@@ -1,5 +1,6 @@
 IQ Revenge
 ==========
+WebGL game using DH3DLibrary
 
 How to play
 -----------
