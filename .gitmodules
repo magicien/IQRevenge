@@ -1,0 +1,3 @@
+[submodule "modules/DH3DLibrary"]
+	path = modules/DH3DLibrary
+	url = git@github.com:magicien/DH3DLibrary

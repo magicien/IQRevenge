@@ -1,0 +1,12 @@
+stageName
+stageWidth,stageLength
+numOfSubStages
+(loop for sub-stages)
+numOfSubSubStages
+questionLength
+numQuestions
+(loop for questions)
+baseStep,x1z1 x2z1 ... xNz1 x1z2 ... (n:normal, a:advantage, f:forbidden)
+(/loop for questions)
+(/loop for sub-stages)
+

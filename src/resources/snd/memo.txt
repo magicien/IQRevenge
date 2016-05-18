@@ -1,0 +1,62 @@
+-------------------------------------------------
+■BGM
+ - movie
+オープニング（ムービー）
+エンディング（ムービー）
+ - music
+メニュー：menu
+ステージ開始：stagecall：b_025（01Earth）
+ゲームオーバー：gameover
+ステージクリア：fanfare
+ステージ１：stage1
+ステージ２：stage2
+ステージ３：stage3
+ステージ４
+ステージ５
+ステージ６
+ステージ７
+ステージ８
+ステージ９
+-------------------------------------------------
+■SE
+ - menu
+◎カーソル移動：select：cursor3.wav（TAM Music Factory）
+◎決定：decision：se_maoudamashii_se_sound03.mp3（魔王魂）
+
+ - game
+ substage
+◎マーカ設置時：mark：cursor8.wav（TAM Music Factory）
+◎マーカ使用時（青／緑）：markon：se03.wav（TAM Music Factory）
+◎キューブ消滅開始時：erase：se04.wav（TAM Music Factory）
+◎黒キューブ消滅開始時：forbidden：system01.wav（魔王魂）
+◎地面崩壊時：break：bigshot3.wav（TAM Music Factory）
+◎キューブ回転終了時：roll：bigshot1.wav（TAM Music Factory）
+◎キューブ落下時：fall：magic_05_shuuuin.mp3（音の杜）
+◎クリア時足場移動：count：bigshot1.wav（TAM Music Factory）（rollと一緒）
+
+◎パーフェクト：bonus：decide4.wav（TAM Music Factory）
+EXCELLENT：excellent：なし　ToDo
+PERFECT：perfect：なし　ToDo
+GREAT：great：なし　ToDo
+AGAIN：again：なし　ToDo
+
+ - キャラ毎に作成
+◎足音：step：se_maoudamashii_se_footstep01.mp3（魔王魂）
+キャラ回転開始時：lifted：なし ToDo
+キャラ潰された時：stamped：liftedと同じ
+キャラ落下時：scream：なし　ToDo
+
+-------------------------------------------------
+■H/MIX GALLERY
+http://www.hmix.net/music_gallery/image/grand.htm
+飛翔 n28.mp3（stage1）
+
+■TAM Music Factory
+se03.wav （erase）
+bigshot1.wav （roll）
+bigshot3.wav （break）
+cursor8.wav （mark） 
+
+■DHサンプルページより
+walk_se1.mp3（step）
+
