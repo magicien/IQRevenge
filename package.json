@@ -6,7 +6,8 @@
   "scripts": {
     "lint": "gulp lint",
     "test": "gulp test",
-    "build": "gulp build"
+    "build": "gulp build",
+    "webserver": "gulp webserver"
   },
   "repository": {
     "type": "git",

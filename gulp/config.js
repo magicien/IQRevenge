@@ -81,6 +81,14 @@ module.exports = {
     dest: dest
   },
 
+  clean: {
+    src: [
+      dest + '/**/*',
+      docs + '/**/*',
+      '!**/.git'
+    ]
+  },
+
   stylus: {
     src: [
       src + '/styl/**/!(_)*'

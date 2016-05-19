@@ -1,6 +1,6 @@
 IQ Revenge
 ==========
-WebGL game using DH3DLibrary
+WebGL game using [DH3DLibrary](http://github.com/magicien/DH3DLibrary)
 
 How to play
 -----------
@@ -11,6 +11,7 @@ How to play
  - Z: Decision, Marking
  - X: Trigger an Advantage Cube
  - C: Fast Forward cubes
+ - Esc: Pause/Resume
 
 Rules
 -----------
@@ -21,9 +22,18 @@ How to build
 ```bash
 git clone git://github.com/magicien/IQRevenge
 cd IQRevenge
+git submodule init
+git submodule update
 npm install
 npm run build
 ```
-Then you can find `IQRevenge.js` in `build/js/` directory
+Then you can find `IQRevenge.js` in `build/js/` directory.
 
+How to run this game on a local server
+--------------------------------------
+After the build commands above,
+```bash
+npm run webserver
+```
+Then access http://localhost:8000 with your modern web browser.
 
