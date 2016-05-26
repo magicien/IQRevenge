@@ -1,20 +1,22 @@
 'use strict'
 
-import AjaxRequest from '../../modules/DH3DLibrary/src/js/util/AjaxRequest'
-import Bone from '../../modules/DH3DLibrary/src/js/base/Bone'
-import Camera from '../../modules/DH3DLibrary/src/js/base/Camera'
-import CanvasField from '../../modules/DH3DLibrary/src/js/base/CanvasField'
+import {
+  AjaxRequest,
+  Bone,
+  Camera,
+  CanvasField,
+  KeyListener,
+  Light,
+  MMDAnimator,
+  PMDReader,
+  VMDReader,
+  ModelBank,
+  MotionBank,
+  Vector3,
+  Vector4,
+  SimpleRenderer
+} from '../../modules/DH3DLibrary/src/js/main'
 import CookieManager from '../../modules/CookieManager/cookiemanager'
-import KeyListener from '../../modules/DH3DLibrary/src/js/base/KeyListener'
-import Light from '../../modules/DH3DLibrary/src/js/base/Light'
-import MMDAnimator from '../../modules/DH3DLibrary/src/js/mmd/MMDAnimator'
-import PMDReader from '../../modules/DH3DLibrary/src/js/mmd/PMDReader'
-import VMDReader from '../../modules/DH3DLibrary/src/js/mmd/VMDReader'
-import ModelBank from '../../modules/DH3DLibrary/src/js/base/ModelBank'
-import MotionBank from '../../modules/DH3DLibrary/src/js/base/MotionBank'
-import Vector3 from '../../modules/DH3DLibrary/src/js/base/Vector3'
-import Vector4 from '../../modules/DH3DLibrary/src/js/base/Vector4'
-import SimpleRenderer from '../../modules/DH3DLibrary/src/js/renderer/simple/SimpleRenderer'
 
 import IQCube from './IQCube'
 import IQEffectPlate from './IQEffectPlate'
@@ -254,7 +256,7 @@ function playerMoveCallback(obj) {
     const speed = g.cubeSize * 1000.0 / g.stageCreateDelay
     const startZ = g.minZ
     const step1Time = (pos.z - startZ) / speed * 1000.0
-    const diffTime = g.nowTime - g.stageCreateStartTime
+    const diffTime = g.getElapsedTime(g.stageCreateStartTime)
 
     if(diffTime > step1Time){
       g.stageStarting = false
@@ -277,11 +279,16 @@ function playerMoveCallback(obj) {
     }
   }else if(g.gameOver){
     // game over
-    const diffTime = g.nowTime - g.gameOverTime
+    const diffTime = g.getElapsedTime(g.gameOverTime)
 
     g.cameraTargetXGoal = pos.x
     g.cameraTargetYGoal = pos.y
     g.cameraTargetZGoal = pos.z
+
+    if(g.testPlay && diffTime > g.gameOverTime1 + g.gameOverTime2){
+      quitTestPlay()
+    }
+
     if(diffTime < g.gameOverTime1){
       g.cameraXAngleGoal = -0.8
       g.cameraYAngleGoal = Math.PI
@@ -343,7 +350,7 @@ function playerMoveCallback(obj) {
     g.cameraTargetY = g.cameraTargetYGoal
     g.cameraTargetZ = g.cameraTargetZGoal
   }else if(g.stageClear){
-    let diffTime = g.nowTime - g.clearTime
+    let diffTime = g.getElapsedTime(g.clearTime)
     const clearWaitTime = g.clearRotateTime * 2 + g.clearLabelTime
     let moveMaxTime = clearWaitTime + g.clearLineMoveTime * g.stageLength
     const clearMaxTime = moveMaxTime + g.clearLineWaitTime
@@ -585,7 +592,6 @@ function showOpeningLoop() {
 }
 
 function showMenu() {
-  console.info("showMenu start")
   if(!IQMenu.initialized){
     setTimeout(showMenu, 500)
     return
@@ -628,31 +634,9 @@ function showMenu() {
   })
   .then(start)
 
-  console.info("showMenu end")
 }
 
 function initModelAndMotion() {
-  console.info("initModelAndMotion called")
-  /*
-  const miku     = ModelBank.getModel('../pmd/miku/初音ミク.pmd')
-  const plate    = ModelBank.getModel('x/normal_plate.x')
-  g.standing  = MotionBank.getMotion('../vmd/standing.vmd')
-  g.running   = MotionBank.getMotion('../vmd/running.vmd')
-  g.rolling   = MotionBank.getMotion('../vmd/rolling.vmd')
-  g.down      = MotionBank.getMotion('../vmd/down.vmd')
-  g.standup   = MotionBank.getMotion('../vmd/standup.vmd')
-  g.falling   = MotionBank.getMotion('../vmd/falling.vmd')
-  */
-  Promise.all([
-    ModelBank.getModel('pmd/miku/初音ミク.pmd')
-  ])
-  .then((result) => {
-    console.info('miku model loaded')
-  })
-  .catch((error) => {
-    console.error('miku model load error:' + error)
-  })
-
   return Promise.all([
     ModelBank.getModel('pmd/miku/初音ミク.pmd'),
     ModelBank.getModel('x/normal_plate.x'),
@@ -678,7 +662,6 @@ function initModelAndMotion() {
 }
 
 function initAudio() {
-  console.info("initAudio start")
   g.bgm_stage = new Audio()
   if(g.bgm_stage.canPlayType('audio/mpeg')){
     g.support_mp3 = true
@@ -769,8 +752,6 @@ function initAudio() {
   g.se_lifted.src  = g.se_directory  + '/' + g.se_miku_lifted_file  + ext
   g.se_stamped.src = g.se_directory  + '/' + g.se_miku_stamped_file + ext
   g.se_scream.src  = g.se_directory  + '/' + g.se_miku_scream_file  + ext
-
-  console.info("initAudio end")
 }
 
 /***************************************************
@@ -782,7 +763,6 @@ function initAudio() {
  * @returns {object|null} - parsed cookie IQ data
  ***************************************************/
 function getCookieIQ() {
-  console.info("getCookiIQ start")
   const cookieIQValue = g.cookieManager.getCookie(g.cookieScore)
   if(!cookieIQValue)
     return null
@@ -795,9 +775,7 @@ function getCookieIQ() {
   */
 
   const cookieIQ = JSON.parse( decodeURIComponent(cookieIQValue) )
-  console.info("cookieIQ: " + cookieIQ)
 
-  console.info("getCookieIQ end")
   return cookieIQ
 }
 
@@ -858,7 +836,6 @@ function setIQtoCookie(iq) {
 }
 
 function updatePersonalBestIQ() {
-  console.info("updatePersonalBestIQ start")
   setIQtoCookie(0)
   const scoreObj = getCookieIQ()
 
@@ -890,7 +867,6 @@ function updatePersonalBestIQ() {
       //g.personalWeeklyBest.get(characterName).set(levelName, weeklyBest)
     })
   })
-  console.info("updatePersonalBestIQ end")
 }
 
 function loadBestIQ() {
@@ -1020,6 +996,7 @@ function loadCookieOption() {
   g.keyMark      = g.cookieManager.getCookie(g.cookieOptionKeyMark)
   g.keyAdvantage = g.cookieManager.getCookie(g.cookieOptionKeyAdvantage)
   g.keySpeedUp   = g.cookieManager.getCookie(g.cookieOptionKeySpeedUp)
+  g.keyEscape    = g.cookieManager.getCookie(g.cookieOptionKeyEscape)
 
   return true
 }
@@ -1038,6 +1015,7 @@ function saveCookieOption() {
   g.cookieManager.setCookie(g.cookieOptionKeyMark,      g.keyMark)
   g.cookieManager.setCookie(g.cookieOptionKeyAdvantage, g.keyAdvantage)
   g.cookieManager.setCookie(g.cookieOptionKeySpeedUp,   g.keySpeedUp)
+  g.cookieManager.setCookie(g.cookieOptionKeyEscape,    g.keyEscape)
 }
 
 function removeAllObjects() {
@@ -1203,6 +1181,7 @@ function resetValues(stage, remainScores) {
 }
 
 function playSound(audio, recycle = false){
+  /*
   if(recycle){
     audio.pause()
     audio.currentTime = 0
@@ -1212,6 +1191,7 @@ function playSound(audio, recycle = false){
     newAudio.volume = g.soundVolume
     newAudio.play()
   }
+  */
 }
 function playSECallback_step(){
   playSound(g.se_step)
@@ -1241,7 +1221,6 @@ function checkObjLoaded() {
 }
 
 function changeToMenu() {
-  console.info("changeToMenu start")
   stop()
   g.menu.setMenu('top')
   g.camera.distance = 20.0
@@ -1275,7 +1254,6 @@ function changeToMenu() {
   g.renderer.setLight(g.light)
 
   start()
-  console.info("changeToMenu end")
 }
 
 function showMenuLoop() {
@@ -1347,7 +1325,7 @@ function showMenuLoop() {
   let cx
   let cy
   if(g.menu._moving){
-    const diffTime = g.nowTime - g.menu._startTime
+    const diffTime = g.getElapsedTime(g.menu._startTime)
     const maxTime = g.menuMoveTime
     if(diffTime > maxTime){
       cx = g.menu._dstX
@@ -1384,7 +1362,7 @@ function showMenuLoop() {
 
     }
   }else if(g.menu._folding){
-    const diffTime = g.nowTime - g.menu._foldingTime
+    const diffTime = g.getElapsedTime(g.menu._foldingTime)
     // FIMXE
     if(diffTime < g.menuFoldingTime){
       const r = diffTime / g.menuFoldingTime * Math.PI * 0.5
@@ -1424,7 +1402,7 @@ function showMenuLoop() {
       })
 
       switch(g.menu.getOptionName()){
-        case 'START':
+        case 'START': {
           new IQSceneChanger(3.0, true, g.bgm_menu, g.bgm_stagecall, null, () => {
             stop()
             g.canvasField.removeObject(g.menu)
@@ -1433,20 +1411,24 @@ function showMenuLoop() {
             setup()
           })
           break
+        }
         case 'OPTION':
         case 'SCORE':
         case 'RULES':
         case 'CREATE':
-        case 'SHARE':
+        case 'SHARE': {
           moveCubeToTopLeft()
           break
-        case 'EXTRA':
+        }
+        case 'EXTRA': {
           break
-        case 'EXIT':
+        }
+        case 'EXIT': {
           new IQSceneChanger(5.0, true, g.bgm_menu, null, null, () => {
             window.close()
           })
           break
+        }
       }
     }
     const t = diffTime / g.menuRotationTime
@@ -1459,7 +1441,7 @@ function showMenuLoop() {
     cy = g.menu._opPosY[g.menu._cursor]
   }else if(g.menu._moveTopLeft){
     // cube position
-    const cubeDiffTime = g.nowTime - g.menu._moveTopLeftTime
+    const cubeDiffTime = g.getElapsedTime(g.menu._moveTopLeftTime)
     const cube = g.menu._foldingTiles[0]
     const cubePos = cube._position
     let s = 0
@@ -1474,7 +1456,7 @@ function showMenuLoop() {
       g.menu._expandingTime = g.nowTime
 
       // calc expandingStartTime
-      const foldingDiffTime = g.nowTime - g.menu._foldingTime
+      const foldingDiffTime = g.getElapsedTime(g.menu._foldingTime)
       const t = foldingDiffTime / g.menuRotationTime
       const h = (t - 1.0) * g.menuRotationSpeed
       const nowR = h + Math.sqrt(t + h * h)
@@ -1507,7 +1489,7 @@ function showMenuLoop() {
     g.menu.setFadeTileAlpha(s)
 
     // rotate cube
-    const foldingDiffTime = g.nowTime - g.menu._foldingTime
+    const foldingDiffTime = g.getElapsedTime(g.menu._foldingTime)
     const t = foldingDiffTime / g.menuRotationTime
     const h = (t - 1.0) * g.menuRotationSpeed
     const r = h + Math.sqrt(t + h * h)
@@ -1518,14 +1500,14 @@ function showMenuLoop() {
     cx = g.menu._opPosX[g.menu._cursor]
     cy = g.menu._opPosY[g.menu._cursor]
   }else if(g.menu._expanding){
-    const expandingDiffTime = g.nowTime - g.menu._expandingTime
+    const expandingDiffTime = g.getElapsedTime(g.menu._expandingTime)
 
     const time1 = g.menu._expandingStartTime
     const time2 = time1 + g.menuCubeExpandingTime
     //var time3 = time2 + g.menuMenuExpandingTime
     if(expandingDiffTime < time1){
       // rotate cube
-      const rotDiffTime = g.nowTime - g.menu._expandingTime
+      const rotDiffTime = g.getElapsedTime(g.menu._expandingTime)
       const rotSpeed = g.menuRotationSpeed * 2.0
       const t = rotDiffTime / g.menuRotationTime
       const r = g.menu._expandingSrcRot + rotSpeed * t
@@ -1647,8 +1629,9 @@ function showSubMenuLoop() {
 
   const menuName = g.menu.getOptionName()
   let subName = g.menu.getSubOptionName()
+  let startEditing = false
 
-  if(!g.menu._moving && g.menu._showSubMenuReady){
+  if(!g.menu._moving && g.menu._showSubMenuReady && !g.editing){
     let c = g.menu._subCursor
     if(g.keyListener.getKeyState(g.keyUp)){
       do {
@@ -1698,7 +1681,7 @@ function showSubMenuLoop() {
           g.menuPlayerObj.setMotion(g.running)
           g.canvasField.addObject(g.menuPlayerObj)
           */
-        }else if(name == 'SoundVolume'){
+        }else if(name == 'Volume'){
           g.menu._opSubSubMenus = g.soundVolumeList
           g.menu._opSubSubMenuEnable = g.soundVolumeListEnable
           g.menu._subSubCursor = g.soundVolumeList.indexOf(g.soundVolumeValue)
@@ -1725,6 +1708,32 @@ function showSubMenuLoop() {
           g.menu._opSubSubMenus = g.levelList
           g.menu._opSubSubMenuEnable = g.levelListEnable
           g.menu._subSubCursor = g.levelList.indexOf(g.level)
+        }else{
+          // return
+          g.menu._opSubSubMenus = null
+          g.menu._opSubSubMenuEnable = null
+        }
+      }else if(menuName == 'CREATE'){
+        const name = g.menu.getSubOptionName()
+        if(name == 'Size'){
+          g.menu._opSubSubMenus = g.stageSizeList
+          g.menu._opSubSubMenuEnable = g.stageSizeListEnable
+          //g.menu._subSubCursor = g.stageSizeList.indexOf(g.editStageSize)
+          g.menu._subSubCursor = g.editStageSize // FIXME: not use index
+        }else if(name == 'Step'){
+          g.menu._opSubSubMenus = g.stageStepList
+          g.menu._opSubSubMenuEnable = g.stageStepListEnable
+          //g.menu._subSubCursor = g.stageStepList.indexOf(g.editStageStep)
+          g.menu._subSubCursor = g.editStageStep // FIXME: not use index
+        }else if(name == 'Edit'){
+          g.menu._opSubSubMenus = null
+          g.menu._opSubSubMenuEnable = null
+        }else if(name == 'Play'){
+          g.menu._opSubSubMenus = null
+          g.menu._opSubSubMenuEnable = null
+        }else if(name == 'Save'){
+          g.menu._opSubSubMenus = null
+          g.menu._opSubSubMenuEnable = null
         }else{
           // return
           g.menu._opSubSubMenus = null
@@ -1762,7 +1771,7 @@ function showSubMenuLoop() {
           }else if(subName == 'Character'){
             g.character = g.characterList[c]
             // FIXME: change character model
-          }else if(subName == 'SoundVolume'){
+          }else if(subName == 'Volume'){
             g.soundVolumeValue = g.soundVolumeList[c]
             if(g.soundVolumeValue < 0){
               c = g.menu._subSubCursor
@@ -1802,6 +1811,44 @@ function showSubMenuLoop() {
             g.menu._subScoreCharacter = g.characterList[c]
           }else if(subName == 'Level'){
             g.menu._subScoreLevel = g.levelList[c]
+          }
+          g.menu._subSubCursor = c
+        }
+      }else if(menuName == 'CREATE'){
+        subName = g.menu.getSubOptionName()
+        c = g.menu._subSubCursor
+
+        if(g.editing){
+          // do it later
+        }else if(g.menu._opSubSubMenus){
+          if(g.keyListener.getKeyNewState(g.keyRight)){
+            do {
+              c++
+              if(c >= g.menu._opSubSubMenus.length){
+                c = 0
+              }
+            }while(!g.menu._opSubSubMenuEnable[c])
+          }
+          if(g.keyListener.getKeyNewState(g.keyLeft)){
+            do {
+              c--
+              if(c < 0){
+                c = g.menu._opSubSubMenus.length - 1
+              }
+            }while(!g.menu._opSubSubMenuEnable[c])
+          }
+
+          if(c != g.menu._subSubCursor){
+            // update value
+            subName = g.menu.getSubOptionName()
+            if(subName == 'Size'){
+              //g.menu._subCreateSize = g.stageSizeList[c]
+              g.editStageSize = c
+            }else if(subName == 'Step'){
+              //g.menu._subCreateStep = g.stageStepList[c]
+              //g.menu.editStageStep = c
+              g.editStageStep = c
+            }
           }
           g.menu._subSubCursor = c
         }
@@ -1902,11 +1949,92 @@ function showSubMenuLoop() {
           }
           break
         }
+
+        case 'CREATE': {
+          const name = g.menu.getSubOptionName()
+
+          if(g.editing){
+            // do it later
+          }else if(name == 'Size'){
+            // nothing to do
+          }else if(name == 'Step'){
+            // nothing to do
+          }else if(name == 'Edit'){
+            startEditing = true
+          }else if(name == 'Play'){
+            new IQSceneChanger(3.0, true, g.bgm_menu, g.bgm_stagecall, null, () => {
+              g.testPlay = true
+              stop()
+              setup()
+            })
+          }else if(name == 'return'){
+            // return
+            new IQSceneChanger(2.0, true, null, null, showMenuLoop, subMenuReturn)
+          }
+          break
+        }
       }
     }
   }
+
+  if(g.editing){
+    const stageSize = g.stageSizeValues[g.editStageSize]
+    const stageWidth = stageSize[0]
+    const stageLength = stageSize[1]
+    let cx = g.menu._editCursorX
+    let cy = g.menu._editCursorY
+
+    if(g.keyListener.getKeyNewState(g.keyRight)){
+      cx++
+    }
+    if(g.keyListener.getKeyNewState(g.keyLeft)){
+      cx--
+    }
+    if(g.keyListener.getKeyNewState(g.keyUp)){
+      cy--
+    }
+    if(g.keyListener.getKeyNewState(g.keyDown)){
+      cy++
+    }
+    cx = (cx + stageWidth) % stageWidth
+    cy = (cy + stageLength) % stageLength
+
+    if(cx != g.menu._editCursorX || cy != g.menu._editCursorY){
+      playSound(g.se_select)
+      g.menu._moving = true
+      g.menu._moveSubMenuTime = g.nowTime
+
+      g.menu._editCursorSX = g.menu._editCursorX
+      g.menu._editCursorSY = g.menu._editCursorY
+      g.menu._editCursorX = cx
+      g.menu._editCursorY = cy
+    }
+
+    if(!g.menu._moving){
+      if(g.keyListener.getKeyNewState(g.keyMark)){
+        // back to sub sub menu
+        g.editing = false
+      }else if(g.keyListener.getKeyNewState(g.keyAdvantage)){
+        // change block type
+        const oldBlockType = g.editStageData[g.menu._editCursorX][g.menu._editCursorY]
+        const blockTypes = ['n', 'a', 'f']
+        const newBlockTypeIndex = (blockTypes.indexOf(oldBlockType) + 1) % blockTypes.length
+        const newBlockType = blockTypes[newBlockTypeIndex]
+
+        g.editStageData[g.menu._editCursorX][g.menu._editCursorY] = newBlockType
+      }
+    }
+
+    if(g.keyListener.getKeyNewState(g.keySpeedUp)){
+      // for debug
+      outputEditStageData()
+    }
+  }else if(startEditing){
+    g.editing = true
+  }
+
   if(g.menu._moving){
-    const diffTime = g.nowTime - g.menu._moveSubMenuTime
+    const diffTime = g.getElapsedTime(g.menu._moveSubMenuTime)
     const maxTime = g.menuMoveTime
     if(diffTime >= maxTime){
       g.menu._moving = false
@@ -1914,6 +2042,7 @@ function showSubMenuLoop() {
   }
   g.keyListener.resetKeyNewState()
 }
+
 function setMenuTileFolding(tile, tileArray) {
   tile._marked = true
   const x = tile._tileX
@@ -2093,7 +2222,7 @@ function showIQLoop() {
       g.gameOverFadeOutStartTime = g.nowTime
     }
   }else{
-    const diffTime = g.nowTime - g.gameOverFadeOutStartTime
+    const diffTime = g.getElapsedTime(g.gameOverFadeOutStartTime)
     if(diffTime > g.gameOverFadeOutTime){
       g.continueFadeInStartTime = g.nowTime
       removeAllObjects()
@@ -2211,7 +2340,22 @@ function setup() {
     return
   }
 
-  loadStageFilesData(g.stageDataFile)
+  let loadDataPromise = null
+
+  if(g.testPlay){
+    g.stageMax = 1
+    g.stage = 1
+    g.stageFiles = ['TestPlay'] // just set dummy string
+
+    loadDataPromise = new Promise((resolve, reject) => {
+      // just resolve
+      resolve()
+    })
+  }else{
+    loadDataPromise = loadStageFilesData(g.stageDataFile)
+  }
+
+  loadDataPromise
   .then((result) => {
     // character
     let character
@@ -2257,9 +2401,55 @@ function setup() {
   })
 }
 
+/**
+ * go back to edit from test play
+ * @access public
+ * @returns {void}
+ */
+function quitTestPlay() {
+  new IQSceneChanger(3.0, true, g.bgm_stage, g.bgm_menu, showSubMenuLoop, () => {
+    removeAllObjects()
+    g.canvasField.addObject(g.menu)
+    g.camera.lookat(130, 100, -135, 130, 100, 0, 0, -1, 0)
+
+    g.menu.setMenu('top')
+    g.menu._cursor = 4  // 'CREATE'
+
+    // set light
+    g.light.setPosition(-50, 0, -100)
+    g.light.setAmbient(0.6, 0.6, 0.6, 0.0)
+    g.light.setDiffuse(0.7, 0.7, 0.7, 0.0)
+    g.light.setSpecular(0.9, 0.9, 0.9, 0.0)
+    g.renderer.setLight(g.light)
+
+    // title objects: 'CREATE'
+    g.menu._foldingTiles.forEach((tile) => {
+      g.canvasField.addObject(tile)
+    })
+
+    g.testPlay = false
+  })
+}
+
+/**
+ * show edited stage data for debug
+ * @access public
+ * @returns {void}
+ */
+function outputEditStageData() {
+  let debugInfo = g.stageStepList[g.editStageStep] + ","
+  const stageSize = g.stageSizeValues[g.editStageSize]
+  for(let y=0; y<stageSize[1]; y++){
+    for(let x=0; x<stageSize[0]; x++){
+      debugInfo += g.editStageData[x][y]
+    }
+  }
+  console.info("stageData: " + debugInfo)
+}
+
 function downProcess() {
   if(g.playerObj._state == 'down'){
-    const diffTime = g.nowTime - g.playerObj.downStartTime
+    const diffTime = g.getElapsedTime(g.playerObj.downStartTime)
     if(diffTime > g.downWaitTime){
       g.playerObj._state = 'standup'
       g.playerObj.setMotionWithBlending(g.standup, 3)
@@ -2267,7 +2457,7 @@ function downProcess() {
       g.playerObj.standupStartTime = g.nowTime
     }
   }else if(g.playerObj._state == 'standup'){
-    const diffTime = g.nowTime - g.playerObj.standupStartTime
+    const diffTime = g.getElapsedTime(g.playerObj.standupStartTime)
     if(diffTime > g.standupWaitTime){
       g.playerObj._state = 'standing'
       g.playerObj.setMotionWithBlending(g.standing, 3)
@@ -2281,7 +2471,7 @@ function createSubStageProcess() {
   if(!g.stageCreating)
     return
 
-  let diffTime = g.nowTime - g.stageCreateStartTime
+  let diffTime = g.getElapsedTime(g.stageCreateStartTime)
   if(!g.stageStarting){
     diffTime -= g.stageCreateWait
   }
@@ -2463,11 +2653,15 @@ function createSubStage() {
 }
 
 function blockReady(obj) {
+  if(obj.paused){
+    return
+  }
+
   // FIXME: merge to createStage function
   const moveLength = g.stageCreateBlockMoveTime
 
   if(obj.state == 'entry'){
-    const diffTime = g.nowTime - obj.startTime
+    const diffTime = g.getElapsedTime(obj.startTime)
     if(obj.moveTime < diffTime){
       if(obj.moveTime + moveLength > diffTime){
         // delete marker
@@ -2495,29 +2689,24 @@ function loadStageFilesData(fileName) {
   if(dir == fileName){
     dir = './'
   }
-
+  
   return AjaxRequest.get(fileName, {
     async: false
   })
   .then((result) => {
-    console.info("loadStageFilesData then start")
     const data = result
     let line = 0
     const lines = data.split('\n')
 
-    console.info("data = " + data)
-
     // numStages
     g.stageMax = parseInt(lines[line])
     line++
-    console.info("g.stageMax = " + g.stageMax)
 
     g.stageFiles = []
     for(let i=1; i<=g.stageMax; i++){
       g.stageFiles[i] = dir + lines[line]
       line++
     }
-    console.info("loadStageFilesData then end")
   })
   .catch((error) => {
     console.error(`Stage data loading error: ${error}`)
@@ -2525,10 +2714,41 @@ function loadStageFilesData(fileName) {
 }
 
 function loadQuestionFile(fileName) {
-  const promise = AjaxRequest.get(fileName, {
-    async: false
-  })
-  .then((result) => {
+  let promise = null
+
+  if(g.testPlay){
+    // build test play data
+    const stageSize = g.stageSizeValues[g.editStageSize]
+    const stageLength = 30
+    const baseStep = g.stageStepList[g.editStageStep]
+    promise = new Promise((resolve, reject) => {
+      let testData = "Test Play\n" // stage name
+      testData += stageSize[0] + "," + stageLength + "\n" // stage size
+      testData += "1\n" // number of sub stages
+      testData += "1\n" // number of sub sub stages
+      testData += stageSize[1] + "\n" // question length
+      testData += "1\n" // number of questions
+      testData += baseStep + ","
+
+      for(let y=0; y<stageSize[1]; y++){
+        for(let x=0; x<stageSize[0]; x++){
+          testData += g.editStageData[x][y]
+        }
+      }
+
+      testData += "\n"
+
+      resolve(testData)
+
+      return testData
+    })
+  }else{
+    promise = AjaxRequest.get(fileName, {
+      async: false
+    })
+  }
+
+  promise.then((result) => {
     const data = result
 
     let line = 0
@@ -2712,9 +2932,18 @@ function blockRotate() {
     g.rotateElapsedTime += g.elapsedTime
   }
 
-  if(!g.activated || g.rotateElapsedTime < g.rotateWaitTime){
+  let waitTime = g.rotateWaitTime
+  /*
+  if(g.blockDeleted){
+    waitTime += g.afterDeleteAdditionalWaitTime
+  }
+  */
+
+  if(!g.activated || g.rotateElapsedTime < waitTime){
     return
   }
+
+  g.blockDeleted = false
   
   if(g.rotateElapsedTime > g.rotateWaitTime + g.rotateTime){
     // rotation ended
@@ -2841,12 +3070,12 @@ function markerRotate() {
   g.markerArray.forEach( (marker) => {
     marker.setRotateAxis(g.yaxis, rot)
     if(marker.startTime){
-      if(g.markerRemainTime < g.nowTime - marker.startTime){
+      if(g.markerRemainTime < g.getElapsedTime(marker.startTime)){
         marker.erase()
       }
     }
     if(!g.rotating && marker.deleteStartTime){
-      if(g.deletedWaitTime < g.nowTime - marker.deleteStartTime){
+      if(g.deletedWaitTime < g.getElapsedTime(marker.deleteStartTime)){
         marker.erase()
       }
     }
@@ -2998,7 +3227,7 @@ function checkMarker() {
     }
   })
   if(deleted){
-    g.rotateElapsedTime = 0
+    g.rotateElapsedTime = -g.afterDeleteAdditionalWaitTime
     g.deleting = true
     if(!g.stepCounting){
       g.stepCounting = true
@@ -3017,6 +3246,7 @@ function checkMarker() {
         }
       })
     }
+    //g.blockDeleted = true
 
 /*
     // FIXME: SE timing
@@ -3044,7 +3274,7 @@ function fallProcess() {
   const endTime = 1000
   const arr = g.fallCubeArray
   arr.forEach( (cube) => {
-    const diffTime = g.nowTime - cube.fallStartTime
+    const diffTime = g.getElapsedTime(cube.fallStartTime)
     if(diffTime > endTime){
       g.fallCubeArray = g.fallCubeArray.filter((fallCube) => { return fallCube !== cube })
       g.canvasField.removeObject(cube)
@@ -3073,7 +3303,7 @@ function deleteProcess() {
   let cubeErased = false
   let forbiddenErased = false
   arr.forEach( (cube) => {
-    const diffTime = (g.nowTime - cube.deleteStartTime) - g.deletedWaitTime
+    const diffTime = g.getElapsedTime(cube.deleteStartTime) - g.deletedWaitTime
     if(diffTime > endTime){
       g.deleteCubeArray = g.deleteCubeArray.filter((deleteCube) => { return deleteCube !== cube })
       g.canvasField.removeObject(cube)
@@ -3112,11 +3342,14 @@ function perfectProcess() {
     return
 
   const perfectProcessTime = g.perfectStringTime + g.perfectWaitTime + g.perfectRotateTime
-  const diffTime = g.nowTime - g.perfectTime
+  const diffTime = g.getElapsedTime(g.perfectTime)
  
   if(diffTime > perfectProcessTime){
     g.perfect = false
-    if(g.subSubStage == g.subSubStageMax){
+    if(g.testPlay){
+      // go back to edit
+      quitTestPlay()
+    }else if(g.subSubStage == g.subSubStageMax){
       subStageClear()
     }else{
       g.subSubStage++
@@ -3192,7 +3425,7 @@ function breakLineProcess() {
     return
 
   const e = 0.0001
-  const diffTime = g.nowTime - g.breakStartTime
+  const diffTime = g.getElapsedTime(g.breakStartTime)
   const endTime = 1000
   const line = g.breakCubeArray
   line.forEach( (cube) => {
@@ -3255,7 +3488,7 @@ function breakLineProcess() {
 
 function gameOverProcess() {
   if(g.gameOver){
-    const diffTime = (g.nowTime - g.gameOverTime) * 0.001
+    const diffTime = g.getElapsedTime(g.gameOverTime) * 0.001
     g.playerObj._position.y = -60.0 * diffTime * (diffTime + 0.5)
 
     const maxTime = g.gameOverTime1 + g.gameOverTime2 + g.gameOverTime3 * 0.5
@@ -3458,7 +3691,13 @@ function setStageBGM(stage) {
     null,
     g.bgm_stage1_file,
     g.bgm_stage2_file,
-    g.bgm_stage3_file
+    g.bgm_stage3_file,
+    g.bgm_stage4_file,
+    g.bgm_stage5_file,
+    g.bgm_stage6_file,
+    g.bgm_stage7_file,
+    g.bgm_stage8_file,
+    g.bgm_stage9_file
   ]
   if(g.support_mp3){
     ext = '.mp3'
@@ -3474,7 +3713,7 @@ function clearProcess() {
   if(!g.stageClear || g.gameOver)
     return
 
-  let diffTime = g.nowTime - g.clearTime
+  let diffTime = g.getElapsedTime(g.clearTime)
   const clearWaitTime = g.clearRotateTime * 2 + g.clearLabelTime
   const moveMaxTime = clearWaitTime + g.clearLineMoveTime * g.stageLength
   const clearMaxTime = moveMaxTime + g.clearLineWaitTime
@@ -3588,7 +3827,7 @@ function endingLoop() {
   g.nowTime = new Date()
 
   const maxTime = g.endingTotalTime
-  const diffTime = g.nowTime - g.endingStartTime
+  const diffTime = g.getElapsedTime(g.endingStartTime)
   if(diffTime > maxTime){
     if(!g.sceneChanging && g.keyListener.getKeyNewState(g.keyMark)){
       const srcBGM = null
@@ -3693,6 +3932,68 @@ function update(elapsedTime) {
   force.x = force.y = force.z = 0
   let moving = false
 
+  if(g.keyListener.getKeyNewState(g.keyPause)){
+    if(g.pausing){
+      // resume
+      if(g.current_bgm){
+        g.current_bgm.play()
+      }
+
+      let pausedTime = (new Date()) - g.pauseStartTime
+      let cubePausedTime = pausedTime
+      g.addTimeToAllTimer(pausedTime)
+      g.playerObj.setAnimating(true)
+      g.qCubeArray.forEach((cubeLine) => {
+        cubeLine.forEach((cube) => {
+          if(cube){
+            cube.resume(cubePausedTime)
+            // FIXME: all cubes share the same timer...
+            cubePausedTime = 0
+          }
+        })
+      })
+
+      g.aCubeArray.forEach((cubeLine) => {
+        cubeLine.forEach((cube) => {
+          if(cube){
+            cube.resume(pausedTime)
+          }
+        })
+      })
+
+      g.labelObj.addTime(pausedTime)
+
+      g.pausing = false
+    }else{
+      // pause
+      g.pauseStartTime = new Date()
+      if(g.current_bgm){
+        g.current_bgm.pause()
+      }
+      g.playerObj.setAnimating(false)
+      g.qCubeArray.forEach((cubeLine) => {
+        cubeLine.forEach((cube) => {
+          if(cube){
+            cube.pause()
+          }
+        })
+      })
+      g.aCubeArray.forEach((cubeLine) => {
+        cubeLine.forEach((cube) => {
+          if(cube){
+            cube.pause()
+          }
+        })
+      })
+      g.pausing = true
+    }
+  }
+
+  if(g.pausing){
+    g.keyListener.resetKeyNewState()
+    return
+  }
+
   if(g.keyListener.getKeyState(g.keyUp)){
     force.z -= speed
     moving = true
@@ -3756,7 +4057,6 @@ function update(elapsedTime) {
   */
 
   if(g.keyListener.getKeyNewState(g.keyMark)){
-    //if(!g.stageStarting && !g.gameOver){
     if(checkControllable()){
       setMarker()
     }
@@ -3787,13 +4087,6 @@ function update(elapsedTime) {
   checkClear()
   clearProcess()
 
-/*
-  if(g.stageStarting || g.stageClear){
-    force.x = force.y = force.z = 0
-  }else if(g.playerObj._state == 'rolling' || g.playerObj._state == 'down' || g.playerObj._state == 'standup'
-     || g.playerObj._state == 'falling'){
-    force.x = force.y = force.z = 0
-*/
   if(!checkControllable()){
     force.x = force.y = force.z = 0
   }else if(moving && g.playerObj._state != 'running'){
@@ -3809,14 +4102,12 @@ function update(elapsedTime) {
 }
 
 function init() {
-  console.info("init start")
   initGameData()
   initCanvas()
   initModelAndMotion()
   initAudio()
   loadBestIQ()
   loadCookieOption()
-  console.info("init end")
 }
 
 document.addEventListener('DOMContentLoaded', init, false)

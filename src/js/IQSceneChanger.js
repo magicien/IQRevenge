@@ -1,6 +1,8 @@
 'use strict'
 
-import DH2DObject from '../../modules/DH3DLibrary/src/js/base/DH2DObject'
+import {
+  DH2DObject
+} from '../../modules/DH3DLibrary/src/js/main'
 import IQGameData from './IQGameData'
 
 /**
@@ -41,7 +43,7 @@ export default class IQSceneChanger extends DH2DObject {
 
   render() {
     const c = IQGameData.canvasField.get2DContext()
-    const diffTime = (IQGameData.nowTime - this._startTime) * 0.001
+    const diffTime = IQGameData.getElapsedTime(this._startTime) * 0.001
     let r
     if(this._changeTime > 0){
       r = 2.0 * diffTime / this._changeTime
@@ -72,12 +74,14 @@ export default class IQSceneChanger extends DH2DObject {
       }
       if(this._beforeBGM){
         this._beforeBGM.pause()
+        IQGameData.current_bgm = null
       }
       if(this._afterBGM){
         this._afterBGM.pause()
         this._afterBGM.currentTime = 0
         this._afterBGM.volume = 0
         this._afterBGM.play()
+        IQGameData.current_bgm = this._afterBGM
       }
       if(this._sceneChangeCallback){
         this._sceneChangeCallback()

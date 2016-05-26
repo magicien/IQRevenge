@@ -1,8 +1,10 @@
 'use strict'
 
-import DH3DObject from '../../modules/DH3DLibrary/src/js/base/DH3DObject'
-import TextureBank from '../../modules/DH3DLibrary/src/js/base/TextureBank'
-import ModelBank from '../../modules/DH3DLibrary/src/js/base/ModelBank'
+import {
+  DH3DObject,
+  TextureBank,
+  ModelBank
+} from '../../modules/DH3DLibrary/src/js/main'
 import IQGameData from './IQGameData'
 
 /**
@@ -71,7 +73,7 @@ export default class IQMarkerPlate extends DH3DObject {
    * @returns {void}
    */
   update() {
-    const diffTime = IQGameData.nowTime - this.startTime
+    const diffTime = IQGameData.getElapsedTime(this.startTime)
     let step
 
     if(diffTime < this.endTime){

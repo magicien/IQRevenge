@@ -1,6 +1,8 @@
 'use strict'
 
-import Vector3 from '../../modules/DH3DLibrary/src/js/base/Vector3'
+import {
+  Vector3
+} from '../../modules/DH3DLibrary/src/js/main'
 
 /**
  * _IQGameData class
@@ -208,6 +210,7 @@ class _IQGameData {
     this.keyMark = 'Z'
     this.keyAdvantage = 'X'
     this.keySpeedUp = 'C'
+    this.keyPause = 'Esc'
 
     // best score
     this.scoreDataURL = './data/score.txt'
@@ -215,6 +218,45 @@ class _IQGameData {
     this.worldWeeklyBest = 0
     this.personalDailyBest = 0
     this.personalWeeklyBest = 0
+
+    // edit
+    this.stageSizeValues = [
+      [4, 2], [4, 3], [4, 4], [4, 5],
+      [5, 5], [5, 6], [5, 7], [5, 8],
+      [6, 6], [6, 7], [6, 8], [6, 9],
+      [7, 7], [7, 8], [7, 9], [7, 10],
+      [8, 9], [8, 10], [9, 10]
+    ] 
+    this.stageSizeMaxWidth = 9
+    this.stageSizeMaxLength = 10
+
+    this.stageSizeList = []
+    this.stageSizeListEnable = []
+    for(let i=0; i<this.stageSizeValues.length; i++){
+      const stageSize = this.stageSizeValues[i]
+      this.stageSizeList[i] = `${stageSize[0]}x${stageSize[1]}`
+      this.stageSizeListEnable[i] = true
+    }
+
+    const minStageStep = 1
+    const maxStageStep = 40
+    const stepIndices = maxStageStep - minStageStep + 1
+    this.stageStepList = []
+    this.stageStepListEnable = []
+    for(let i=0; i<stepIndices; i++){
+      this.stageStepList[i] = i + minStageStep
+      this.stageStepListEnable[i] = true
+    }
+
+    this.editStageSize = 0
+    this.editStageStep = 0
+    this.editStageData = []
+    for(let ex=0; ex<this.stageSizeMaxWidth; ex++){
+      this.editStageData[ex] = []
+      for(let ey=0; ey<this.stageSizeMaxLength; ey++){
+        this.editStageData[ex][ey] = 'n'
+      }
+    }
 
     // loading
     this.loading = false
@@ -266,6 +308,9 @@ class _IQGameData {
     this.bgm_stagecall = null
     this.bgm_fanfare = null
     this.bgm_gameover = null
+    this.bgm_edit = null
+
+    this.current_bgm = null
 
     // bgm file
     this.bgm_directory = './snd'
@@ -276,6 +321,14 @@ class _IQGameData {
     this.bgm_stage1_file = 'stage1'
     this.bgm_stage2_file = 'stage2'
     this.bgm_stage3_file = 'stage3'
+    this.bgm_stage4_file = 'stage4'
+    this.bgm_stage5_file = 'stage5'
+    this.bgm_stage6_file = 'stage6'
+    this.bgm_stage7_file = 'stage7'
+    this.bgm_stage8_file = 'stage8'
+    this.bgm_stage9_file = 'stage9'
+    this.bgm_stageE_file = 'stage3'
+    this.bgm_edit_file = 'edit'
 
     // sound
     this.se_select = null
@@ -320,6 +373,12 @@ class _IQGameData {
     this.se_stagecall_1_file = 'stagecall_1'
     this.se_stagecall_2_file = 'stagecall_2'
     this.se_stagecall_3_file = 'stagecall_3'
+    this.se_stagecall_4_file = 'stagecall_4'
+    this.se_stagecall_5_file = 'stagecall_5'
+    this.se_stagecall_6_file = 'stagecall_6'
+    this.se_stagecall_7_file = 'stagecall_7'
+    this.se_stagecall_8_file = 'stagecall_8'
+    this.se_stagecall_9_file = 'stagecall_9'
     this.se_excellent_file = 'excellent'
     this.se_perfect_file = 'perfect'
     this.se_great_file = 'great'
@@ -358,6 +417,7 @@ class _IQGameData {
     this.nowTime = null
 
     this.rotateElapsedTime = 0
+    this.pauseStartTime = null
     this.stageCreateStartTime = null
     this.downStartTime = null
     this.gameOverTime = null
@@ -373,12 +433,13 @@ class _IQGameData {
     this.downWaitTime = 1000
     this.standupWaitTime = 600
     this.defaultWaitTime = 800
-    this.deletedWaitTime = 400
+    //this.deletedWaitTime = 400
+    this.deletedWaitTime = 800
     this.rotateWaitTime = 500
+    this.afterDeleteAdditionalWaitTime = 800
     this.rotateTime = 800
-    // DEBUG用
-    //markerRemainTime = 50
-    this.markerRemainTime = 500
+    //this.markerRemainTime = 500
+    this.markerRemainTime = 1000
     this.checkMissTiming = 0.8
     this.perfectStringTime = 1000
     this.perfectWaitTime = 1000
@@ -468,6 +529,7 @@ class _IQGameData {
     this.rotating = false
     this.breaking = false
     this.deleting = false
+    this.blockDeleted = false
     this.again = false
     this.gameOver = false
     this.gameOverFlag = false
@@ -475,6 +537,10 @@ class _IQGameData {
     this.stageClear = false
     this.stageClearSceneChange = false
     this.ending = false
+    this.pausing = false
+
+    this.editing = false
+    this.testPlay = false
 
     this.perfect = false
     this.addingLine = false
@@ -569,6 +635,41 @@ class _IQGameData {
     this.cookieOptionKeyAdvantage = 'IQKAdv'
     this.cookieOptionKeySpeedUp = 'IQKSpeed'
 
+  }
+
+  /**
+   * get elapsed time from given time
+   * @access public
+   * @param {Date} time - Date object to compare time difference
+   * @returns {int} - elapsed time from given time (ms)
+   */
+  getElapsedTime(time) {
+    return this.nowTime - time
+  }
+
+  /**
+   * add time to all timer for pause
+   * @access public
+   * @param {int} time - 
+   * @returns {void}
+   */
+  addTimeToAllTimer(time) {
+    [
+      this.pauseStartTime,
+      this.stageCreateStartTime,
+      this.downStartTime,
+      this.gameOverTime,
+      this.gameOverFadeOutStartTime,
+      this.continueFadeInStartTime,
+      this.againTime,
+      this.perfectTime,
+      this.clearTime,
+      this.endingStartTime
+    ].forEach((timer) => {
+      if(timer){
+        timer.setMilliseconds(timer.getMilliseconds() + time)
+      }
+    })
   }
 }
 

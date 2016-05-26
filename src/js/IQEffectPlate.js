@@ -1,8 +1,10 @@
 'use strict'
 
-import DH3DObject from '../../modules/DH3DLibrary/src/js/base/DH3DObject'
-import ModelBank from '../../modules/DH3DLibrary/src/js/base/ModelBank'
-import TextureBank from '../../modules/DH3DLibrary/src/js/base/TextureBank'
+import {
+  DH3DObject,
+  ModelBank,
+  TextureBank
+} from '../../modules/DH3DLibrary/src/js/main'
 import IQGameData from './IQGameData'
 
 /**
@@ -72,7 +74,7 @@ export default class IQEffectPlate extends DH3DObject {
    * @returns {void}
    */
   update() {
-    const diffTime = (IQGameData.nowTime - this.startTime) - this.delay
+    const diffTime = IQGameData.getElapsedTime(this.startTime) - this.delay
     const frames = IQEffectPlate.upFrames + IQEffectPlate.downFrames
 
     if(diffTime < 0){
@@ -165,8 +167,8 @@ IQEffectPlate.setup = function() {
     grad.addColorStop(0.0, IQEffectPlate.whiteColor)
     grad.addColorStop(1.0, IQEffectPlate.transparent)
     c.fillStyle = grad
-    c.clearRect(0, 0, w, h)
-    c.fillRect(0, 0, w, h)
+    c.clearRect(0, 0, w, h+1)
+    c.fillRect(0, 0, w, h+1)
 
     textures[i] = TextureBank.getTexture(canvas)
 
@@ -180,7 +182,7 @@ IQEffectPlate.setup = function() {
     canvas.height = h
 
     const c = canvas.getContext('2d')
-    c.clearRect(0, 0, w, h)
+    c.clearRect(0, 0, w, h+1)
 
     IQEffectPlate.transparentTexture = TextureBank.getTexture(canvas)
   }

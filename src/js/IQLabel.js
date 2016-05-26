@@ -1,6 +1,8 @@
 'use strict'
 
-import DH2DObject from '../../modules/DH3DLibrary/src/js/base/DH2DObject'
+import {
+  DH2DObject
+} from '../../modules/DH3DLibrary/src/js/main'
 import IQGameData from './IQGameData'
 
 /**
@@ -66,13 +68,15 @@ export default class IQLabel extends DH2DObject {
 
       let str = 'GAME OVER'
       let strlen = str.length
-      const diffTime = g.nowTime - g.gameOverTime
+      const diffTime = g.getElapsedTime(g.gameOverTime)
       let dx = 50
       let x = (g.canvasWidth - dx * (strlen - 1)) * 0.5
       //var startTime = g.gameOverTime1 + g.gameOverTime2 + g.gameOverTime3
       const startTime = g.gameOverTime1 + g.gameOverTime2 + g.gameOverTime3 * 0.5
 
-      if(diffTime < startTime){
+      if(g.testPlay){
+        // don't show "GAME OVER" in test play
+      }else if(diffTime < startTime){
         // nothing to do
       }else if(diffTime < startTime + g.gameOverRotateTime){
         // show game over
@@ -256,7 +260,7 @@ export default class IQLabel extends DH2DObject {
 
     if(g.gameOverFadeOut){
       // fade out 
-      const diffTime = g.nowTime - g.gameOverFadeOutStartTime
+      const diffTime = g.getElapsedTime(g.gameOverFadeOutStartTime)
       let alpha = diffTime / g.gameOverFadeOutTime
       if(alpha > 1.0)
         alpha = 1.0
@@ -295,7 +299,7 @@ export default class IQLabel extends DH2DObject {
       c.fillStyle    = g.whiteColor
       c.strokeStyle  = g.blackColor
 
-      const diffTime = g.nowTime - g.endingStartTime
+      const diffTime = g.getElapsedTime(g.endingStartTime)
       const time1 = g.endingWaitTime
       const time2 = time1 + g.endingScoreRotateTime
       const time3 = time2 + g.endingScoreWaitTime
@@ -535,7 +539,7 @@ export default class IQLabel extends DH2DObject {
 
       const str = 'Again!'
       const strlen = str.length
-      const diffTime = g.nowTime - g.againTime
+      const diffTime = g.getElapsedTime(g.againTime)
       const dx = 50
       x = (g.canvasWidth - dx * (strlen - 1)) * 0.5
 
@@ -592,7 +596,7 @@ export default class IQLabel extends DH2DObject {
 
       const str = g.perfectString
       const strlen = str.length
-      let diffTime = g.nowTime - g.perfectTime
+      let diffTime = g.getElapsedTime(g.perfectTime)
       const dx = 50
       x = (g.canvasWidth - dx * (strlen - 1)) * 0.5
 
@@ -662,7 +666,7 @@ export default class IQLabel extends DH2DObject {
 
       let str = g.messageClear
       let strlen = str.length
-      const diffTime = g.nowTime - g.clearTime
+      const diffTime = g.getElapsedTime(g.clearTime)
       let dx = 50
       x = (g.canvasWidth - dx * (strlen - 1)) * 0.5
 
@@ -731,6 +735,12 @@ export default class IQLabel extends DH2DObject {
       }
       c.restore()
     } // if(g.stageClear)
+
+    if(g.pausing){
+      // make the screen darker
+      c.fillStyle = 'rgba(0, 0, 0, 0.8)'
+      c.fillRect(0, 0, g.canvasWidth, g.canvasHeight)
+    } // if(g.pausing)
   }
 
   /**
@@ -740,20 +750,19 @@ export default class IQLabel extends DH2DObject {
    * @returns {void}
    */
   addMessage(message) {
-    /*
-    for(let i=this._messageLength; true; i++){
-      if(this._messages[i]){
-        continue
-      }
-      this._messages[i] = message
-      break
-    }
-    */
     let i = this._messageLength
     while(this._messages[i]){
       i++
     }
     this._messages[i] = message
+  }
+
+  addTime(ms) {
+    if(this._beforeTime){
+      console.log("addTime: " + ms)
+      this._beforeTime.setMilliseconds(this._beforeTime.getMilliseconds() + ms)
+      this._messageCycle += Math.floor(ms / this._messageSpeed) * this._messageSpeed
+    }
   }
 
   /**
@@ -764,6 +773,8 @@ export default class IQLabel extends DH2DObject {
   _drawMessages() {
     const g = this._gameData
     const c = g.canvasField.get2DContext()
+
+    //console.log("start:before/cycle: " + this._beforeTime + "," + this._messageCycle)
 
     if(!this._beforeTime){
       this._beforeTime = g.nowTime
@@ -777,7 +788,7 @@ export default class IQLabel extends DH2DObject {
 
       this._messageCycle += this._messageSpeed
     }
-    const delta = g.nowTime - this._messageCycle
+    const delta = g.getElapsedTime(this._messageCycle)
 
     const dy = 25
     let y = 70 + dy * (1 - delta / this._messageSpeed)
@@ -817,5 +828,6 @@ export default class IQLabel extends DH2DObject {
     }
 
     this._beforeTime = g.nowTime
+    //console.log("end  :before/cycle: " + this._beforeTime + "," + this._messageCycle)
   }
 }

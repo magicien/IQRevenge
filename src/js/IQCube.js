@@ -1,9 +1,11 @@
 'use strict'
 
-import DH3DObject from '../../modules/DH3DLibrary/src/js/base/DH3DObject'
-import ModelBank from '../../modules/DH3DLibrary/src/js/base/ModelBank'
-import TextureBank from '../../modules/DH3DLibrary/src/js/base/TextureBank'
-import XReader from '../../modules/DH3DLibrary/src/js/xfile/XReader'
+import {
+  DH3DObject,
+  ModelBank,
+  TextureBank,
+  XReader
+} from '../../modules/DH3DLibrary/src/js/main'
 import IQGameData from './IQGameData'
 
 /**
@@ -29,18 +31,24 @@ export default class IQCube extends DH3DObject {
     /** @type {string} */
     this.type = ''
 
-    /** @type {Time} */
+    /** @type {Date} */
     this.startTime = null
 
-    /** @type {Time} */
-    this.moveTime = null
+    /** @type {int} */
+    this.moveTime = 0
+
+    /** @type {Date} */
+    this.deleteStartTime = null
 
     /** @type {float} */
     this.rotateCount = 0
 
     /** @type {boolean} */
     this.deleteStarted = false
-    
+
+    /** @type {boolean} */
+    this.paused = false
+
     switch(type){
       case 'advantage':
         this.setType('advantage')
@@ -122,6 +130,39 @@ export default class IQCube extends DH3DObject {
     IQGameData.deleteCubeArray.push(this)
     this.deleteStartTime = new Date()
   }
+
+  pause() {
+    if(this.paused){
+      return
+    }
+    this.paused = true
+
+    if(this.type !== 'normal'){
+      this.getModel().materialArray[0].texture = IQCube.model_n.materialArray[0].texture
+    }
+  }
+
+  resume(pausedTime = 0) {
+    if(!this.paused){
+      return
+    }
+    this.paused = false
+
+    if(this.type === 'forbidden'){
+      this.getModel().materialArray[0].texture = TextureBank.getTexture(IQCube.texture_f)
+    }else if(this.type === 'advantage'){
+      this.getModel().materialArray[0].texture = TextureBank.getTexture(IQCube.texture_a)
+    }
+
+    [
+      this.startTime,
+      this.deleteStartTime
+    ].forEach((timer) => {
+      if(timer){
+        timer.setMilliseconds(timer.getMilliseconds() + pausedTime)
+      }
+    })
+  }
 }
 
 /** @type {boolean} */
@@ -134,6 +175,10 @@ IQCube.file_n = './x/cube_n.x'
 IQCube.file_f = './x/cube_f.x'
 /** @type {string} */
 IQCube.file_a = './x/cube_a.x'
+
+// FIXME
+IQCube.texture_f = './x/cube_tex_f.bmp'
+IQCube.texture_a = './x/cube_tex_a.bmp'
 
 /**
  * setup IQCube data
@@ -185,6 +230,24 @@ IQCube.setNormalCubeTextureForStage = (stage) => {
       break
     case 3:
       textureName = 'cube_tex_3n.bmp'
+      break
+    case 4:
+      textureName = 'cube_tex_4n.bmp'
+      break
+    case 5:
+      textureName = 'cube_tex_5n.bmp'
+      break
+    case 6:
+      textureName = 'cube_tex_6n.bmp'
+      break
+    case 7:
+      textureName = 'cube_tex_7n.bmp'
+      break
+    case 8:
+      textureName = 'cube_tex_8n.bmp'
+      break
+    case 9:
+      textureName = 'cube_tex_9n.bmp'
       break
     case 1:
     default:

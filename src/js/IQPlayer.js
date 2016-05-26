@@ -1,7 +1,9 @@
 'use strict'
 
-import DH3DObject from '../../modules/DH3DLibrary/src/js/base/DH3DObject'
-import ModelBank from '../../modules/DH3DLibrary/src/js/base/ModelBank'
+import {
+  DH3DObject,
+  ModelBank
+} from '../../modules/DH3DLibrary/src/js/main'
 import IQGameData from './IQGameData'
 
 /**

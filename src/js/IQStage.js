@@ -1,12 +1,14 @@
 'use strict'
 
-import Bone from '../../modules/DH3DLibrary/src/js/base/Bone'
-import DH3DObject from '../../modules/DH3DLibrary/src/js/base/DH3DObject'
-import Vector3 from '../../modules/DH3DLibrary/src/js/base/Vector3'
-import Model from '../../modules/DH3DLibrary/src/js/base/Model'
-import RenderGroup from '../../modules/DH3DLibrary/src/js/base/RenderGroup'
-import Skin from '../../modules/DH3DLibrary/src/js/base/Skin'
-import TextureUV from '../../modules/DH3DLibrary/src/js/base/TextureUV'
+import {
+  Bone,
+  DH3DObject,
+  Vector3,
+  Model,
+  RenderGroup,
+  Skin,
+  TextureUV
+} from '../../modules/DH3DLibrary/src/js/main'
 import IQCube from './IQCube'
 import IQEffectPlate from './IQEffectPlate'
 import IQGameData from './IQGameData'
