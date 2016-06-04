@@ -1189,7 +1189,6 @@ function resetValues(stage, remainScores) {
 }
 
 function playSound(audio, recycle = false){
-  /* disable sound for debug (performance check)
   if(recycle){
     audio.pause()
     audio.currentTime = 0
@@ -1199,11 +1198,12 @@ function playSound(audio, recycle = false){
     newAudio.volume = g.soundVolume
     newAudio.play()
   }
-  */
 }
+
 function playSECallback_step(){
   playSound(g.se_step)
 }
+
 function pauseSound(audio){
   audio.pause()
   //for(let i=0; i<audio.children.length; i++){
@@ -2116,6 +2116,7 @@ function setMenuTileFolding(tile, tileArray) {
     }
   })
 }
+
 function moveCubeToTopLeft() {
   const tilePos = g.menu._foldingTiles[0]._position
   const cameraPos = g.camera.position
@@ -3961,7 +3962,7 @@ function update(elapsedTime) {
   force.x = force.y = force.z = 0
   let moving = false
 
-  if(g.keyListener.getKeyNewState(g.keyPause)){
+  if(g.keyListener.getKeyNewState(g.keyPause) || g.controller.getTouchNewState(g.controller.pauseButton)){
     if(g.pausing){
       // resume
       if(g.current_bgm){
@@ -4102,7 +4103,7 @@ function update(elapsedTime) {
   if(g.keyListener.getKeyNewState(g.keyAdvantage) || g.controller.getTouchNewState(g.controller.advantageButton)){
     useAdvantage()
   }
-  if(g.keyListener.getKeyState(g.keySpeedUp) || g.controller.getTouchState(g.controller.ffButton)){
+  if(g.keyListener.getKeyState(g.keySpeedUp) || g.controller.getTouchState(g.controller.speedUpButton)){
     g.speedUp = true
   }else{
     g.speedUp = false

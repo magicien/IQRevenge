@@ -31,12 +31,12 @@ export default class IQController {
 
     this.markerButton = 0
     this.advantageButton = 1
-    this.ffButton = 2
+    this.speedUpButton = 2
     this.pauseButton = 3
 
-    this._controllerSize = 70
-    this._buttonSize = 30
-    this._buttonIconSize = 15
+    this._controllerSize = 100
+    this._buttonSize = 50
+    this._buttonIconSize = 30 
     this._outerButtonSize = this._buttonSize + 5
     this._outerPadding = 40
     this._innerPadding = 20
@@ -51,49 +51,71 @@ export default class IQController {
     this._ctrColor = 'rgba(255, 255, 255, 1)'
 
     // button position
-    this._btn1CenterX = IQGameData.canvasWidth - this._outerPadding - this._innerPadding * 2 - this._outerButtonSize * 2 - this._outerButtonSize / 2
+    // marker button
+    this._btn1CenterX = IQGameData.canvasWidth - this._outerPadding - this._innerPadding - this._outerButtonSize - this._outerButtonSize / 2
     this._btn1CenterY = this._ctrCenterY
     this._btn1Color   = 'rgba(128, 128, 255, 0.7)'
 
+    // advantage button
     this._btn2CenterX = this._btn1CenterX + this._innerPadding + this._outerButtonSize
     this._btn2CenterY = this._ctrCenterY
     this._btn2Color   = 'rgba(0, 255, 0, 0.7)'
     this._btn2DisableColor = 'rgba(255, 255, 255, 0.3)'
 
-    this._btn3CenterX = this._btn2CenterX + this._innerPadding + this._outerButtonSize
-    this._btn3CenterY = this._ctrCenterY
+    // speedup button
+    this._btn3CenterX = this._btn2CenterX
+    this._btn3CenterY = this._ctrCenterY - this._outerButtonSize * 1.5
     this._btn3Color   = 'rgba(255, 255, 255, 0.7)'
 
-    this._btn3IconP11X = this._btn3CenterX - this._buttonIconSize / 2
+    const btn3DX = 3
+    this._btn3IconP11X = this._btn3CenterX - this._buttonIconSize / 2 + btn3DX
     this._btn3IconP11Y = this._btn3CenterY - this._buttonIconSize / 2
 
     this._btn3IconP12X = this._btn3IconP11X
     this._btn3IconP12Y = this._btn3IconP11Y + this._buttonIconSize
 
-    this._btn3IconP13X = this._btn3CenterX
+    this._btn3IconP13X = this._btn3CenterX + btn3DX
     this._btn3IconP13Y = this._btn3CenterY
 
-    this._btn3IconP21X = this._btn3CenterX
+    this._btn3IconP21X = this._btn3CenterX + btn3DX
     this._btn3IconP21Y = this._btn3IconP11Y
 
     this._btn3IconP22X = this._btn3IconP21X
     this._btn3IconP22Y = this._btn3IconP12Y
 
-    this._btn3IconP23X = this._btn3CenterX + this._buttonIconSize / 2
+    this._btn3IconP23X = this._btn3CenterX + this._buttonIconSize / 2 + btn3DX
     this._btn3IconP23Y = this._btn3CenterY
 
-    // FIXME: where is the pause button?
-    this._btn4CenterX = 0
-    this._btn4CenterY = 0
+    // pause button
+    this._btn4CenterX = this._btn1CenterX
+    this._btn4CenterY = this._btn3CenterY
     this._btn4Color   = 'rgba(255, 255, 255, 0.7)'
+
+    // pause icon
+    this._btn4IconP1X = this._btn4CenterX - this._buttonIconSize * 0.4
+    this._btn4IconP1Y = this._btn4CenterY - this._buttonIconSize * 0.5
+
+    this._btn4IconP2X = this._btn4CenterX + this._buttonIconSize * 0.1
+    this._btn4IconP2Y = this._btn4IconP1Y
+
+    this._btn4IconWidth  = this._buttonIconSize * 0.3
+    this._btn4IconHeight = this._buttonIconSize
+
+    // resume icon
+    this._btn4ResumeP1X = this._btn4CenterX + this._buttonIconSize * 0.6
+    this._btn4ResumeP1Y = this._btn4CenterY
+
+    this._btn4ResumeP2X = this._btn4CenterX - this._buttonIconSize * 0.4
+    this._btn4ResumeP2Y = this._btn4CenterY - this._buttonIconSize * 0.5
+
+    this._btn4ResumeP3X = this._btn4ResumeP2X
+    this._btn4ResumeP3Y = this._btn4ResumeP2Y + this._buttonIconSize
+
 
     this._btnRadius  = this._buttonSize / 2
     this._btnOuterRadius = this._outerButtonSize / 2
     this._buttonRadius2 = this._btnOuterRadius * this._btnOuterRadius
     this._btnFireColor = 'rgba(255, 0, 0, 0.7)'
-
-    // button icon
-    // TODO: create icon image
 
     this.setEnable()
 
@@ -180,9 +202,9 @@ export default class IQController {
         console.log('inside advantage button!')
         this._buttonNewState[this.advantageButton] = true
       }
-      if(this.isInsideFFButton(touch)){
-        console.log('inside ff button!')
-        this._buttonNewState[this.ffButton] = true
+      if(this.isInsideSpeedUpButton(touch)){
+        console.log('inside speedup button!')
+        this._buttonNewState[this.speedUpButton] = true
       }
       if(this.isInsidePauseButton(touch)){
         console.log('inside pause button!')
@@ -332,9 +354,9 @@ export default class IQController {
         }
         break
       }
-      case this.ffButton: {
+      case this.speedUpButton: {
         for(let i=0; i<len; i++){
-          result |= this.isInsideFFButton(this._nowTouches[i])
+          result |= this.isInsideSpeedUpButton(this._nowTouches[i])
         }
         break
       }
@@ -434,7 +456,7 @@ export default class IQController {
     return (dx * dx + dy * dy < this._buttonRadius2)
   }
 
-  isInsideFFButton(touch) {
+  isInsideSpeedUpButton(touch) {
     const x = touch.clientX
     const y = touch.clientY
 
@@ -512,7 +534,7 @@ export default class IQController {
     c.arc(this._btn2CenterX, this._btn2CenterY, this._btnRadius, 0, this._2pi)
     c.fill()
 
-    // button 3: fast-forward
+    // button 3: speed up
     c.strokeStyle = this._btn3Color
     c.fillStyle = this._btn3Color
     c.beginPath()
@@ -522,6 +544,7 @@ export default class IQController {
     c.beginPath()
     c.arc(this._btn3CenterX, this._btn3CenterY, this._btnRadius, 0, this._2pi)
     c.stroke()
+
 
     // draw fast-forward icon
     c.beginPath()
@@ -535,5 +558,47 @@ export default class IQController {
     c.lineTo(this._btn3IconP22X, this._btn3IconP22Y)
     c.lineTo(this._btn3IconP23X, this._btn3IconP23Y)
     c.fill()
+
+    // button 4: pause
+    c.strokeStyle = this._btn4Color
+    c.fillStyle = this._btn4Color
+
+    c.beginPath()
+    c.arc(this._btn4CenterX, this._btn4CenterY, this._btnRadius, 0, this._2pi)
+    c.stroke()
+
+    c.beginPath()
+    c.arc(this._btn4CenterX, this._btn4CenterY, this._btnOuterRadius, 0, this._2pi)
+    c.stroke()
+
+    c.fillRect(this._btn4IconP1X, this._btn4IconP1Y, this._btn4IconWidth, this._btn4IconHeight)
+    c.fillRect(this._btn4IconP2X, this._btn4IconP2Y, this._btn4IconWidth, this._btn4IconHeight)
+  }
+
+  /**
+   * draw resume button during pause
+   * @access public
+   * @param {object} canvas - canvas context
+   * @returns {void}
+   */
+  drawResumeButton(canvas) {
+    const c = canvas
+    c.strokeStyle = this._btn4Color
+    c.fillStyle = this._btn4Color
+
+    c.beginPath()
+    c.arc(this._btn4CenterX, this._btn4CenterY, this._btnRadius, 0, this._2pi)
+    c.stroke()
+
+    c.beginPath()
+    c.arc(this._btn4CenterX, this._btn4CenterY, this._btnOuterRadius, 0, this._2pi)
+    c.stroke()
+
+    c.beginPath()
+    c.moveTo(this._btn4ResumeP1X, this._btn4ResumeP1Y)
+    c.lineTo(this._btn4ResumeP2X, this._btn4ResumeP2Y)
+    c.lineTo(this._btn4ResumeP3X, this._btn4ResumeP3Y)
+    c.fill()
   }
 }
+

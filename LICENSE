@@ -19,3 +19,61 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+=============================================================================
+Files below are licensed by each creator.
+
+- Model
+    - Creator: あにまさ
+        - src/resources/pmd/miku
+
+- Motion
+    - Creator: つなまよ [（走ってみた）](http://www.nicovideo.jp/watch/sm9554606)
+        - src/resources/vmd/running.vmd
+        - src/resources/vmd/walking.vmd
+
+- Sound Effect
+    - Creator: [多夢（TAM Music Factory）](http://www.tam-music.com/)
+        - src/resources/snd/bonus.mp3,ogg,wav
+        - src/resources/snd/break.mp3,ogg,wav
+        - src/resources/snd/erase.mp3,ogg,wav
+        - src/resources/snd/fall.mp3,ogg,wav
+        - src/resources/snd/mark.mp3,ogg,wav
+        - src/resources/snd/markon.mp3,ogg,wav
+        - src/resources/snd/roll.mp3,ogg,wav
+
+    - Creator: [KOUICHI（音楽素材/魔王魂）](http://maoudamashii.jokersounds.com/)
+        - src/resources/snd/decision.mp3,ogg,wav
+        - src/resources/snd/forbidden.mp3,ogg,wav
+        - src/resources/snd/step.mp3,ogg,wav
+
+    - Creator: [株式会社こだまプロダクション（効果音源（こうかおんげん））](http://koukaongen.com/)
+        - src/resources/snd/substage.mp3,ogg,wav
+
+    - Creator: [株式会社ゼロワンアース（フリー音素材 01SoundEarth）](http://www.01earth.net/sound)
+        - src/resources/snd/stagecall.mp3,ogg,wav
+
+- BGM
+    - Creator: [Virus Key（Digital Square）](http://digitalsquare.biz/viruskey/) [（ニコニ・コモンズ）](http://commons.nicovideo.jp/user/5209)
+        - src/resources/movie/iq_opening.mp4,webm (music)
+        - src/resources/snd/menu.mp3,ogg,wav
+        - src/resources/snd/fanfare.mp3,ogg,wav
+        - src/resources/snd/stage2.mp3,ogg,wav
+        - src/resources/snd/stage3.mp3,ogg,wav
+        - src/resources/snd/stage5.mp3,ogg,wav
+        - src/resources/snd/stage6.mp3,ogg,wav
+        - src/resources/snd/stage7.mp3,ogg,wav
+        - src/resources/snd/stage8.mp3,ogg,wav
+        - src/resources/snd/stage9.mp3,ogg,wav
+
+    - Creator: [秋山裕和（フリー音楽素材 H/MIX GALLERY）](http://www.hmix.net/)
+        - src/resources/snd/stage1.mp3,ogg,wav
+        - src/resources/snd/stage4.mp3,ogg,wav
+
+    - Creator: [ju-nya（ju-nya's sets on SoundCloud）](http://soundcloud.com/ju-nya/sets) [（ニコニ・コモンズ）](http://commons.nicovideo.jp/user/204000)
+        - src/resources/snd/gameover.mp3,ogg,wav
+
+- Font
+    - Creator: [Ray Larabie（Webフォントコレクション）](http://www.amazon.co.jp/サイトデザインに差をつける-Webフォントコレクション-ijデジタルBOOK-インプレスPC編集部/dp/4844331671%3FSubscriptionId%3DAKIAII2SNJD7LSMTSCPA%26tag%3Ddark0a-22%26linkCode%3Dxm2%26camp%3D2025%26creative%3D165953%26creativeASIN%3D4844331671'%20target='_blank'%3E%3Cimg%20src='http://ecx.images-amazon.com/images/I/514Cy8gmXyL._SL160_.jpg) [（MyFonts）](http://new.myfonts.com/foundry/Larabie/)
+        - src/resources/font/Expressway.woff
+

@@ -740,14 +740,19 @@ export default class IQLabel extends DH2DObject {
       c.restore()
     } // if(g.stageClear)
 
+    // draw controller for mobile
+    if(g.device.isMobile || g.device.isTablet){
+      this._controller.render(c)
+    }
+
     if(g.pausing){
       // make the screen darker
       c.fillStyle = 'rgba(0, 0, 0, 0.8)'
       c.fillRect(0, 0, g.canvasWidth, g.canvasHeight)
-    } // if(g.pausing)
+      this._controller.drawResumeButton(c)
 
-    // draw controller for mobile
-    this._controller.render(c)
+
+    } // if(g.pausing)
   }
 
   /**
