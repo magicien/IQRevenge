@@ -83,7 +83,7 @@ export default class IQStage extends DH3DObject {
     const uv11 = uvArr[3]
 
     const skinArray = []
-    let s
+    let s = null
 
     for(let z=0; z<this.length; z++){
       for(let x=0; x<this.width; x++){
@@ -189,7 +189,7 @@ export default class IQStage extends DH3DObject {
     const uv11 = uvArr[3]
     
     const skinArray = []
-    let s
+    let s = null
 
     // front
     for(let x=0; x<this.width; x++){
@@ -389,8 +389,6 @@ export default class IQStage extends DH3DObject {
   }
 
   breakOneLine(breakByPenaltyMax) {
-    const g = IQGameData
-
     if(IQGameData.gameOver){
       return
     }
@@ -424,7 +422,7 @@ export default class IQStage extends DH3DObject {
 
         posX += IQGameData.cubeSize
 
-        if(y == 0){
+        if(y === 0){
           cube.isTopCube = true
         }
       }
@@ -432,6 +430,7 @@ export default class IQStage extends DH3DObject {
     }
     // add effect
     for(let x=0; x<IQGameData.stageWidth; x++){
+      // FIXME: Do not use 'new' for side effects
       new IQEffectPlate(true, IQGameData.stageLength - 1, x)
     }
 
@@ -501,7 +500,7 @@ export default class IQStage extends DH3DObject {
     const rightNormal  = new Vector3(1, 0, 0)
     const topNormal    = new Vector3(0, 1, 0)
     const bottomNormal = new Vector3(0, -1, 0)
-    const frontNormal  = new Vector3(0, 0, 1)
+    //const frontNormal  = new Vector3(0, 0, 1)
 
     const uvArr = this.getTextureUV(IQGameData.stage)
     const uv00 = uvArr[0]
@@ -510,7 +509,7 @@ export default class IQStage extends DH3DObject {
     const uv11 = uvArr[3]
 
     let skinArray = []
-    let s
+    let s = null
 
     const z = this.length
     // left
@@ -755,7 +754,7 @@ export default class IQStage extends DH3DObject {
     const topNormal    = new Vector3(0, 1, 0)
     const bottomNormal = new Vector3(0, -1, 0)
     const frontNormal  = new Vector3(0, 0, 1)
-    const backNormal   = new Vector3(0, 0, -1)
+    //const backNormal   = new Vector3(0, 0, -1)
 
     const uvArr = this.getTextureUV(IQGameData.stage)
     const uv00 = uvArr[0]
@@ -764,7 +763,7 @@ export default class IQStage extends DH3DObject {
     const uv11 = uvArr[3]
 
     const skinArray = []
-    let s
+    let s = null
 
     // front
     for(let x=0; x<this.width; x++){
@@ -958,7 +957,7 @@ export default class IQStage extends DH3DObject {
     line.setRenderer(IQGameData.renderer)
     line.setRotateAxis(IQGameData.yaxis, 0)
 
-    let x = -0.5 * IQGameData.cubeSize * this.width
+    const x = -0.5 * IQGameData.cubeSize * this.width
     const z = -0.5 * IQGameData.cubeSize
     line.setPosition(x, 0, z)
 
@@ -978,9 +977,9 @@ export default class IQStage extends DH3DObject {
     const rightNormal  = new Vector3(1, 0, 0)
     const leftNormal   = new Vector3(-1, 0, 0)
     const topNormal    = new Vector3(0, 1, 0)
-    const bottomNormal = new Vector3(0, -1, 0)
+    //const bottomNormal = new Vector3(0, -1, 0)
     const frontNormal  = new Vector3(0, 0, 1)
-    const backNormal   = new Vector3(0, 0, -1)
+    //const backNormal   = new Vector3(0, 0, -1)
 
     const uvArr = this.getTextureUV(IQGameData.stage)
     const uv00 = uvArr[0]
@@ -989,7 +988,7 @@ export default class IQStage extends DH3DObject {
     const uv11 = uvArr[3]
 
     const skinArray = []
-    let s
+    let s = null
 
     // front
     for(let x=0; x<this.width; x++){
@@ -1172,10 +1171,13 @@ export default class IQStage extends DH3DObject {
     return waitCube
   }
 
+/*
   getTextureUV(stage) {
     if(stage < 1 || stage > 12) {
       stage = 1
     }
+*/
+  getTextureUV() {
     const arr = []
     /*
     const width = 0.25
@@ -1190,10 +1192,10 @@ export default class IQStage extends DH3DObject {
     y0 += delta
     y1 -= delta
     */
-    let x0 = 0
-    let x1 = 1
-    let y0 = 0
-    let y1 = 1
+    const x0 = 0
+    const x1 = 1
+    const y0 = 0
+    const y1 = 1
 
     arr[0] = new TextureUV(x0, y0)
     arr[1] = new TextureUV(x0, y1)
@@ -1204,6 +1206,6 @@ export default class IQStage extends DH3DObject {
   }
 }
 
-IQStage.setup = () => {}
+IQStage.setup = () => { /* nothing to do */ }
 
 

@@ -4,6 +4,7 @@ import {
   DH2DObject
 } from '../../modules/DH3DLibrary/src/js/main'
 import IQGameData from './IQGameData'
+import IQController from './IQController'
 
 /**
  * IQLabel class
@@ -34,6 +35,9 @@ export default class IQLabel extends DH2DObject {
 
     /** @type {Array} */
     this._messages = []
+
+    /** @type {IQController} */
+    this._controller = new IQController()
   }
 
   /**
@@ -269,14 +273,14 @@ export default class IQLabel extends DH2DObject {
       c.fillRect(0, 0, g.canvasWidth, g.canvasHeight)
 
       c.fillStyle = g.whiteColor
-      let dx = 30
+      const dx = 30
       let x = g.canvasWidth * 0.5 - dx * 3.5
       c.fillText('I', x,      y)
       c.fillText('.', x+dx,   y)
       c.fillText('Q', x+dx*2, y)
 
-      let str = new String(g.iqPoint)
-      let strlen = str.length
+      const str = new String(g.iqPoint)
+      const strlen = str.length
       x = g.canvasWidth * 0.5 + dx * 1.5
       for(let i=0; i<strlen; i++){
         const drawChar = str.charAt(i)
@@ -407,8 +411,8 @@ export default class IQLabel extends DH2DObject {
 
         c.fillStyle = 'rgba(255, 255, 255, ' + a + ')'
         c.strokeStyle = 'rgba(0, 0, 0, ' + a + ')'
-        let str = new String(g.iqPoint)
-        let strlen = str.length
+        const str = new String(g.iqPoint)
+        const strlen = str.length
         x = g.canvasWidth * 0.5 + dx * 1.5
         for(let i=0; i<strlen; i++){
           const drawChar = str.charAt(i)
@@ -427,8 +431,8 @@ export default class IQLabel extends DH2DObject {
         c.fillText('.', x+dx,   y)
         c.fillText('Q', x+dx*2, y)
 
-        let str = new String(g.iqPoint)
-        let strlen = str.length
+        const str = new String(g.iqPoint)
+        const strlen = str.length
         x = g.canvasWidth * 0.5 + dx * 1.5
         for(let i=0; i<strlen; i++){
           const drawChar = str.charAt(i)
@@ -481,7 +485,7 @@ export default class IQLabel extends DH2DObject {
     if(g.step < g.baseStep){
       c.fillStyle   = g.blueColor
       c.strokeStyle = g.blueColor
-    }else if(g.step == g.baseStep){
+    }else if(g.step === g.baseStep){
       c.fillStyle   = g.whiteColor
       c.strokeStyle = g.whiteColor
     }else{
@@ -741,6 +745,9 @@ export default class IQLabel extends DH2DObject {
       c.fillStyle = 'rgba(0, 0, 0, 0.8)'
       c.fillRect(0, 0, g.canvasWidth, g.canvasHeight)
     } // if(g.pausing)
+
+    // draw controller for mobile
+    this._controller.render(c)
   }
 
   /**
@@ -757,9 +764,14 @@ export default class IQLabel extends DH2DObject {
     this._messages[i] = message
   }
 
+  /**
+   * add time to timer for reducing time of pausing
+   * @access public
+   * @param {int} ms - time to add (ms)
+   * @returns {void}
+   */
   addTime(ms) {
     if(this._beforeTime){
-      console.log("addTime: " + ms)
       this._beforeTime.setMilliseconds(this._beforeTime.getMilliseconds() + ms)
       this._messageCycle += Math.floor(ms / this._messageSpeed) * this._messageSpeed
     }
@@ -773,8 +785,6 @@ export default class IQLabel extends DH2DObject {
   _drawMessages() {
     const g = this._gameData
     const c = g.canvasField.get2DContext()
-
-    //console.log("start:before/cycle: " + this._beforeTime + "," + this._messageCycle)
 
     if(!this._beforeTime){
       this._beforeTime = g.nowTime
@@ -804,10 +814,10 @@ export default class IQLabel extends DH2DObject {
     const fx = 40
     const dx = 10
     for(let i=0; i<this._messageLength; i++, y+=dy){
-      if(i==0){
+      if(i === 0){
         c.fillStyle = firstColor
         c.strokeStyle = firstColor
-      }else if(i==this._messageLength-1){
+      }else if(i === this._messageLength-1){
         c.fillStyle = lastColor
         c.strokeStyle = lastColor
       }else{
@@ -828,6 +838,5 @@ export default class IQLabel extends DH2DObject {
     }
 
     this._beforeTime = g.nowTime
-    //console.log("end  :before/cycle: " + this._beforeTime + "," + this._messageCycle)
   }
 }

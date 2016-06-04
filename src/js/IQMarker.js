@@ -76,7 +76,7 @@ export default class IQMarker extends DH3DObject {
    * @returns {int} - if it is unknown type, it reutrns -1. otherwise 0.
    */
   setType(type) {
-    if(this.type == type){
+    if(this.type === type){
       return 0
     }
 
@@ -205,7 +205,7 @@ IQMarker.setup = () => {
   .catch((error) => {
     console.error(`Marker model loading error: ${error}`)
   })
-  .then((result) => {
+  .then(() => {
     return Promise.all([
       ModelBank.getModelForRenderer(IQMarker.file_r, IQGameData.renderer),
       ModelBank.getModelForRenderer(IQMarker.file_g, IQGameData.renderer),

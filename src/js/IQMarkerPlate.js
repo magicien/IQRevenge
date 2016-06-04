@@ -74,7 +74,7 @@ export default class IQMarkerPlate extends DH3DObject {
    */
   update() {
     const diffTime = IQGameData.getElapsedTime(this.startTime)
-    let step
+    let step = 0
 
     if(diffTime < this.endTime){
       step = Math.floor(IQMarkerPlate.frames * diffTime / this.endTime)
@@ -91,7 +91,7 @@ export default class IQMarkerPlate extends DH3DObject {
   }
 
   setType(type) {
-    if(this.type == type){
+    if(this.type === type){
       return
     }
 
@@ -188,7 +188,7 @@ IQMarkerPlate.setup = function() {
       //canvas.toString = () => { return 'markerPlate_' + color + '_' + i }
 
       const c = canvas.getContext('2d')
-      if(i == frames - 1){
+      if(i === frames - 1){
         c.fillStyle = colors[color]
       }else{
         const grad = c.createRadialGradient(x0, y0, r0, x0, y0, r0 + step)
@@ -211,7 +211,7 @@ IQMarkerPlate.setup = function() {
   .catch((error) => {
     console.error(`MarkerPlate model loading error: ${error}`)
   })
-  .then((result) => {
+  .then(() => {
     return ModelBank.getModelForRenderer(IQMarkerPlate.file_plate, IQGameData.renderer)
   })
   .catch((error) => {

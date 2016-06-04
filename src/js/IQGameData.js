@@ -16,28 +16,40 @@ class _IQGameData {
    */
   constructor() {
     /**
+     * device type (isMobile, isTablet)
+     * @type {Object}
+     */
+    this.device = this._getDeviceInfo()
+
+    /**
+     * controller (only) for mobile
+     * @type {IQController}
+     */
+    this.controller = null
+
+    /**
      * URL for sharing in Social Media
      * @type {string}
      */
-    this.shareURL = "http://darkhorse2.0spec.jp/dh3d/sample/iq/iq.php"
+    this.shareURL = 'http://darkhorse2.0spec.jp/dh3d/sample/iq/iq.php'
 
     /**
      * Title for sharing in Social Media
      * @type {string}
      */
-    this.shareTitle = "I.Q Revenge"
+    this.shareTitle = 'I.Q Revenge'
 
     /**
      * URL to send score
      * @type {string}
      */
-    this.scoreSendURL = "http://darkhorse2.0spec.jp/dh3d/sample/iq/sendScore.php"
+    this.scoreSendURL = 'http://darkhorse2.0spec.jp/dh3d/sample/iq/sendScore.php'
 
     /**
      * URL to get score and ranking
      * @type {string}
      */
-    this.scoreDataURL = "http://darkhorse2.0spec.jp/dh3d/sample/iq/score.txt"
+    this.scoreDataURL = 'http://darkhorse2.0spec.jp/dh3d/sample/iq/score.txt'
 
     /** 
      * Stage level of the game
@@ -611,6 +623,8 @@ class _IQGameData {
     this.xaxis = new Vector3(1.0, 0.0, 0.0)
     this.yaxis = new Vector3(0.0, 1.0, 0.0)
     this.zaxis = new Vector3(0.0, 0.0, 1.0)
+    
+    //this.menuCubeRotateAxis = new Vector3(0.0, 1.0, -0.3)
 
     // cube data
     this.cubeSize = 25
@@ -635,6 +649,35 @@ class _IQGameData {
     this.cookieOptionKeyAdvantage = 'IQKAdv'
     this.cookieOptionKeySpeedUp = 'IQKSpeed'
 
+  }
+
+  /**
+   * get device info from user agent
+   * @access private
+   * @returns {Object} - device isMobile/isTablet
+   */
+  _getDeviceInfo() {
+    const u = window.navigator.userAgent.toLowerCase()
+
+    return {
+      isTablet: (
+        (u.indexOf("windows") != -1 && u.indexOf("touch") != -1 && u.indexOf("tablet pc") == -1) 
+        || u.indexOf("ipad") != -1
+        || (u.indexOf("android") != -1 && u.indexOf("mobile") == -1)
+        || (u.indexOf("firefox") != -1 && u.indexOf("tablet") != -1)
+        || u.indexOf("kindle") != -1
+        || u.indexOf("silk") != -1
+        || u.indexOf("playbook") != -1
+      ),
+      isMobile: (
+        (u.indexOf("windows") != -1 && u.indexOf("phone") != -1)
+        || u.indexOf("iphone") != -1
+        || u.indexOf("ipod") != -1
+        || (u.indexOf("android") != -1 && u.indexOf("mobile") != -1)
+        || (u.indexOf("firefox") != -1 && u.indexOf("mobile") != -1)
+        || u.indexOf("blackberry") != -1
+      )
+    }
   }
 
   /**

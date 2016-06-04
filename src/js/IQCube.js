@@ -3,8 +3,7 @@
 import {
   DH3DObject,
   ModelBank,
-  TextureBank,
-  XReader
+  TextureBank
 } from '../../modules/DH3DLibrary/src/js/main'
 import IQGameData from './IQGameData'
 
@@ -195,7 +194,7 @@ IQCube.setup = () => {
   .catch((error) => {
     console.error(`IQCube model loading error: ${error}`)
   })
-  .then((result) => {
+  .then(() => {
     return Promise.all([
       ModelBank.getModelForRenderer(IQCube.file_n, IQGameData.renderer),
       ModelBank.getModelForRenderer(IQCube.file_f, IQGameData.renderer),

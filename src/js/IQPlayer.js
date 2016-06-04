@@ -22,7 +22,7 @@ IQPlayer.setup = () => {
   .catch((error) => {
     console.error(`Player model loading error: ${error}`)
   })
-  .then((result) => {
+  .then(() => {
     return Promise.all([
       ModelBank.getModelForRenderer(IQPlayer.file_x, IQGameData.renderer)
     ])

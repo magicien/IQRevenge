@@ -45,8 +45,8 @@ export default class IQEffectPlate extends DH3DObject {
     this.setAnimating(false)
     this.setRenderer(IQGameData.renderer)
 
-    let posX
-    let posZ
+    let posX = 0
+    let posZ = 0
     if(wide){
       this.setRotateAxis(IQGameData.yaxis, 0)
       posX = (x + 0.5 - IQGameData.stageWidth * 0.5) * IQGameData.cubeSize
@@ -88,7 +88,7 @@ export default class IQEffectPlate extends DH3DObject {
 
     const peek = this.endTime * IQEffectPlate.upFrames / frames
     const num = IQEffectPlate.numTextures
-    let step
+    let step = 0
     if(diffTime < peek){
       step = Math.floor(num * diffTime / peek)
     }else{
@@ -193,7 +193,7 @@ IQEffectPlate.setup = function() {
   .catch((error) => {
     console.error(`Plate model loading error: ${error}`)
   })
-  .then((result) => {
+  .then(() => {
     return ModelBank.getModelForRenderer(IQEffectPlate.file_plate, IQGameData.renderer)
   })
   .catch((error) => {

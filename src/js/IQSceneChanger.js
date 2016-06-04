@@ -44,7 +44,7 @@ export default class IQSceneChanger extends DH2DObject {
   render() {
     const c = IQGameData.canvasField.get2DContext()
     const diffTime = IQGameData.getElapsedTime(this._startTime) * 0.001
-    let r
+    let r = 0
     if(this._changeTime > 0){
       r = 2.0 * diffTime / this._changeTime
     }else{
@@ -100,7 +100,7 @@ export default class IQSceneChanger extends DH2DObject {
       IQGameData.canvasField.removeObject(this)
       if(this._afterBGM){
         // FIXME
-        this._afterBGM.volume = 1.0 * IQGameData.soundVolume
+        this._afterBGM.volume = 1.0 * Number(IQGameData.soundVolume)
       }
       IQGameData.sceneChanging = false
       return

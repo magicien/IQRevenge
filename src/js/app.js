@@ -8,8 +8,8 @@ import {
   KeyListener,
   Light,
   MMDAnimator,
-  PMDReader,
-  VMDReader,
+//  PMDReader,
+//  VMDReader,
   ModelBank,
   MotionBank,
   Vector3,
@@ -32,7 +32,8 @@ import IQStage from './IQStage'
 
 const g = IQGameData
 
-function playerMoveCallback(obj) {
+//function playerMoveCallback(obj) {
+function playerMoveCallback() {
   if(!g.gameOver && !g.stageClear){
     if(g.playerObj._position.x < g.minX){
       g.playerObj._position.x = g.minX
@@ -55,10 +56,10 @@ function playerMoveCallback(obj) {
     const oldZ = g.playerObj.oldZ
     let newX = Math.floor((newPosX - g.minX) / g.cubeSize)
     let newZ = Math.floor((newPosZ - g.minZ) / g.cubeSize)
-    let bigX
-    let bigZ
-    const diffX = newPosX - oldPosX
-    const diffZ = newPosZ - oldPosZ
+    let bigX = 0
+    let bigZ = 0
+    //const diffX = newPosX - oldPosX
+    //const diffZ = newPosZ - oldPosZ
 
     // value check
     if(newX < 0)
@@ -82,7 +83,7 @@ function playerMoveCallback(obj) {
       bigZ = newZ
     }
 
-    if(oldX != newX || oldZ != newZ){
+    if(oldX !== newX || oldZ !== newZ){
       const e = 0.0001
       const c = getCubeAt(newZ, newX)
       let backX = false
@@ -91,7 +92,7 @@ function playerMoveCallback(obj) {
       if(g.rotating){
         const co = getCubeAt(oldZ, oldX)
         const cn = getCubeAt(newZ - 1, newX)
-        if(oldX == newX){
+        if(oldX === newX){
           if(c){
             if(oldZ > newZ || co || cn){
               backZ = true
@@ -101,7 +102,7 @@ function playerMoveCallback(obj) {
               backZ = true
             }
           }
-        }else if(oldZ == newZ){
+        }else if(oldZ === newZ){
           if(c){
             if(cn){
               backX = true
@@ -127,32 +128,32 @@ function playerMoveCallback(obj) {
             const tanXPosZ = oldPosZ + (newPosZ - oldPosZ) * (tanXPosX - oldPosX) / (newPosX - oldPosX)
             const tanZ = Math.floor((tanXPosZ - g.minZ) / g.cubeSize)
             const tanZPosZ = g.minZ + bigZ * g.cubeSize
-            const tanZPosX = oldPosX + (newPosX - oldPosX) * (tanZPosZ - oldPosZ) / (newPosZ - oldPosZ)
-            const tanX = Math.floor((tanZPosX - g.minX) / g.cubeSize)
+            //const tanZPosX = oldPosX + (newPosX - oldPosX) * (tanZPosZ - oldPosZ) / (newPosZ - oldPosZ)
+            //const tanX = Math.floor((tanZPosX - g.minX) / g.cubeSize)
 
             if(cx && cz){
               if(oldZ > newZ){
-                if(tanZ == newZ){
+                if(tanZ === newZ){
                   g.playerObj._position.z -= tanXPosZ - tanZPosZ
                 }
               }else{
-                if(co || tanZ != newZ){
+                if(co || tanZ !== newZ){
                   backZ = true
                 }
               }
             }else if(cx){
               if(oldZ < newZ){
-                if(co || tanZ != newZ){
+                if(co || tanZ !== newZ){
                   backZ = true
                 }
               }
             }else if(cz){
               if(oldZ < newZ){
-                if(tanZ == newZ){
+                if(tanZ === newZ){
                   g.playerObj._position.z -= tanXPosZ - tanZPosZ
                 }
               }else{
-                if(co && tanZ == newZ){
+                if(co && tanZ === newZ){
                   g.playerObj._position.z -= tanXPosZ - tanZPosZ
                 }
               }
@@ -164,11 +165,11 @@ function playerMoveCallback(obj) {
 
       }else{
         // g.rotating is false
-        if(oldX == newX){
+        if(oldX === newX){
           if(c){
             backZ = true
           }
-        }else if(oldZ == newZ){
+        }else if(oldZ === newZ){
           if(c){
             backX = true
           }
@@ -189,21 +190,21 @@ function playerMoveCallback(obj) {
             const tanZ = Math.floor((tanXPosZ - g.minZ) / g.cubeSize)
             const tanZPosZ = g.minZ + bigZ * g.cubeSize
             const tanZPosX = oldPosX + (newPosX - oldPosX) * (tanZPosZ - oldPosZ) / (newPosZ - oldPosZ)
-            const tanX = Math.floor((tanZPosX - g.minX) / g.cubeSize)
+            //const tanX = Math.floor((tanZPosX - g.minX) / g.cubeSize)
 
             if(cx && cz){
               backX = true
               backZ = true
             }else if(cx){
-              if(tanZ != newZ){
+              if(tanZ !== newZ){
                 g.playerObj._position.x -= tanZPosX - tanXPosX
               }
             }else if(cz){
-              if(tanZ == newZ){
+              if(tanZ === newZ){
                 g.playerObj._position.z -= tanXPosZ - tanZPosZ
               }
             }else{
-              if(tanZ == newZ){
+              if(tanZ === newZ){
                 backX = true
               }else{
                 backZ = true
@@ -213,9 +214,9 @@ function playerMoveCallback(obj) {
         }
       }
 
-      if(g.breaking && newZ == g.stageObj.stageLength && newX >= g.breakTopCubeX){
+      if(g.breaking && newZ === g.stageObj.stageLength && newX >= g.breakTopCubeX){
         // check breaking cube
-        if(oldZ == newZ){
+        if(oldZ === newZ){
           backX = true
         }else{
           backZ = true
@@ -260,7 +261,7 @@ function playerMoveCallback(obj) {
 
     if(diffTime > step1Time){
       g.stageStarting = false
-      // FIXME
+      // FIXME: Do not use 'new' for side effects
       new IQSceneChanger(0, false, g.bgm_stagecall, g.bgm_stage, null, null)
 
       g.cameraXAngleGoal = -0.3
@@ -299,7 +300,8 @@ function playerMoveCallback(obj) {
       if(g.cameraXAngleGoal > 0){
         g.cameraXAngleGoal = 0
       }else{
-        const t = g.gameOverTime1 + g.gameOverTime2 * 0.5
+        // nothing to do
+        //const t = g.gameOverTime1 + g.gameOverTime2 * 0.5
         //g.cameraTargetYGoal = -60.0 * t * (t + 0.5)
       }
       g.cameraYAngleGoal = Math.PI * 1.10
@@ -353,7 +355,7 @@ function playerMoveCallback(obj) {
     let diffTime = g.getElapsedTime(g.clearTime)
     const clearWaitTime = g.clearRotateTime * 2 + g.clearLabelTime
     let moveMaxTime = clearWaitTime + g.clearLineMoveTime * g.stageLength
-    const clearMaxTime = moveMaxTime + g.clearLineWaitTime
+    //const clearMaxTime = moveMaxTime + g.clearLineWaitTime
 
     if(diffTime >= moveMaxTime){
       g.cameraXAngleGoal = -0.3
@@ -520,7 +522,6 @@ function playerMoveCallback(obj) {
   g.camera.lookat(cx, cy, cz, ox, oy, oz, 0, 1, 0)
 }
 
-
 function initGameData() {
   // g = IQGameData
 
@@ -543,6 +544,11 @@ function initGameData() {
 
   g.cookieManager = new CookieManager()
   g.cookieShelfLife = g.cookieSaveDays
+
+  const agent = g.device
+
+  console.log(`mobile: ${agent.isMobile}`)
+  console.log(`tablet: ${agent.isTablet}`)
 }
 
 function initCanvas() {
@@ -582,13 +588,20 @@ function initCanvas() {
   // FIXME: player object
 }
 
+function decisionKeyPushed() {
+  return (g.keyListener.getKeyNewState(g.keyMark) || g.labelObj._controller.getAnyTouchState())
+}
+
 function showOpeningLoop() {
   g.nowTime = new Date()
 
-  if(!g.sceneChanging && g.keyListener.getAnyKeyState()){
+  // FIXME: separate label and controller
+  if(!g.sceneChanging && (g.keyListener.getAnyKeyState() || g.labelObj._controller.getAnyTouchState())){
+    // FIXME: Do not use 'new' for side effects
     new IQSceneChanger(2.0, true, g.menu._opMovie, g.bgm_menu, showMenuLoop, changeToMenu)
   }
   g.keyListener.resetKeyNewState()
+  resetTouchState()
 }
 
 function showMenu() {
@@ -616,6 +629,8 @@ function showMenu() {
 
   // label
   g.labelObj = new IQLabel()
+  // FIXME: separate controller from label
+  g.controller = g.labelObj._controller
 
   // model
   g.playerObj = new IQPlayer()
@@ -630,10 +645,9 @@ function showMenu() {
     g.normalPlate = result[1]
   })
   .catch((error) => {
-    console.error("playerObj/normalPlate model for renderer loading error: " + error)
+    console.error(`playerObj/normalPlate model for renderer loading error: ${error}`)
   })
   .then(start)
-
 }
 
 function initModelAndMotion() {
@@ -767,13 +781,6 @@ function getCookieIQ() {
   if(!cookieIQValue)
     return null
 
-  const cookieIQJson = decodeURIComponent(cookieIQValue)
-  /*
-  if(!cookieIQJson.isJSON()){
-    return null
-  }
-  */
-
   const cookieIQ = JSON.parse( decodeURIComponent(cookieIQValue) )
 
   return cookieIQ
@@ -799,7 +806,7 @@ function setIQtoCookie(iq) {
       })
       scoreObj[characterName] = characterScoreObj
     })
-  }else if(scoreObj.date != today){
+  }else if(scoreObj.date !== today){
     const diffDate = today - scoreObj.date
     g.characterList.forEach( (characterName) => {
       let characterScoreObj = scoreObj[characterName]
@@ -875,14 +882,14 @@ function loadBestIQ() {
   g.worldWeeklyBest = new Object()
 
   let fileName = g.scoreDataURL
-  fileName += '?' + (new Date() * 1) // disable cache
+  fileName += '?' + (Number(new Date()) * 1) // disable cache
 
   AjaxRequest.get(fileName, {
     async: false
   })
   .then((result) => {
     const data = result
-    let worldIQJson = decodeURIComponent(data)
+    const worldIQJson = decodeURIComponent(data)
     /*
     if(!worldIQJson.isJSON()){
       worldIQJson = '{}'
@@ -897,8 +904,10 @@ function loadBestIQ() {
 
       g.levelList.forEach( (levelName) => {
         if(worldIQ[characterName] && worldIQ[characterName][levelName]){
-          g.worldDailyBest[characterName][levelName]  = worldIQ[characterName][levelName]['daily']
-          g.worldWeeklyBest[characterName][levelName] = worldIQ[characterName][levelName]['weekly']
+          //g.worldDailyBest[characterName][levelName]  = worldIQ[characterName][levelName]['daily']
+          //g.worldWeeklyBest[characterName][levelName] = worldIQ[characterName][levelName]['weekly']
+          g.worldDailyBest[characterName][levelName]  = worldIQ[characterName][levelName].daily
+          g.worldWeeklyBest[characterName][levelName] = worldIQ[characterName][levelName].weekly
         }else{
           g.worldDailyBest[characterName][levelName] = 0
           g.worldWeeklyBest[characterName][levelName] = 0
@@ -915,10 +924,9 @@ function loadBestIQ() {
 function sendScore() {
   if(g.iqPoint > g.worldDailyBest[g.character][g.level]){
     // send score to server
-    let sendData
-    let receiveData
+    let receiveData = null
 
-    sendData = {
+    const sendData = {
       submit: 'submit',
       iq: g.iqPoint,
       score: g.score,
@@ -933,7 +941,7 @@ function sendScore() {
     .then((result) => {
       receiveData = result
       const data = receiveData.evalJSON()
-      if(data.result == 'OK'){
+      if(data.result === 'OK'){
         // OK
       }else{
         // error
@@ -1040,7 +1048,7 @@ function resetValues(stage, remainScores) {
     // DEBUG
     //g.stage = 3
   }
-  let stageFile = g.stageFiles[g.stage]
+  const stageFile = g.stageFiles[g.stage]
 
   // reset score
   if(!remainScores){
@@ -1151,7 +1159,7 @@ function resetValues(stage, remainScores) {
 
   // load stage data
   const promise = createStage(stageFile)
-  .then((result) => {
+  .then(() => {
     g.plateMarkerArray = []
     for(let z=0; z<g.stageLength; z++){
       g.plateMarkerArray[z] = []
@@ -1181,7 +1189,7 @@ function resetValues(stage, remainScores) {
 }
 
 function playSound(audio, recycle = false){
-  /*
+  /* disable sound for debug (performance check)
   if(recycle){
     audio.pause()
     audio.currentTime = 0
@@ -1284,7 +1292,7 @@ function showMenuLoop() {
   }
 
   let tileZ = g.menu._upTileZ
-  if(!g.menu._moving && g.menu._cursor != c){
+  if(!g.menu._moving && g.menu._cursor !== c){
     g.menu._srcCursor = g.menu._cursor
     if(g.menu._srcCursor >= g.menu._opMenus.size){
       g.menu._srcCursor = 0
@@ -1322,8 +1330,8 @@ function showMenuLoop() {
     })
   }
 
-  let cx
-  let cy
+  let cx = 0
+  let cy = 0
   if(g.menu._moving){
     const diffTime = g.getElapsedTime(g.menu._startTime)
     const maxTime = g.menuMoveTime
@@ -1351,8 +1359,8 @@ function showMenuLoop() {
       }
       cx = s * g.menu._dstX + (1 - s) * g.menu._srcX
       cy = s * g.menu._dstY + (1 - s) * g.menu._srcY
-      let uz = s * tileZ
-      let dz = (1 - s) * tileZ
+      const uz = s * tileZ
+      const dz = (1 - s) * tileZ
       g.menu._opUpTiles.forEach( (tile) => {
         tile._position.z = uz
       })
@@ -1403,6 +1411,7 @@ function showMenuLoop() {
 
       switch(g.menu.getOptionName()){
         case 'START': {
+          // FIXME: Do not use 'new' for side effects
           new IQSceneChanger(3.0, true, g.bgm_menu, g.bgm_stagecall, null, () => {
             stop()
             g.canvasField.removeObject(g.menu)
@@ -1424,10 +1433,14 @@ function showMenuLoop() {
           break
         }
         case 'EXIT': {
+          // FIXME: Do not use 'new' for side effects
           new IQSceneChanger(5.0, true, g.bgm_menu, null, null, () => {
             window.close()
           })
           break
+        }
+        default: {
+          // nothing to do
         }
       }
     }
@@ -1494,6 +1507,7 @@ function showMenuLoop() {
     const h = (t - 1.0) * g.menuRotationSpeed
     const r = h + Math.sqrt(t + h * h)
     const tile = g.menu._foldingTiles[0]
+    //tile._model.rootBone.rotate.createAxis(g.menuCubeRotateAxis, -r)
     tile._model.rootBone.rotate.createAxis(g.yaxis, -r)
 
     // camera position
@@ -1512,6 +1526,7 @@ function showMenuLoop() {
       const t = rotDiffTime / g.menuRotationTime
       const r = g.menu._expandingSrcRot + rotSpeed * t
       const tile = g.menu._foldingTiles[0]
+      //tile._model.rootBone.rotate.createAxis(g.menuCubeRotateAxis, -r)
       tile._model.rootBone.rotate.createAxis(g.yaxis, -r)
     }else if(expandingDiffTime < time2){
       if(!g.menu._expandingRotFinished){
@@ -1595,34 +1610,34 @@ function showMenuLoop() {
 
   if(!g.menu._moving && !g.menu._folding && !g.menu._moveTopLeft
      && !g.menu._expanding && !g.sceneChanging 
-     && g.keyListener.getKeyNewState(g.keyMark)){
+     && decisionKeyPushed()){
     // FIXME
     //g.selectedMenu = g.menu.getOptionName()
 
-        g.menu.setSubMenu()
-        g.menu._folding = true
-        g.menu._foldingTime = g.nowTime
-        const tiles = g.menu._opActiveTileObjArray
-        const tilePos = g.menu._opActiveTiles[g.menu._cursor]
-        const tileObjs = []
-        tilePos.forEach( (pos) => {
-          const x = pos[0]
-          const y = pos[1]
-          const tile = tiles[y][x]
-          tile._marked = false
-          tileObjs.push(tile)
-        })
-        g.menu._foldingTiles = tileObjs
-        setMenuTileFolding(tileObjs[0], tileObjs)
+    g.menu.setSubMenu()
+    g.menu._folding = true
+    g.menu._foldingTime = g.nowTime
+    const tiles = g.menu._opActiveTileObjArray
+    const tilePos = g.menu._opActiveTiles[g.menu._cursor]
+    const tileObjs = []
+    tilePos.forEach( (pos) => {
+      const x = pos[0]
+      const y = pos[1]
+      const tile = tiles[y][x]
+      tile._marked = false
+      tileObjs.push(tile)
+    })
+    g.menu._foldingTiles = tileObjs
+    setMenuTileFolding(tileObjs[0], tileObjs)
 
-        const childBone = tileObjs[0]._model.rootBone.childBoneArray[0]
-        childBone.rotate = new Vector4(0, 0, 0, 1)
-        childBone.offset = new Vector3(0, 0, -0.5)
-        
+    const childBone = tileObjs[0]._model.rootBone.childBoneArray[0]
+    childBone.rotate = new Vector4(0, 0, 0, 1)
+    childBone.offset = new Vector3(0, 0, -0.5)
 
     playSound(g.se_decision)
   }
   g.keyListener.resetKeyNewState()
+  resetTouchState()
 }
 function showSubMenuLoop() {
   g.nowTime = new Date()
@@ -1649,25 +1664,29 @@ function showSubMenuLoop() {
         }
       }while(!g.menu._opSubMenuEnable[c])
     }
-    if(c != g.menu._subCursor){
+    if(c !== g.menu._subCursor){
       playSound(g.se_select)
       g.menu._moving = true
 
+      /*
       const sy = g.menu._subMenuSY
       const dy = g.menu._subMenuDY
       g.menu._srcY = sy + (g.menu._subCursor - 0.5) * dy
       g.menu._dstY = sy + (c - 0.5) * dy
+      */
+      g.menu._srcMenuItem = g.menu._subCursor
+      g.menu._dstMenuItem = c
       g.menu._moveSubMenuTime = g.nowTime
       g.menu._subCursor = c
 
       // set subsubmenu
-      if(menuName == 'OPTION'){
+      if(menuName === 'OPTION'){
         const name = g.menu.getSubOptionName()
-        if(name == 'Level'){
+        if(name === 'Level'){
           g.menu._opSubSubMenus = g.levelList
           g.menu._opSubSubMenuEnable = g.levelListEnable
           g.menu._subSubCursor = g.levelList.indexOf(g.level)
-        }else if(name == 'Character'){
+        }else if(name === 'Character'){
           g.menu._opSubSubMenus = g.characterList
           g.menu._opSubSubMenuEnable = g.characterListEnable
           g.menu._subSubCursor = g.characterList.indexOf(g.character)
@@ -1681,11 +1700,11 @@ function showSubMenuLoop() {
           g.menuPlayerObj.setMotion(g.running)
           g.canvasField.addObject(g.menuPlayerObj)
           */
-        }else if(name == 'Volume'){
+        }else if(name === 'Volume'){
           g.menu._opSubSubMenus = g.soundVolumeList
           g.menu._opSubSubMenuEnable = g.soundVolumeListEnable
           g.menu._subSubCursor = g.soundVolumeList.indexOf(g.soundVolumeValue)
-        }else if(name == 'Language'){
+        }else if(name === 'Language'){
           g.menu._opSubSubMenus = g.languageList
           g.menu._opSubSubMenuEnable = g.languageListEnable
           g.menu._subSubCursor = g.languageList.indexOf(g.language)
@@ -1694,17 +1713,17 @@ function showSubMenuLoop() {
           g.menu._opSubSubMenuEnable = null
         }
 
-        if(name != 'Character'){
+        if(name !== 'Character'){
           // hide character
           g.canvasField.removeObject(g.menuPlayerObj)
         }
-      }else if(menuName == 'SCORE'){
+      }else if(menuName === 'SCORE'){
         const name = g.menu.getSubOptionName()
-        if(name == 'Character'){
+        if(name === 'Character'){
           g.menu._opSubSubMenus = g.characterList
           g.menu._opSubSubMenuEnable = g.characterListEnable
           g.menu._subSubCursor = g.characterList.indexOf(g.charater)
-        }else if(name == 'Level'){
+        }else if(name === 'Level'){
           g.menu._opSubSubMenus = g.levelList
           g.menu._opSubSubMenuEnable = g.levelListEnable
           g.menu._subSubCursor = g.levelList.indexOf(g.level)
@@ -1713,25 +1732,25 @@ function showSubMenuLoop() {
           g.menu._opSubSubMenus = null
           g.menu._opSubSubMenuEnable = null
         }
-      }else if(menuName == 'CREATE'){
+      }else if(menuName === 'CREATE'){
         const name = g.menu.getSubOptionName()
-        if(name == 'Size'){
+        if(name === 'Size'){
           g.menu._opSubSubMenus = g.stageSizeList
           g.menu._opSubSubMenuEnable = g.stageSizeListEnable
           //g.menu._subSubCursor = g.stageSizeList.indexOf(g.editStageSize)
           g.menu._subSubCursor = g.editStageSize // FIXME: not use index
-        }else if(name == 'Step'){
+        }else if(name === 'Step'){
           g.menu._opSubSubMenus = g.stageStepList
           g.menu._opSubSubMenuEnable = g.stageStepListEnable
           //g.menu._subSubCursor = g.stageStepList.indexOf(g.editStageStep)
           g.menu._subSubCursor = g.editStageStep // FIXME: not use index
-        }else if(name == 'Edit'){
+        }else if(name === 'Edit'){
           g.menu._opSubSubMenus = null
           g.menu._opSubSubMenuEnable = null
-        }else if(name == 'Play'){
+        }else if(name === 'Play'){
           g.menu._opSubSubMenus = null
           g.menu._opSubSubMenuEnable = null
-        }else if(name == 'Save'){
+        }else if(name === 'Save'){
           g.menu._opSubSubMenus = null
           g.menu._opSubSubMenuEnable = null
         }else{
@@ -1742,9 +1761,9 @@ function showSubMenuLoop() {
       }
     }
 
-    // change value
-    if(!g.menu._moving){
-      if(menuName == 'OPTION'){
+    // change value by left/right key
+    if(!g.menu._moving && g.menu._opSubSubMenus){
+      if(menuName === 'OPTION'){
         c = g.menu._subSubCursor
         if(g.keyListener.getKeyNewState(g.keyRight)){
           do {
@@ -1763,15 +1782,15 @@ function showSubMenuLoop() {
           }while(!g.menu._opSubSubMenuEnable[c])
         }
 
-        if(c != g.menu._subSubCursor){
+        if(c !== g.menu._subSubCursor){
           // update value
           subName = g.menu.getSubOptionName()
-          if(subName == 'Level'){
+          if(subName === 'Level'){
             g.level = g.levelList[c]
-          }else if(subName == 'Character'){
+          }else if(subName === 'Character'){
             g.character = g.characterList[c]
             // FIXME: change character model
-          }else if(subName == 'Volume'){
+          }else if(subName === 'Volume'){
             g.soundVolumeValue = g.soundVolumeList[c]
             if(g.soundVolumeValue < 0){
               c = g.menu._subSubCursor
@@ -1780,12 +1799,12 @@ function showSubMenuLoop() {
             g.soundVolume = g.soundVolumeValue * 0.01
 
             setSoundVolume()
-          }else if(subName == 'Language'){
+          }else if(subName === 'Language'){
             g.language = g.languageList[c]
           }
           g.menu._subSubCursor = c
         }
-      }else if(menuName == 'SCORE'){
+      }else if(menuName === 'SCORE'){
         c = g.menu._subSubCursor
         if(g.keyListener.getKeyNewState(g.keyRight)){
           do {
@@ -1804,23 +1823,23 @@ function showSubMenuLoop() {
           }while(!g.menu._opSubSubMenuEnable[c])
         }
 
-        if(c != g.menu._subSubCursor){
+        if(c !== g.menu._subSubCursor){
           // update value
           subName = g.menu.getSubOptionName()
-          if(subName == 'Character'){
+          if(subName === 'Character'){
             g.menu._subScoreCharacter = g.characterList[c]
-          }else if(subName == 'Level'){
+          }else if(subName === 'Level'){
             g.menu._subScoreLevel = g.levelList[c]
           }
           g.menu._subSubCursor = c
         }
-      }else if(menuName == 'CREATE'){
+      }else if(menuName === 'CREATE'){
         subName = g.menu.getSubOptionName()
         c = g.menu._subSubCursor
 
         if(g.editing){
           // do it later
-        }else if(g.menu._opSubSubMenus){
+        }else{
           if(g.keyListener.getKeyNewState(g.keyRight)){
             do {
               c++
@@ -1838,13 +1857,13 @@ function showSubMenuLoop() {
             }while(!g.menu._opSubSubMenuEnable[c])
           }
 
-          if(c != g.menu._subSubCursor){
+          if(c !== g.menu._subSubCursor){
             // update value
             subName = g.menu.getSubOptionName()
-            if(subName == 'Size'){
+            if(subName === 'Size'){
               //g.menu._subCreateSize = g.stageSizeList[c]
               g.editStageSize = c
-            }else if(subName == 'Step'){
+            }else if(subName === 'Step'){
               //g.menu._subCreateStep = g.stageStepList[c]
               //g.menu.editStageStep = c
               g.editStageStep = c
@@ -1858,21 +1877,23 @@ function showSubMenuLoop() {
     // push decision button handling
     if(!g.menu._moving && g.keyListener.getKeyNewState(g.keyMark)){
       // FIXME
-      switch(g.menu.getOptionName()){
+      const menuOptionName = g.menu.getOptionName()
+      switch(menuOptionName){
         case 'OPTION': {
           const name = g.menu.getSubOptionName()
-          if(name == 'Level'){
+          if(name === 'Level'){
             /* TODO: implement */
-          }else if(name == 'Character'){
+          }else if(name === 'Character'){
             /* TODO: implement */
-          }else if(name == 'KeyConfig'){
+          }else if(name === 'KeyConfig'){
             /* TODO: implement */
-          }else if(name == 'SoundVolume'){
+          }else if(name === 'SoundVolume'){
             /* TODO: implement */
-          }else if(name == 'Language'){
+          }else if(name === 'Language'){
             /* TODO: implement */
-          }else if(name == 'return'){
+          }else if(name === 'return'){
             updateOptionValue()
+            // FIXME: Do not use 'new' for side effects
             new IQSceneChanger(2.0, true, null, null, showMenuLoop, subMenuReturn)
           }
           
@@ -1881,11 +1902,11 @@ function showSubMenuLoop() {
 
         case 'SCORE': {
           const name = g.menu.getSubOptionName()
-          if(name == 'Character'){
+          if(name === 'Character'){
             /* TODO: implement */
-          }else if(name == 'Level'){
+          }else if(name === 'Level'){
             /* TODO: implement */
-          }else if(name == 'return'){
+          }else if(name === 'return'){
             new IQSceneChanger(2.0, true, null, null, showMenuLoop, subMenuReturn)
           }
           break
@@ -1895,57 +1916,29 @@ function showSubMenuLoop() {
           const url = g.shareURL
           const title = g.shareTitle
           const name = g.menu.getSubOptionName()
-          if(name == 'Twitter'){
+          if(name === 'Twitter'){
             // Twitter
             const href = 'http://twitter.com/share?url=' + escape(url)
                 + '&text=' + escape(title)
                 + '&hashtags=IQRevenge'
             window.location.href = href
-          }else if(name == 'Facebook'){
+          }else if(name === 'Facebook'){
             // Facebook
             const href = 'http://www.facebook.com/share.php?u=' + escape(url)
             window.location.href = href
-          }else if(name == 'Google+'){
+          }else if(name === 'Google+'){
             // Google+
             const href = 'https://plusone.google.com/_/+1/confirm?hl=' + g.language + '&url=' + escape(url)
                 + '&title=' + escape(title)
             window.location.href = href
-          }else if(name == 'mixi'){
+          }else if(name === 'mixi'){
             // mixi
             const href = 'http://mixi.jp/share.pl?u=' + escape(url)
             window.location.href = href
-          }else if(name == 'return'){
+          }else if(name === 'return'){
             // return
+            // FIXME: Do not use 'new' for side effects
             new IQSceneChanger(2.0, true, null, null, showMenuLoop, subMenuReturn)
-            /*
-            new IQSceneChanger(2.0, true, null, null, showMenuLoop, () => {
-              g.camera.distance = 20.0
-              // FIXME
-              g.canvasField.addObject(g.menu._opTileObj, true)
-              g.menu.addTilesToCanvas()
-              g.menu.initMenuParams()
-
-              // set first menu
-              const cursor = g.menu._cursor
-              g.menu._srcCursor = cursor
-              g.menu._srcX = g.menu._opPosX[cursor]
-              g.menu._srcY = g.menu._opPosY[cursor]
-              g.menu._dstCursor = cursor
-              g.menu._dstX = g.menu._opPosX[cursor]
-              g.menu._dstY = g.menu._opPosY[cursor]
-              g.menu._startTime = g.nowTime
-              g.menu._moving = true
-              g.menu._cursor = cursor
-
-              g.menu._opStayTiles.length = 0
-              g.menu._opUpTiles.length = 0
-              g.menu._opDownTiles.length = 0
-              const srcTiles = g.menu.getMenuTiles(g.menu._srcCursor)
-              srcTiles.forEach( (tile) => {
-                g.menu._opUpTiles.push(tile)
-              })
-            })
-            */
           }
           break
         }
@@ -1955,23 +1948,28 @@ function showSubMenuLoop() {
 
           if(g.editing){
             // do it later
-          }else if(name == 'Size'){
+          }else if(name === 'Size'){
             // nothing to do
-          }else if(name == 'Step'){
+          }else if(name === 'Step'){
             // nothing to do
-          }else if(name == 'Edit'){
+          }else if(name === 'Edit'){
             startEditing = true
-          }else if(name == 'Play'){
+          }else if(name === 'Play'){
             new IQSceneChanger(3.0, true, g.bgm_menu, g.bgm_stagecall, null, () => {
               g.testPlay = true
               stop()
               setup()
             })
-          }else if(name == 'return'){
+          }else if(name === 'return'){
             // return
+            // FIXME: Do not use 'new' for side effects
             new IQSceneChanger(2.0, true, null, null, showMenuLoop, subMenuReturn)
           }
           break
+        }
+
+        default: {
+          console.error(`unknown menu name: ${menuOptionName}`)
         }
       }
     }
@@ -1999,7 +1997,7 @@ function showSubMenuLoop() {
     cx = (cx + stageWidth) % stageWidth
     cy = (cy + stageLength) % stageLength
 
-    if(cx != g.menu._editCursorX || cy != g.menu._editCursorY){
+    if(cx !== g.menu._editCursorX || cy !== g.menu._editCursorY){
       playSound(g.se_select)
       g.menu._moving = true
       g.menu._moveSubMenuTime = g.nowTime
@@ -2041,6 +2039,7 @@ function showSubMenuLoop() {
     }
   }
   g.keyListener.resetKeyNewState()
+  resetTouchState()
 }
 
 function setMenuTileFolding(tile, tileArray) {
@@ -2051,7 +2050,7 @@ function setMenuTileFolding(tile, tileArray) {
   tileArray.forEach( (tile2) => {
     if(!tile2._marked){
       // left
-      if(tile2._tileX == x-1 && tile2._tileY == y){
+      if(tile2._tileX === x-1 && tile2._tileY === y){
         const bone = new Bone()
         bone.rotate = new Vector4(0, 0, 0, 1)
         bone.offset = new Vector3(-0.5, 0, 0)
@@ -2067,7 +2066,7 @@ function setMenuTileFolding(tile, tileArray) {
         setMenuTileFolding(tile2, arr)
       }
       // right
-      else if(tile2._tileX == x+1 && tile2._tileY == y){
+      else if(tile2._tileX === x+1 && tile2._tileY === y){
         const bone = new Bone()
         bone.rotate = new Vector4(0, 0, 0, 1)
         bone.offset = new Vector3(0.5, 0, 0)
@@ -2083,7 +2082,7 @@ function setMenuTileFolding(tile, tileArray) {
         setMenuTileFolding(tile2, arr)
       }
       // top
-      else if(tile2._tileX == x && tile2._tileY == y-1){
+      else if(tile2._tileX === x && tile2._tileY === y-1){
         const bone = new Bone()
         bone.rotate = new Vector4(0, 0, 0, 1)
         bone.offset = new Vector3(0, -0.5, 0)
@@ -2099,7 +2098,7 @@ function setMenuTileFolding(tile, tileArray) {
         setMenuTileFolding(tile2, arr)
       }
       // bottom
-      else if(tile2._tileX == x && tile2._tileY == y+1){
+      else if(tile2._tileX === x && tile2._tileY === y+1){
         const bone = new Bone()
         bone.rotate = new Vector4(0, 0, 0, 1)
         bone.offset = new Vector3(0, 0.5, 0)
@@ -2217,7 +2216,7 @@ function updateOptionValue() {
 function showIQLoop() {
   g.nowTime = new Date()
   if(!g.gameOverFadeOut){
-    if(g.keyListener.getKeyNewState(g.keyMark)){
+    if(decisionKeyPushed()){
       g.gameOverFadeOut = true
       g.gameOverFadeOutStartTime = g.nowTime
     }
@@ -2232,12 +2231,15 @@ function showIQLoop() {
     }
   }
   g.keyListener.resetKeyNewState()
+  resetTouchState()
 }
 
 function showContinueLoop() {
   g.nowTime = new Date()
-  let c = g.canvasField.get2DContext()
-  if(g.keyListener.getKeyNewState(g.keyMark)){
+  //const c = g.canvasField.get2DContext()
+  
+  const touchedMenu = g.menu.getTouchedMenuNumber()
+  if(g.keyListener.getKeyNewState(g.keyMark) || touchedMenu >= 0){
     // FIXME
     /*
     const srcBGM = null
@@ -2248,8 +2250,12 @@ function showContinueLoop() {
     }
     */
     const srcBGM = g.bgm_gameover
+    let cursor = g.menu._cursor
+    if(touchedMenu >= 0){
+      cursor = touchedMenu
+    }
 
-    switch(g.menu._cursor){
+    switch(cursor){
       case 0: {
         // Tweet
         const url = g.shareURL
@@ -2284,7 +2290,7 @@ function showContinueLoop() {
         //g.canvasField.addObject(g.menu._opTileObj)
         //g.canvasField.setFrameCallback(showMenuLoop)
 
-        // FIXME
+        // FIXME: Do not use 'new' for side effects
         new IQSceneChanger(2.0, true, srcBGM, g.bgm_menu, showMenuLoop, () => {
           g.menu.setMenu('top')
           g.camera.distance = 20.0
@@ -2321,6 +2327,10 @@ function showContinueLoop() {
         })
         break
       }
+
+      default: {
+        /* nothing to do */
+      }
     }
   }
 
@@ -2332,6 +2342,7 @@ function showContinueLoop() {
     g.menu._cursor = (g.menu._cursor + 1) % max
   }
   g.keyListener.resetKeyNewState()
+  resetTouchState()
 }
 
 function setup() {
@@ -2347,7 +2358,8 @@ function setup() {
     g.stage = 1
     g.stageFiles = ['TestPlay'] // just set dummy string
 
-    loadDataPromise = new Promise((resolve, reject) => {
+    //loadDataPromise = new Promise((resolve, reject) => {
+    loadDataPromise = new Promise((resolve) => {
       // just resolve
       resolve()
     })
@@ -2356,10 +2368,10 @@ function setup() {
   }
 
   loadDataPromise
-  .then((result) => {
+  .then(() => {
     // character
-    let character
-    if(g.character == 'Miku'){
+    //let character = null
+    if(g.character === 'Miku'){
       g.playerObj.setModel(g.model_miku)
       g.se_step.src    = g.se_directory  + '/' + g.se_miku_step_file    + g.snd_ext
       g.se_lifted.src  = g.se_directory  + '/' + g.se_miku_lifted_file  + g.snd_ext
@@ -2369,7 +2381,7 @@ function setup() {
       g.se_step_timing_2 = g.se_miku_step_timing_2
       g.menu._opMenuEnable[6] = false
       g.characterSpeed = g.characterData.get('Miku').get('characterSpeed')
-    }else if(g.character == 'Cyan'){
+    }else if(g.character === 'Cyan'){
       g.playerObj.setModel(g.model_cyan)
       g.se_step.src    = g.se_directory  + '/' + g.se_cyan_step_file    + g.snd_ext
       g.se_lifted.src  = g.se_directory  + '/' + g.se_cyan_lifted_file  + g.snd_ext
@@ -2379,7 +2391,7 @@ function setup() {
       g.se_step_timing_2 = g.se_cyan_step_timing_2
       g.menu._opMenuEnable[6] = false
       g.characterSpeed = g.characterData.get('Cyan').get('characterSpeed')
-    }else if(g.character == 'Reimu'){
+    }else if(g.character === 'Reimu'){
       g.playerObj.setModel(g.model_reimu)
       g.se_step.src    = g.se_directory  + '/' + g.se_reimu_step_file    + g.snd_ext
       g.se_lifted.src  = g.se_directory  + '/' + g.se_reimu_lifted_file  + g.snd_ext
@@ -2437,18 +2449,18 @@ function quitTestPlay() {
  * @returns {void}
  */
 function outputEditStageData() {
-  let debugInfo = g.stageStepList[g.editStageStep] + ","
+  let debugInfo = g.stageStepList[g.editStageStep] + ','
   const stageSize = g.stageSizeValues[g.editStageSize]
   for(let y=0; y<stageSize[1]; y++){
     for(let x=0; x<stageSize[0]; x++){
       debugInfo += g.editStageData[x][y]
     }
   }
-  console.info("stageData: " + debugInfo)
+  console.info(`stageData: ${debugInfo}`)
 }
 
 function downProcess() {
-  if(g.playerObj._state == 'down'){
+  if(g.playerObj._state === 'down'){
     const diffTime = g.getElapsedTime(g.playerObj.downStartTime)
     if(diffTime > g.downWaitTime){
       g.playerObj._state = 'standup'
@@ -2456,7 +2468,7 @@ function downProcess() {
       g.playerObj.animationTime = 0
       g.playerObj.standupStartTime = g.nowTime
     }
-  }else if(g.playerObj._state == 'standup'){
+  }else if(g.playerObj._state === 'standup'){
     const diffTime = g.getElapsedTime(g.playerObj.standupStartTime)
     if(diffTime > g.standupWaitTime){
       g.playerObj._state = 'standing'
@@ -2496,7 +2508,7 @@ function createSubStageProcess() {
       createSubSubStage()
     }
   }else if(diffTime > borderTime + g.stageCreateDelay){
-    if(g.playerObj._state == 'rolling'){
+    if(g.playerObj._state === 'rolling'){
       g.playerObj._position.z = maxZ + g.cubeSize
       g.playerObj._state = 'down'
       g.playerObj.setMotionWithBlending(g.down, 3)
@@ -2509,7 +2521,7 @@ function createSubStageProcess() {
   }else if(diffTime > borderTime){
     g.moveMinZ = g.minZ + g.cubeSize * g.questionLength * g.subSubStageMax
   }else if(diffTime > 0){
-    if(borderZ > g.playerObj._position.z && g.playerObj._state != 'rolling'){
+    if(borderZ > g.playerObj._position.z && g.playerObj._state !== 'rolling'){
       g.playerObj._state = 'rolling'
       g.playerObj.setMotionWithBlending(g.rolling, 5)
       g.playerObj.animationTime = 0
@@ -2519,15 +2531,15 @@ function createSubStageProcess() {
       g.iqPoint -= 1
     }
   }
-  if(g.playerObj._state == 'rolling'){
+  if(g.playerObj._state === 'rolling'){
     g.playerObj._position.z = borderZ
   }
 }
 
 function createStage(stageFile) {
   const e = 0.0001
-  var promise = loadQuestionFile(stageFile)
-  .then((result) => {
+  const promise = loadQuestionFile(stageFile)
+  .then(() => {
     // set stage texture
     IQCube.setNormalCubeTextureForStage(g.stage)
 
@@ -2631,19 +2643,25 @@ function createSubStage() {
   g.subSubStage = 1
   g.stageCreateStartTime = new Date()
 
-  if(g.subStage == 1){
+  if(g.subStage === 1){
     // FIXME
     // stage call
     switch(g.stage){
-      case 1:
+      case 1: {
         playSound(g.se_stagecall_1)
         break
-      case 2:
+      }
+      case 2: {
         playSound(g.se_stagecall_2)
         break
-      case 3:
+      }
+      case 3: {
         playSound(g.se_stagecall_3)
         break
+      }
+      default: {
+        console.error(`unknown stage call: ${g.stage}`)
+      }
     }
   }else{
     playSound(g.se_substage, true)
@@ -2660,14 +2678,14 @@ function blockReady(obj) {
   // FIXME: merge to createStage function
   const moveLength = g.stageCreateBlockMoveTime
 
-  if(obj.state == 'entry'){
+  if(obj.state === 'entry'){
     const diffTime = g.getElapsedTime(obj.startTime)
     if(obj.moveTime < diffTime){
       if(obj.moveTime + moveLength > diffTime){
         // delete marker
         const marker = g.plateMarkerArray[obj.bz][obj.bx]
         if(marker){
-          if(marker.type == 'blue'){
+          if(marker.type === 'blue'){
             g.activeMarker = null
             g.markerOn = false
           }
@@ -2686,7 +2704,7 @@ function blockReady(obj) {
 
 function loadStageFilesData(fileName) {
   let dir = (new String(fileName)).replace(/\/[^\/]*$/, '/')
-  if(dir == fileName){
+  if(dir === fileName){
     dir = './'
   }
   
@@ -2699,7 +2717,7 @@ function loadStageFilesData(fileName) {
     const lines = data.split('\n')
 
     // numStages
-    g.stageMax = parseInt(lines[line])
+    g.stageMax = parseInt(lines[line], 10)
     line++
 
     g.stageFiles = []
@@ -2721,14 +2739,15 @@ function loadQuestionFile(fileName) {
     const stageSize = g.stageSizeValues[g.editStageSize]
     const stageLength = 30
     const baseStep = g.stageStepList[g.editStageStep]
-    promise = new Promise((resolve, reject) => {
-      let testData = "Test Play\n" // stage name
-      testData += stageSize[0] + "," + stageLength + "\n" // stage size
-      testData += "1\n" // number of sub stages
-      testData += "1\n" // number of sub sub stages
-      testData += stageSize[1] + "\n" // question length
-      testData += "1\n" // number of questions
-      testData += baseStep + ","
+    //promise = new Promise((resolve, reject) => {
+    promise = new Promise((resolve) => {
+      let testData = 'Test Play\n' // stage name
+      testData += stageSize[0] + ',' + stageLength + '\n' // stage size
+      testData += '1\n' // number of sub stages
+      testData += '1\n' // number of sub sub stages
+      testData += stageSize[1] + '\n' // question length
+      testData += '1\n' // number of questions
+      testData += baseStep + ','
 
       for(let y=0; y<stageSize[1]; y++){
         for(let x=0; x<stageSize[0]; x++){
@@ -2736,7 +2755,7 @@ function loadQuestionFile(fileName) {
         }
       }
 
-      testData += "\n"
+      testData += '\n'
 
       resolve(testData)
 
@@ -2760,12 +2779,12 @@ function loadQuestionFile(fileName) {
 
     // stageWidth,stageLength
     let tokens = lines[line].split(',')
-    g.stageWidth = parseInt(tokens[0])
-    g.stageLength = parseInt(tokens[1])
+    g.stageWidth = parseInt(tokens[0], 10)
+    g.stageLength = parseInt(tokens[1], 10)
     line++
 
     // numOfSubStages
-    g.subStageMax = parseInt(lines[line])
+    g.subStageMax = parseInt(lines[line], 10)
     line++
 
     // loop for sub-stages
@@ -2774,15 +2793,15 @@ function loadQuestionFile(fileName) {
       const obj = new Object()
 
       // subSubStageMax
-      obj.subSubStageMax = parseInt(lines[line])
+      obj.subSubStageMax = parseInt(lines[line], 10)
       line++
 
       // questionLength
-      obj.questionLength = parseInt(lines[line])
+      obj.questionLength = parseInt(lines[line], 10)
       line++
 
       // numQuestions
-      obj.numQuestions = parseInt(lines[line])
+      obj.numQuestions = parseInt(lines[line], 10)
       line++
 
       obj.questionArray = []
@@ -2792,7 +2811,7 @@ function loadQuestionFile(fileName) {
         tokens = lines[line].split(',')
         const q = new IQQuestion()
 
-        q.baseStep = parseInt(tokens[0])
+        q.baseStep = parseInt(tokens[0], 10)
         q.data = []
         let index = 0
         for(let z=0; z<obj.questionLength; z++){
@@ -2837,7 +2856,7 @@ function loadQuestionFile(fileName) {
 }
 
 function setQuestion(again) {
-  let qNo
+  let qNo = -1
   if(again){
     qNo = g.questionNo
   }else{
@@ -2932,12 +2951,7 @@ function blockRotate() {
     g.rotateElapsedTime += g.elapsedTime
   }
 
-  let waitTime = g.rotateWaitTime
-  /*
-  if(g.blockDeleted){
-    waitTime += g.afterDeleteAdditionalWaitTime
-  }
-  */
+  const waitTime = g.rotateWaitTime
 
   if(!g.activated || g.rotateElapsedTime < waitTime){
     return
@@ -2990,7 +3004,7 @@ function blockRotate() {
     }
 
     g.markerArray.forEach( (marker) => {
-      if(marker.type == 'red'){
+      if(marker.type === 'red'){
         marker.deleteStartTime = g.nowTime
       }
     })
@@ -3020,7 +3034,7 @@ function blockRotate() {
       for(let z=0; z<g.stageLength; z++){
         for(let x=0; x<g.stageWidth; x++){
           const marker = g.plateMarkerArray[z][x]
-          if(marker && marker.type == 'red'){
+          if(marker && marker.type === 'red'){
             marker.erase()
           }
         }
@@ -3144,7 +3158,7 @@ function setMarker() {
 function useAdvantage() {
   let used = false
   g.markerArray.forEach( (marker) => {
-    if(marker.type == 'green'){
+    if(marker.type === 'green'){
       used = true
       marker.setType('red')
 
@@ -3202,7 +3216,7 @@ function checkMarker() {
   let notmissed = false
   */
   g.markerArray.forEach( (marker) => {
-    if(marker.type == 'red'){
+    if(marker.type === 'red'){
       const cube = getCubeAt(marker.cubeZ, marker.cubeX)
       if(cube){
         if(marker.advantage){
@@ -3214,7 +3228,7 @@ function checkMarker() {
         new IQEffectPlate(false, marker.cubeZ, marker.cubeX, g.deletedWaitTime)
         new IQEffectPlate(false, marker.cubeZ, marker.cubeX + 1, g.deletedWaitTime)
  
-        if(cube.type == 'advantage'){
+        if(cube.type === 'advantage'){
           marker.setType('green')
           marker.deleteStartTime = null
         }else if(!marker.advantage && !marker.deleteStartTime){
@@ -3240,7 +3254,7 @@ function checkMarker() {
 
       // delete red markers
       g.markerArray.forEach( (marker) => {
-        if(marker.type == 'red' && marker.advantage && !marker.deleteStartTime){
+        if(marker.type === 'red' && marker.advantage && !marker.deleteStartTime){
           //marker.erase()
           marker.deleteStartTime = g.nowTime
         }
@@ -3278,7 +3292,7 @@ function fallProcess() {
     if(diffTime > endTime){
       g.fallCubeArray = g.fallCubeArray.filter((fallCube) => { return fallCube !== cube })
       g.canvasField.removeObject(cube)
-      if(cube.type != 'forbidden' || g.speedUpByMiss){
+      if(cube.type !== 'forbidden' || g.speedUpByMiss){
         g.penalty++
         g.missed = true
         if(g.penalty >= g.penaltyMax){
@@ -3310,7 +3324,7 @@ function deleteProcess() {
     }else if(diffTime > 0){
       if(!cube.deleteStarted){
         cube.deleteStarted = true
-        if(cube.type == 'forbidden'){
+        if(cube.type === 'forbidden'){
           // miss
           g.stageObj.breakOneLine()
           // FIXME
@@ -3332,7 +3346,7 @@ function deleteProcess() {
     playSound(g.se_erase)
   }
 
-  if(g.deleteCubeArray.length == 0){
+  if(g.deleteCubeArray.length === 0){
     g.deleting = false
   }
 }
@@ -3349,7 +3363,7 @@ function perfectProcess() {
     if(g.testPlay){
       // go back to edit
       quitTestPlay()
-    }else if(g.subSubStage == g.subSubStageMax){
+    }else if(g.subSubStage === g.subSubStageMax){
       subStageClear()
     }else{
       g.subSubStage++
@@ -3447,7 +3461,7 @@ function breakLineProcess() {
         const cz = Math.floor((cube._position.z - g.minZ) / g.cubeSize)
         const bx = Math.floor((g.playerObj._position.x - g.minX) / g.cubeSize)
         const bz = Math.floor((g.playerObj._position.z - g.minZ) / g.cubeSize)
-        if(bx == cx && bz == cz){
+        if(bx === cx && bz === cz){
           const minZ = g.cubeSize * cz + 15
           if(g.playerObj._position.z < minZ){
             g.playerObj._position.z = minZ
@@ -3455,13 +3469,13 @@ function breakLineProcess() {
           gameOver()
         }
 
-        if(cx == 0){
+        if(cx === 0){
           g.maxZ = (g.stageLength - 0.5) * g.cubeSize - e
 
           // delete marker
           g.markerArray.forEach( (marker) => {
             if(marker.cubeZ >= cz){
-              if(marker.type == 'blue'){
+              if(marker.type === 'blue'){
                 g.activeMarker = null
                 g.markerOn = false
               }
@@ -3473,7 +3487,7 @@ function breakLineProcess() {
     }
   })
 
-  if(g.breakCubeArray.length == 0){
+  if(g.breakCubeArray.length === 0){
     g.breaking = false
     if(g.penalty >= g.penaltyMax){
       g.stageObj.breakOneLine(true)
@@ -3515,7 +3529,7 @@ function checkClear() {
     let cleared = true
     g.aCubeArray.forEach( (line) => {
       line.forEach( (cube) => {
-        if(cube && cube.type != 'forbidden')
+        if(cube && cube.type !== 'forbidden')
           cleared = false
       })
     })
@@ -3535,7 +3549,7 @@ function checkClear() {
     if(g.fallCubeArray.length > 0 ||
        g.deleteCubeArray.length > 0 ||
        g.breakCubeArray.length){
-         cleared = false
+      cleared = false
     }
     
     if(cleared){
@@ -3569,7 +3583,7 @@ function subSubStageClear() {
 
       // FIXME
       g.iqPoint += 4
-    }else if(g.step == g.baseStep){
+    }else if(g.step === g.baseStep){
       // Perfect!
       g.perfectString = g.messagePerfect
       g.score += g.pointPerfect
@@ -3621,6 +3635,11 @@ function subSubStageClear() {
   }else{
     // not perfect
 
+    if(g.testPlay){
+      // go back to edit
+      quitTestPlay()
+    }
+
     // FIXME
     g.iqPoint += 1
   }
@@ -3631,7 +3650,7 @@ function subSubStageClear() {
   g.speedUpByMiss = false
 
   if(!g.perfect){
-    if(g.subSubStage == g.subSubStageMax){
+    if(g.subSubStage === g.subSubStageMax){
       g.again = false
       subStageClear()
     }else{
@@ -3645,7 +3664,7 @@ function subSubStageClear() {
 }
 
 function subStageClear() {
-  if(g.subStage == g.subStageMax){
+  if(g.subStage === g.subStageMax){
     stageClear()
   }else{
     g.subStage++
@@ -3722,7 +3741,7 @@ function clearProcess() {
       return
 
     g.bonusScore = g.stageLength * g.pointBonus
-    if(g.stage == g.stageMax){
+    if(g.stage === g.stageMax){
       // FIXME: ending
       //alert('game completed')
       //reset()
@@ -3789,7 +3808,7 @@ function clearProcess() {
 
     if(blockNo > g.clearPlayerBlockZ){
       g.playerObj._position.z = g.clearPlayerZ - g.cubeSize
-    }else if(blockNo == g.clearPlayerBlockZ){
+    }else if(blockNo === g.clearPlayerBlockZ){
       g.playerObj._position.z = g.clearPlayerZ - (blockTime - blockNo) * g.cubeSize
     }
     g.stageLines[blockNo]._position.z = g.minZ + (blockNo * 2 - blockTime) * g.cubeSize
@@ -3800,7 +3819,7 @@ function clearProcess() {
       g.bonusScore = (blockNo + 1) * g.pointBonus
     }
 
-    if(blockNo > 1 && g.oldBlockNo != blockNo){
+    if(blockNo > 1 && g.oldBlockNo !== blockNo){
       playSound(g.se_count)
     }
     g.oldBlockNo = blockNo
@@ -3813,10 +3832,10 @@ function checkControllable() {
   if(g.stageStarting || g.stageClear || g.gameOver)
     return false
 
-  if(g.playerObj._state == 'rolling'
-     || g.playerObj._state == 'down'
-     || g.playerObj._state == 'standup'
-     || g.playerObj._state == 'falling'){
+  if(g.playerObj._state === 'rolling'
+     || g.playerObj._state === 'down'
+     || g.playerObj._state === 'standup'
+     || g.playerObj._state === 'falling'){
     return false
   }
 
@@ -3829,7 +3848,7 @@ function endingLoop() {
   const maxTime = g.endingTotalTime
   const diffTime = g.getElapsedTime(g.endingStartTime)
   if(diffTime > maxTime){
-    if(!g.sceneChanging && g.keyListener.getKeyNewState(g.keyMark)){
+    if(!g.sceneChanging && decisionKeyPushed()){
       const srcBGM = null
       new IQSceneChanger(2.0, true, srcBGM, null, endingTweetLoop, () => {
         removeAllObjects()
@@ -3840,6 +3859,7 @@ function endingLoop() {
   }
 
   g.keyListener.resetKeyNewState()
+  resetTouchState()
 }
 
 function endingTweetLoop() {
@@ -3898,6 +3918,10 @@ function endingTweetLoop() {
         })
         break
       }
+
+      default: {
+        // nothing to do
+      }
     }
   }
 
@@ -3910,6 +3934,7 @@ function endingTweetLoop() {
   }
 
   g.keyListener.resetKeyNewState()
+  resetTouchState()
 }
 
 function start() {
@@ -3926,6 +3951,10 @@ function resetGame() {
   .then(start)
 }
 
+function resetTouchState() {
+  g.controller.resetTouchNewState()
+}
+
 function update(elapsedTime) {
   const speed = g.characterSpeed
   const force = g.playerObj._force
@@ -3939,7 +3968,7 @@ function update(elapsedTime) {
         g.current_bgm.play()
       }
 
-      let pausedTime = (new Date()) - g.pauseStartTime
+      const pausedTime = (new Date()) - g.pauseStartTime
       let cubePausedTime = pausedTime
       g.addTimeToAllTimer(pausedTime)
       g.playerObj.setAnimating(true)
@@ -3991,6 +4020,7 @@ function update(elapsedTime) {
 
   if(g.pausing){
     g.keyListener.resetKeyNewState()
+    resetTouchState()
     return
   }
 
@@ -4008,6 +4038,14 @@ function update(elapsedTime) {
     force.x += speed
     moving = true
   }
+
+  const moveVector = g.controller.getMoveVector()
+  if(moveVector){
+    force.z += moveVector.y * speed
+    force.x += moveVector.x * speed
+    moving = true
+  }
+
 
   // XXX: DEBUG
   /*
@@ -4056,15 +4094,15 @@ function update(elapsedTime) {
   }
   */
 
-  if(g.keyListener.getKeyNewState(g.keyMark)){
+  if(g.keyListener.getKeyNewState(g.keyMark) || g.controller.getTouchNewState(g.controller.markerButton)){
     if(checkControllable()){
       setMarker()
     }
   }
-  if(g.keyListener.getKeyNewState(g.keyAdvantage)){
+  if(g.keyListener.getKeyNewState(g.keyAdvantage) || g.controller.getTouchNewState(g.controller.advantageButton)){
     useAdvantage()
   }
-  if(g.keyListener.getKeyState(g.keySpeedUp)){
+  if(g.keyListener.getKeyState(g.keySpeedUp) || g.controller.getTouchState(g.controller.ffButton)){
     g.speedUp = true
   }else{
     g.speedUp = false
@@ -4089,19 +4127,24 @@ function update(elapsedTime) {
 
   if(!checkControllable()){
     force.x = force.y = force.z = 0
-  }else if(moving && g.playerObj._state != 'running'){
+  }else if(moving && g.playerObj._state !== 'running'){
     g.playerObj.setMotionWithBlending(g.running, 10)
     g.playerObj.animationTime = 0
     g.playerObj._state = 'running'
-  }else if(!moving && g.playerObj._state != 'standing'){
+  }else if(!moving && g.playerObj._state !== 'standing'){
     g.playerObj.setMotionWithBlending(g.standing, 10)
     g.playerObj.animationTime = 0
     g.playerObj._state = 'standing'
   }
   g.keyListener.resetKeyNewState()
+  resetTouchState()
 }
 
 function init() {
+  if(g.device.isMobile){
+    document.removeEventListener('touchstart', init, false)
+  }
+
   initGameData()
   initCanvas()
   initModelAndMotion()
@@ -4110,5 +4153,9 @@ function init() {
   loadCookieOption()
 }
 
-document.addEventListener('DOMContentLoaded', init, false)
+if(g.device.isMobile){
+  document.addEventListener('touchstart', init, false)
+}else{
+  document.addEventListener('DOMContentLoaded', init, false)
+}
 
