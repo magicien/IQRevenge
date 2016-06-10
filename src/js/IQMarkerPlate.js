@@ -45,8 +45,8 @@ export default class IQMarkerPlate extends DH3DObject {
     /** @type {int} */
     this.cubeZ = -1
 
-    /** @type {Date} */
-    this.startTime = null
+    /** @type {boolean} */
+    this.paused = false
 
     this.setModel(IQMarkerPlate.model_plate.clone())
     this.setScale(IQGameData.cubeSize)
@@ -64,7 +64,8 @@ export default class IQMarkerPlate extends DH3DObject {
     this.addMoveCallback( () => {
       obj.update()
     })
-    this.startTime = new Date()
+    //this.startTime = new Date()
+    this.startTime = new Date(IQGameData.nowTime.getTime())
   }
 
   /**
@@ -99,12 +100,14 @@ export default class IQMarkerPlate extends DH3DObject {
       case 'red':
         this.type = 'red'
         this.textures = IQMarkerPlate.redTextures
-        this.startTime = new Date()
+        //this.startTime = new Date()
+        this.startTime = new Date(IQGameData.nowTime.getTime())
         break
       case 'green':
         this.type = 'green'
         this.textures = IQMarkerPlate.greenTextures
-        this.startTime = new Date()
+        //this.startTime = new Date()
+        this.startTime = new Date(IQGameData.nowTime.getTime())
         break
       case 'blue':
       default:
@@ -139,7 +142,32 @@ export default class IQMarkerPlate extends DH3DObject {
     this.cubeX = cubeX
     this.cubeZ = cubeZ
   }
-  
+
+  pause() {
+    if(!this.paused){
+      return
+    }
+    this.paused = false
+  }
+
+  resume(pausedTime = 0) {
+    if(!this.paused){
+      return
+    }
+    this.paused = false
+
+    const timers = [
+      this.startTime
+    ]
+    
+    timers.forEach((timer) => {
+      if(timer){
+        timer.setMilliseconds(timer.getMilliseconds() + pausedTime)
+      }
+    })
+
+    this.markerPlate.resume(pausedTime)
+  }
 }
 
 /** @type {boolean} */

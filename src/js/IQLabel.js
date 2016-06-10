@@ -38,6 +38,9 @@ export default class IQLabel extends DH2DObject {
 
     /** @type {IQController} */
     this._controller = new IQController()
+
+    /** @type {boolean} */
+    this.paused = false
   }
 
   /**
@@ -740,6 +743,66 @@ export default class IQLabel extends DH2DObject {
       c.restore()
     } // if(g.stageClear)
 
+    if(IQGameData.rulePlay){
+      const data = IQGameData.rulesCurrentData
+      const time = IQGameData.rulesElapsedTime
+
+      // for debug
+      c.fillStyle = IQGameData.whiteColor
+      c.fillText(IQGameData.rulesElapsedTime, 500, 100)
+
+      if(data){
+        const startTime = data.time
+        const endTime = data.time + data.duration
+        if(data.type === 'audio' && data.text.length > 0){
+          if(startTime <= time && time < endTime){
+            let alpha = 1.0
+            if(time < startTime + IQGameData.rulesTextFadeTime){
+              // Fade in
+              alpha = (time - startTime) / IQGameData.rulesTextFadeTime
+            }else if(time < endTime - IQGameData.rulesTextFadeTime){
+              alpha = 1.0
+            }else{
+              // Fade out
+              alpha = (endTime - time) / IQGameData.rulesTextFadeTime
+            }
+            if(alpha > 1.0){
+              console.log('something is wrong')
+            }
+            const textAlpha = alpha
+            const bgAlpha = textAlpha * 0.5
+
+            y = 80
+            let center = IQGameData.canvasWidth / 2
+            padding = 10
+            const textHeight = 18
+
+            // back ground
+            const bgHeight = (padding + textHeight) * data.text.length + padding
+            c.fillStyle = `rgba(0, 0, 0, ${bgAlpha})`
+            //console.log(`bgAlpha: ${bgAlpha}`)
+            c.fillRect(0, y, IQGameData.canvasWidth, bgHeight)
+
+            // text
+            //c.strokeStyle = `rgba(0, 0, 0, ${alpha})`
+            c.fillStyle = `rgba(255, 255, 255, ${alpha})`
+            c.font = `${textHeight}px bold ${g.fontFamily}`
+            c.textAlgin = 'center'
+            c.textBaseline = 'middle'
+
+            y += padding + textHeight * 0.5
+            data.text.forEach((text) => {
+              c.fillText(text, center, y) 
+              //c.strokeText(text, center, y) 
+              y += padding + textHeight
+            })
+          }
+        }else if(data.type === 'pause'){
+          // TODO: implement
+        }
+      }
+    } // if(g.rulePlay)
+
     // draw controller for mobile
     if(g.device.isMobile || g.device.isTablet){
       this._controller.render(c)
@@ -749,7 +812,10 @@ export default class IQLabel extends DH2DObject {
       // make the screen darker
       c.fillStyle = 'rgba(0, 0, 0, 0.8)'
       c.fillRect(0, 0, g.canvasWidth, g.canvasHeight)
-      this._controller.drawResumeButton(c)
+
+      if(g.device.isMobile || g.device.isTablet){
+        this._controller.drawResumeButton(c)
+      }
 
 
     } // if(g.pausing)
@@ -792,7 +858,8 @@ export default class IQLabel extends DH2DObject {
     const c = g.canvasField.get2DContext()
 
     if(!this._beforeTime){
-      this._beforeTime = g.nowTime
+      //this._beforeTime = g.nowTime
+      this._beforeTime = new Date(g.nowTime.getTime())
       this._messageCycle = Math.floor(g.nowTime / this._messageSpeed) * this._messageSpeed
     }
     while(this._messageCycle + this._messageSpeed < g.nowTime){
@@ -842,6 +909,22 @@ export default class IQLabel extends DH2DObject {
       }
     }
 
-    this._beforeTime = g.nowTime
+    this._beforeTime = new Date(g.nowTime.getTime())
+  }
+
+  pause() {
+    if(this.paused){
+      return
+    }
+    this.paused = true
+  }
+
+  resume(pausedTime = 0) {
+    if(!this.paused){
+      return
+    }
+    this.paused = false
+
+    this.addTime(pausedTime)
   }
 }

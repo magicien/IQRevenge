@@ -18,6 +18,7 @@ import {
 } from '../../modules/DH3DLibrary/src/js/main'
 import CookieManager from '../../modules/CookieManager/cookiemanager'
 
+import IQCanvas from './IQCanvas'
 import IQCube from './IQCube'
 import IQEffectPlate from './IQEffectPlate'
 import IQGameData from './IQGameData'
@@ -27,6 +28,7 @@ import IQMarkerPlate from './IQMarkerPlate'
 import IQMenu from './IQMenu'
 import IQPlayer from './IQPlayer'
 import IQQuestion from './IQQuestion'
+import IQRecorder from './IQRecorder'
 import IQSceneChanger from './IQSceneChanger'
 import IQStage from './IQStage'
 
@@ -252,33 +254,7 @@ function playerMoveCallback() {
   let bindOffsetY = 15.0
   const bindOffsetZ = 0
   const pos = g.playerObj._position
-  if(g.stageStarting){
-    // start
-    const speed = g.cubeSize * 1000.0 / g.stageCreateDelay
-    const startZ = g.minZ
-    const step1Time = (pos.z - startZ) / speed * 1000.0
-    const diffTime = g.getElapsedTime(g.stageCreateStartTime)
-
-    if(diffTime > step1Time){
-      g.stageStarting = false
-      // FIXME: Do not use 'new' for side effects
-      new IQSceneChanger(0, false, g.bgm_stagecall, g.bgm_stage, null, null)
-
-      g.cameraXAngleGoal = -0.3
-      g.cameraYAngleGoal = Math.PI
-      g.cameraTargetXGoal = pos.x
-      g.cameraTargetYGoal = pos.y
-      g.cameraTargetZGoal = pos.z
-    }else{
-      const rate = diffTime / step1Time
-      g.cameraXAngleGoal = -0.3 * rate
-      bindOffsetY *= rate
-      g.cameraYAngleGoal = Math.PI * (1.5 - 0.5 * rate)
-      g.cameraTargetXGoal = 0
-      g.cameraTargetYGoal = 0
-      g.cameraTargetZGoal = startZ + diffTime * speed * 0.001
-    }
-  }else if(g.gameOver){
+  if(g.gameOver){
     // game over
     const diffTime = g.getElapsedTime(g.gameOverTime)
 
@@ -351,6 +327,35 @@ function playerMoveCallback() {
     g.cameraTargetX = g.cameraTargetXGoal
     g.cameraTargetY = g.cameraTargetYGoal
     g.cameraTargetZ = g.cameraTargetZGoal
+  }else if(g.stageStarting){
+    // start
+    const speed = g.cubeSize * 1000.0 / g.stageCreateDelay
+    const startZ = g.minZ
+    const step1Time = (pos.z - startZ) / speed * 1000.0
+    const diffTime = g.getElapsedTime(g.stageCreateStartTime)
+
+    if(diffTime > step1Time){
+      g.stageStarting = false
+      if(!g.rulePlay){
+        // there's no BGM in 'RULES'
+        // FIXME: Do not use 'new' for side effects
+        new IQSceneChanger(0, false, g.bgm_stagecall, g.bgm_stage, null, null)
+      }
+
+      g.cameraXAngleGoal = -0.3
+      g.cameraYAngleGoal = Math.PI
+      g.cameraTargetXGoal = pos.x
+      g.cameraTargetYGoal = pos.y
+      g.cameraTargetZGoal = pos.z
+    }else{
+      const rate = diffTime / step1Time
+      g.cameraXAngleGoal = -0.3 * rate
+      bindOffsetY *= rate
+      g.cameraYAngleGoal = Math.PI * (1.5 - 0.5 * rate)
+      g.cameraTargetXGoal = 0
+      g.cameraTargetYGoal = 0
+      g.cameraTargetZGoal = startZ + diffTime * speed * 0.001
+    }
   }else if(g.stageClear){
     let diffTime = g.getElapsedTime(g.clearTime)
     const clearWaitTime = g.clearRotateTime * 2 + g.clearLabelTime
@@ -552,7 +557,8 @@ function initGameData() {
 }
 
 function initCanvas() {
-  g.canvasField = new CanvasField('iqCanvas')
+  //g.canvasField = new CanvasField('iqCanvas')
+  g.canvasField = new IQCanvas('iqCanvas')
   g.canvasField.enableMirror()
 
   // camera
@@ -589,16 +595,38 @@ function initCanvas() {
 }
 
 function decisionKeyPushed() {
-  return (g.keyListener.getKeyNewState(g.keyMark) || g.labelObj._controller.getAnyTouchState())
+  return (g.keyListener.getKeyNewState(g.keyMark) || g.controller.getAnyTouchEndState())
+}
+
+function waitMovieLoop() {
+  g.nowTime = new Date()
+
+  if(g.menu._opMovieStarted){
+    g.canvasField.setFrameCallback(showOpeningLoop)
+  }else if(g.openingMovieError){
+    // maybe the video codec is not supported... just skip the video
+    new IQSceneChanger(2.0, true, null, g.bgm_menu, showMenuLoop, changeToMenu)
+  }
+
+  g.keyListener.resetKeyNewState()
+  resetTouchState()
 }
 
 function showOpeningLoop() {
   g.nowTime = new Date()
 
+  if(!g.loadingDivRemoved){
+    removeLoadingDiv()
+  }
+
   // FIXME: separate label and controller
-  if(!g.sceneChanging && (g.keyListener.getAnyKeyState() || g.labelObj._controller.getAnyTouchState())){
+  if(!g.sceneChanging && (g.keyListener.getAnyKeyState() || g.controller.getAnyTouchState())){
     // FIXME: Do not use 'new' for side effects
     new IQSceneChanger(2.0, true, g.menu._opMovie, g.bgm_menu, showMenuLoop, changeToMenu)
+  }
+  if(g.openingMovieError){
+    // maybe the video codec is not supported... just skip the video
+    new IQSceneChanger(2.0, true, null, g.bgm_menu, showMenuLoop, changeToMenu)
   }
   g.keyListener.resetKeyNewState()
   resetTouchState()
@@ -625,7 +653,12 @@ function showMenu() {
   g.menu = new IQMenu('opening')
   g.canvasField.addObject(g.menu)
   // FIXME
-  g.canvasField.setFrameCallback(showOpeningLoop)
+  if(g.device.isMobile || g.device.isTablet){
+  //if(g.device.isMobile){
+    g.canvasField.setFrameCallback(waitMovieLoop)
+  }else{
+    g.canvasField.setFrameCallback(showOpeningLoop)
+  }
 
   // label
   g.labelObj = new IQLabel()
@@ -704,6 +737,12 @@ function initAudio() {
   g.se_stagecall_1 = new Audio() // first stage
   g.se_stagecall_2 = new Audio() // second stage
   g.se_stagecall_3 = new Audio() // third stage
+  g.se_stagecall_4 = new Audio() // forth stage
+  g.se_stagecall_5 = new Audio() // fifth stage
+  g.se_stagecall_6 = new Audio() // sixth stage
+  g.se_stagecall_7 = new Audio() // seventh stage
+  g.se_stagecall_8 = new Audio() // eighth stage
+  g.se_stagecall_9 = new Audio() // final stage
   g.se_excellent = new Audio() // Excellent!!
   g.se_perfect = new Audio() // Perfect!
   g.se_great = new Audio() // Great
@@ -756,6 +795,12 @@ function initAudio() {
   g.se_stagecall_1.src = g.se_directory  + '/' + g.se_stagecall_1_file + ext
   g.se_stagecall_2.src = g.se_directory  + '/' + g.se_stagecall_2_file + ext
   g.se_stagecall_3.src = g.se_directory  + '/' + g.se_stagecall_3_file + ext
+  g.se_stagecall_4.src = g.se_directory  + '/' + g.se_stagecall_4_file + ext
+  g.se_stagecall_5.src = g.se_directory  + '/' + g.se_stagecall_5_file + ext
+  g.se_stagecall_6.src = g.se_directory  + '/' + g.se_stagecall_6_file + ext
+  g.se_stagecall_7.src = g.se_directory  + '/' + g.se_stagecall_7_file + ext
+  g.se_stagecall_8.src = g.se_directory  + '/' + g.se_stagecall_8_file + ext
+  g.se_stagecall_9.src = g.se_directory  + '/' + g.se_stagecall_9_file + ext
   g.se_excellent.src   = g.se_directory  + '/' + g.se_excellent_file   + ext
   g.se_perfect.src     = g.se_directory  + '/' + g.se_perfect_file     + ext
   g.se_great.src       = g.se_directory  + '/' + g.se_great_file       + ext
@@ -1189,6 +1234,10 @@ function resetValues(stage, remainScores) {
 }
 
 function playSound(audio, recycle = false){
+  if(!audio){
+    return
+  }
+
   if(recycle){
     audio.pause()
     audio.currentTime = 0
@@ -1242,7 +1291,7 @@ function changeToMenu() {
   g.menu._dstCursor = cursor
   g.menu._dstX = g.menu._opPosX[cursor]
   g.menu._dstY = g.menu._opPosY[cursor]
-  g.menu._startTime = g.nowTime
+  g.menu._startTime = new Date(g.nowTime.getTime())
   g.menu._moving = true
   g.menu._cursor = cursor
 
@@ -1264,13 +1313,276 @@ function changeToMenu() {
   start()
 }
 
+function incrementParam(param, paramList, enableList, stopAtEdge = false) {
+  let enabled = enableList
+  if(!enableList){
+    enabled = g.menu._opSubSubMenuEnable
+  }
+
+  let index = paramList.indexOf(param)
+  const prevIndex = index
+  do {
+    index++
+    if(index >= paramList.length){
+      if(stopAtEdge){
+        index = prevIndex
+        break
+      }else{
+        index = 0
+      }
+    }
+  }while(!enabled[index])
+
+  //g.menu._subSubCursor = index
+
+  return paramList[index]
+}
+
+function decrementParam(param, paramList, enableList, stopAtEdge = false) {
+  let enabled = enableList
+  if(!enableList){
+    enabled = g.menu._opSubSubMenuEnable
+  }
+
+  let index = paramList.indexOf(param)
+  const prevIndex = index
+  do {
+    index--
+    if(index < 0){
+      if(stopAtEdge){
+        index = prevIndex
+        break
+      }else{
+        index = paramList.length - 1
+      }
+    }
+  }while(!enabled[index])
+
+  //this._subSubCursor = index
+
+  return paramList[index]
+}
+
+
+function setSubMenu() {
+  g.menu.setSubMenu()
+
+  const opMenuName = g.menu.getOptionName()
+  switch(opMenuName){
+    case 'OPTION': {
+      // FIXME: get menu item by menu name
+      const levelMenu = g.menu._menuItem[0]
+      levelMenu.onLeft  = () => { g.level = decrementParam(g.level, g.levelList, g.levelListEnable) }
+      levelMenu.onRight = () => { g.level = incrementParam(g.level, g.levelList, g.levelListEnable) }
+      levelMenu.onTouch = levelMenu.onRight
+
+      const charaMenu = g.menu._menuItem[1]
+      charaMenu.onLeft  = () => { g.character = decrementParam(g.character, g.characterList, g.characterListEnable) }
+      charaMenu.onRight = () => { g.character = incrementParam(g.character, g.characterList, g.characterListEnable) }
+      charaMenu.onTouch = charaMenu.onRight
+
+      const volumeMenu = g.menu._menuItem[2]
+      volumeMenu.onLeft = () => {
+        g.soundVolumeValue = decrementParam(g.soundVolumeValue, g.soundVolumeList, g.soundVolumeListEnable, true)
+        g.soundVolume = g.soundVolumeValue * 0.01
+        setSoundVolume()
+      }
+      volumeMenu.onRight = () => {
+        g.soundVolumeValue = incrementParam(g.soundVolumeValue, g.soundVolumeList, g.soundVolumeListEnable, true)
+        g.soundVolume = g.soundVolumeValue * 0.01
+        setSoundVolume()
+      }
+      volumeMenu.onTouch = () => {
+        g.soundVolumeValue = incrementParam(g.soundVolumeValue, g.soundVolumeList, g.soundVolumeListEnable)
+        g.soundVolume = g.soundVolumeValue * 0.01
+        setSoundVolume()
+      }
+
+      const langMenu = g.menu._menuItem[3]
+      langMenu.onLeft  = () => { g.language = decrementParam(g.language, g.languageList, g.languageListEnable) }
+      langMenu.onRight = () => { g.language = incrementParam(g.language, g.languageList, g.languageListEnable) }
+      langMenu.onTouch = langMenu.onRight
+
+      const returnMenu = g.menu._menuItem[6]
+      returnMenu.onDecision = () => {
+        updateOptionValue()
+        new IQSceneChanger(2.0, true, null, null, showMenuLoop, subMenuReturn)
+      }
+      returnMenu.onTouch = returnMenu.onDecision
+
+      break
+    }
+
+    case 'RULES': {
+      const rule1Menu = g.menu._menuItem[0]
+      rule1Menu.onDecision = () => {
+        new IQSceneChanger(2.0, true, g.bgm_menu, g.bgm_stagecall, null, () => {
+          g.rulePlay = true
+          //g.demoPlay = true
+          g.ruleNumber = 1
+          g.rulePlayQuestionNo = 0
+          g.rulesCurrentData = null
+
+          stop()
+          loadRulesData()
+          .then(setup)
+          .catch((error) => {
+            console.error('loadRulesData error: ' + error)
+          })
+          .then(() => {
+            // for debug
+            g.rulesAudioArray.forEach((audio) => {
+              console.log(audio.src + ': ' + audio.duration)
+            })
+          })
+        })
+      }
+      rule1Menu.onTouch = rule1Menu.onDecision
+
+      const rule2Menu = g.menu._menuItem[1]
+      rule2Menu.onDecision = () => {
+        new IQSceneChanger(2.0, true, g.bgm_menu, g.bgm_stagecall, null, () => {
+          g.rulePlay = true
+          g.ruleNumber = 2
+          g.rulePlayQuestionNo = 0
+          stop()
+          setup()
+        })
+      }
+      rule2Menu.onTouch = rule2Menu.onDecision
+
+      const returnMenu = g.menu._menuItem[6]
+      returnMenu.onDecision = () => { new IQSceneChanger(2.0, true, null, null, showMenuLoop, subMenuReturn) }
+      returnMenu.onTouch = returnMenu.onDecision
+
+      break
+    }
+
+    case 'SCORE': {
+      g.menu._subScoreCharacter = g.character
+      g.menu._subScoreLevel = g.level
+
+      const charaMenu = g.menu._menuItem[0]
+      charaMenu.onLeft  = () => { g.menu._subScoreCharacter = decrementParam(g.menu._subScoreCharacter, g.characterList, g.characterListEnable) }
+      charaMenu.onRight = () => { g.menu._subScoreCharacter = incrementParam(g.menu._subScoreCharacter, g.characterList, g.characterListEnable) }
+      charaMenu.onTouch = charaMenu.onRight
+
+      const levelMenu = g.menu._menuItem[1]
+      levelMenu.onLeft  = () => { g.menu._subScoreLevel = decrementParam(g.menu._subScoreLevel, g.levelList, g.levelListEnable) }
+      levelMenu.onRight = () => { g.menu._subScoreLevel = incrementParam(g.menu._subScoreLevel, g.levelList, g.levelListEnable) }
+      levelMenu.onTouch = levelMenu.onRight
+
+      const returnMenu = g.menu._menuItem[6]
+      returnMenu.onDecision = () => { new IQSceneChanger(2.0, true, null, null, showMenuLoop, subMenuReturn) }
+      returnMenu.onTouch = returnMenu.onDecision
+
+      break
+    }
+
+    case 'SHARE': {
+      const url = g.shareURL
+      const title = g.shareTitle
+
+      // Twitter
+      const twitterMenu = g.menu._menuItem[0]
+      twitterMenu.onDecision = () => {
+        const href = 'http://twitter.com/share?url=' + escape(url)
+            + '&text=' + escape(title)
+            + '&hashtags=IQRevenge'
+        window.location.href = href
+      }
+      twitterMenu.onTouch = twitterMenu.onDecision
+
+      // Facebook
+      const facebookMenu = g.menu._menuItem[1]
+      facebookMenu.onDecision = () => {
+        const href = 'http://www.facebook.com/share.php?u=' + escape(url)
+        window.location.href = href
+      }
+      facebookMenu.onTouch = facebookMenu.onDecision
+
+      // Google+
+      const googleMenu = g.menu._menuItem[2]
+      googleMenu.onDecision = () => {
+        const href = 'https://plusone.google.com/_/+1/confirm?hl=' + g.language + '&url=' + escape(url)
+            + '&title=' + escape(title)
+        window.location.href = href
+      }
+      googleMenu.onTouch = googleMenu.onDecision
+
+      // mixi
+      const mixiMenu = g.menu._menuItem[3]
+      mixiMenu.onDecision = () => {
+        const href = 'http://mixi.jp/share.pl?u=' + escape(url)
+        window.location.href = href
+      }
+      mixiMenu.onTouch = mixiMenu.onDecision
+
+      // return
+      const returnMenu = g.menu._menuItem[6]
+      returnMenu.onDecision = () => {
+        new IQSceneChanger(2.0, true, null, null, showMenuLoop, subMenuReturn)
+      }
+      returnMenu.onTouch = returnMenu.onDecision
+
+      break
+    }
+
+    case 'CREATE': {
+      const sizeMenu = g.menu._menuItem[0]
+      sizeMenu.onLeft  = () => { g.editStageSize = decrementParam(g.editStageSize, g.stageSizeList, g.stageSizeListEnable) }
+      sizeMenu.onRight = () => { g.editStageSize = incrementParam(g.editStageSize, g.stageSizeList, g.stageSizeListEnable) }
+      sizeMenu.onTouch = sizeMenu.onRight
+
+      const stepMenu = g.menu._menuItem[1]
+      stepMenu.onLeft  = () => { g.editStageStep = decrementParam(g.editStageStep, g.stageStepList, g.stageStepListEnable) }
+      stepMenu.onRight = () => { g.editStageStep = incrementParam(g.editStageStep, g.stageStepList, g.stageStepListEnable) }
+      stepMenu.onTouch = stepMenu.onRight
+
+      const editMenu = g.menu._menuItem[2]
+      editMenu.onDecision = () => {
+        g.editStart = true
+      }
+
+      const playMenu = g.menu._menuItem[3]
+      playMenu.onDecision = () => {
+        new IQSceneChanger(2.0, true, g.bgm_menu, g.bgm_stagecall, null, () => {
+          g.testPlay = true
+          stop()
+          setup()
+        })
+      }
+      playMenu.onTouch = playMenu.onDecision
+
+      const saveMenu = g.menu._menuItem[4]
+
+      const returnMenu = g.menu._menuItem[6]
+      returnMenu.onDecision = () => {
+        new IQSceneChanger(2.0, true, null, null, showMenuLoop, subMenuReturn)
+      }
+      returnMenu.onTouch = returnMenu.onDecision
+
+      break
+    }
+
+    default: {
+      // nothing to do
+    }
+  }
+}
+
 function showMenuLoop() {
   g.nowTime = new Date()
 
   let c = g.menu._cursor
   if(!g.menu._moving && !g.menu._folding && !g.menu._moveTopLeft && !g.sceneChanging){
     let move = false
-    if(g.keyListener.getKeyState(g.keyLeft)){
+
+    const leftTouches = g.controller.touchEndWithinRect(
+      g.menuLeftButtonX, g.menuLeftButtonY,
+      g.menuButtonWidth, g.menuButtonHeight
+    )
+    if(g.keyListener.getKeyState(g.keyLeft) || leftTouches.length > 0){
       do {
         c--
         if(c < 0){
@@ -1280,7 +1592,12 @@ function showMenuLoop() {
       }while(!g.menu._opMenuEnable[c])
       move = true
     }
-    if(g.keyListener.getKeyState(g.keyRight)){
+
+    const rightTouches = g.controller.touchEndWithinRect(
+      g.menuRightButtonX, g.menuRightButtonY,
+      g.menuButtonWidth, g.canvasHeight
+    )
+    if(g.keyListener.getKeyState(g.keyRight) || rightTouches.length > 0){
       do {
         c++
       }while(!g.menu._opMenuEnable[c])
@@ -1305,7 +1622,7 @@ function showMenuLoop() {
     }
     g.menu._dstX = g.menu._opPosX[c]
     g.menu._dstY = g.menu._opPosY[c]
-    g.menu._startTime = g.nowTime
+    g.menu._startTime = new Date(g.nowTime.getTime())
     g.menu._moving = true
     g.menu._cursor = c
 
@@ -1466,7 +1783,7 @@ function showMenuLoop() {
 
       g.menu._moveTopLeft = false
       g.menu._expanding = true
-      g.menu._expandingTime = g.nowTime
+      g.menu._expandingTime = new Date(g.nowTime.getTime())
 
       // calc expandingStartTime
       const foldingDiffTime = g.getElapsedTime(g.menu._foldingTime)
@@ -1542,7 +1859,7 @@ function showMenuLoop() {
         for(let i=0; i<numTiles; i++){
           const tile = tiles[i]
           tile.setScale(g.menu._cubeScale * 0.5)
-          tile.setRotateAxis(IQGameData.zaxis, 0)
+          tile.setRotateAxis(g.zaxis, 0)
           tile.setPosition(tileX, tileY, tileZ)
 
           const rootBone = tile._model.rootBone
@@ -1584,7 +1901,7 @@ function showMenuLoop() {
       g.menu._expanding = false
       g.menu._showSubMenu = true
       g.menu._showSubMenuReady = false
-      g.menu._showSubMenuTime = g.nowTime
+      g.menu._showSubMenuTime = new Date(g.nowTime.getTime())
       g.menu.subCursorInit()
 
       g.canvasField.setFrameCallback(showSubMenuLoop)
@@ -1614,9 +1931,10 @@ function showMenuLoop() {
     // FIXME
     //g.selectedMenu = g.menu.getOptionName()
 
-    g.menu.setSubMenu()
+    //g.menu.setSubMenu()
+    setSubMenu()
     g.menu._folding = true
-    g.menu._foldingTime = g.nowTime
+    g.menu._foldingTime = new Date(g.nowTime.getTime())
     const tiles = g.menu._opActiveTileObjArray
     const tilePos = g.menu._opActiveTiles[g.menu._cursor]
     const tileObjs = []
@@ -1636,9 +1954,42 @@ function showMenuLoop() {
 
     playSound(g.se_decision)
   }
+
+  // debug: record player's move
+  if(g.keyListener.getKeyNewState('R')){
+    g.recording = !g.recording
+    console.log('g.recording = ' + g.recording)
+  }
+  if(g.keyListener.getKeyNewState('T')){
+    if(g.recorder){
+      console.log(g.recorder.toString())
+    }
+  }
+  if(g.keyListener.getKeyNewState('Y')){
+    AjaxRequest.get('./data/rules_move_1.txt', { async: false })
+    .then((result) => {
+      console.log('test_move.txt loaded')
+      g.recorder = new IQRecorder(result)
+      if(g.recorder.toString() === result){
+        console.log('parse succeeded')
+      }else{
+        console.log('something is wrong.')
+        console.log('result:')
+        console.log(g.recorder.toString())
+      }
+    }).catch((error) => {
+      console.log('error: ' + error)
+    })
+  }
+  if(g.keyListener.getKeyNewState('D')){
+    g.demoPlay = !g.demoPlay
+    console.log('g.demoPlay = ' + g.demoPlay)
+  }
+
   g.keyListener.resetKeyNewState()
   resetTouchState()
 }
+
 function showSubMenuLoop() {
   g.nowTime = new Date()
 
@@ -1668,15 +2019,14 @@ function showSubMenuLoop() {
       playSound(g.se_select)
       g.menu._moving = true
 
-      /*
-      const sy = g.menu._subMenuSY
-      const dy = g.menu._subMenuDY
-      g.menu._srcY = sy + (g.menu._subCursor - 0.5) * dy
-      g.menu._dstY = sy + (c - 0.5) * dy
-      */
+      //const sy = g.menu._subMenuSY
+      //const dy = g.menu._subMenuDY
+      //g.menu._srcY = sy + (g.menu._subCursor - 0.5) * dy
+      //g.menu._dstY = sy + (c - 0.5) * dy
+
       g.menu._srcMenuItem = g.menu._subCursor
       g.menu._dstMenuItem = c
-      g.menu._moveSubMenuTime = g.nowTime
+      g.menu._moveSubMenuTime = new Date(g.nowTime.getTime())
       g.menu._subCursor = c
 
       // set subsubmenu
@@ -1737,13 +2087,11 @@ function showSubMenuLoop() {
         if(name === 'Size'){
           g.menu._opSubSubMenus = g.stageSizeList
           g.menu._opSubSubMenuEnable = g.stageSizeListEnable
-          //g.menu._subSubCursor = g.stageSizeList.indexOf(g.editStageSize)
-          g.menu._subSubCursor = g.editStageSize // FIXME: not use index
+          g.menu._subSubCursor = g.stageSizeList.indexOf(g.editStageSize)
         }else if(name === 'Step'){
           g.menu._opSubSubMenus = g.stageStepList
           g.menu._opSubSubMenuEnable = g.stageStepListEnable
-          //g.menu._subSubCursor = g.stageStepList.indexOf(g.editStageStep)
-          g.menu._subSubCursor = g.editStageStep // FIXME: not use index
+          g.menu._subSubCursor = g.stageStepList.indexOf(g.editStageStep)
         }else if(name === 'Edit'){
           g.menu._opSubSubMenus = null
           g.menu._opSubSubMenuEnable = null
@@ -1762,6 +2110,7 @@ function showSubMenuLoop() {
     }
 
     // change value by left/right key
+    /*
     if(!g.menu._moving && g.menu._opSubSubMenus){
       if(menuName === 'OPTION'){
         c = g.menu._subSubCursor
@@ -1873,8 +2222,14 @@ function showSubMenuLoop() {
         }
       }
     }
+    */
 
     // push decision button handling
+    if(!g.menu._moving){
+      g.menu.handleMenuItemAction()
+    }
+
+    /*
     if(!g.menu._moving && g.keyListener.getKeyNewState(g.keyMark)){
       // FIXME
       const menuOptionName = g.menu.getOptionName()
@@ -1882,19 +2237,14 @@ function showSubMenuLoop() {
         case 'OPTION': {
           const name = g.menu.getSubOptionName()
           if(name === 'Level'){
-            /* TODO: implement */
           }else if(name === 'Character'){
-            /* TODO: implement */
           }else if(name === 'KeyConfig'){
-            /* TODO: implement */
           }else if(name === 'SoundVolume'){
-            /* TODO: implement */
           }else if(name === 'Language'){
-            /* TODO: implement */
           }else if(name === 'return'){
-            updateOptionValue()
+            //updateOptionValue()
             // FIXME: Do not use 'new' for side effects
-            new IQSceneChanger(2.0, true, null, null, showMenuLoop, subMenuReturn)
+            //new IQSceneChanger(2.0, true, null, null, showMenuLoop, subMenuReturn)
           }
           
           break
@@ -1903,9 +2253,7 @@ function showSubMenuLoop() {
         case 'SCORE': {
           const name = g.menu.getSubOptionName()
           if(name === 'Character'){
-            /* TODO: implement */
           }else if(name === 'Level'){
-            /* TODO: implement */
           }else if(name === 'return'){
             new IQSceneChanger(2.0, true, null, null, showMenuLoop, subMenuReturn)
           }
@@ -1955,7 +2303,7 @@ function showSubMenuLoop() {
           }else if(name === 'Edit'){
             startEditing = true
           }else if(name === 'Play'){
-            new IQSceneChanger(3.0, true, g.bgm_menu, g.bgm_stagecall, null, () => {
+            new IQSceneChanger(2.0, true, g.bgm_menu, g.bgm_stagecall, null, () => {
               g.testPlay = true
               stop()
               setup()
@@ -1973,10 +2321,55 @@ function showSubMenuLoop() {
         }
       }
     }
+    */
+
+    /*
+    const touchedMenu = g.menu.getTouchedMenuNumber()
+    if(!g.menu._moving && touchedMenu >= 0){
+      const menuOptionName = g.menu.getOptionName()
+      const name = g.menu.getSubOptionName(touchedMenu)
+
+      switch(menuOptionName){
+        case 'OPTION': {
+          if(name === 'return'){
+            updateOptionValue()
+            new IQSceneChanger(2.0, true, null, null, showMenuLoop, subMenuReturn)
+          }
+          break
+        }
+
+        case 'SCORE': {
+          if(name === 'return'){
+            new IQSceneChanger(2.0, true, null, null, showMenuLoop, subMenuReturn)
+          }
+          break
+        }
+
+        case 'SHARE': {
+          if(name === 'return'){
+            new IQSceneChanger(2.0, true, null, null, showMenuLoop, subMenuReturn)
+          }
+          break
+        }
+
+        case 'CREATE': {
+          if(name === 'return'){
+            new IQSceneChanger(2.0, true, null, null, showMenuLoop, subMenuReturn)
+          }
+          break
+        }
+
+        default: {
+          console.error(`unknown menu name: ${menuOptionName}`)
+        }
+      }
+    }
+    */
   }
 
   if(g.editing){
-    const stageSize = g.stageSizeValues[g.editStageSize]
+    const sizeIndex = g.stageSizeList.indexOf(g.editStageSize)
+    const stageSize = g.stageSizeValues[sizeIndex]
     const stageWidth = stageSize[0]
     const stageLength = stageSize[1]
     let cx = g.menu._editCursorX
@@ -2000,7 +2393,7 @@ function showSubMenuLoop() {
     if(cx !== g.menu._editCursorX || cy !== g.menu._editCursorY){
       playSound(g.se_select)
       g.menu._moving = true
-      g.menu._moveSubMenuTime = g.nowTime
+      g.menu._moveSubMenuTime = new Date(g.nowTime.getTime())
 
       g.menu._editCursorSX = g.menu._editCursorX
       g.menu._editCursorSY = g.menu._editCursorY
@@ -2027,8 +2420,49 @@ function showSubMenuLoop() {
       // for debug
       outputEditStageData()
     }
-  }else if(startEditing){
+  }else if(g.editStart){
     g.editing = true
+    g.editStart = false
+  }
+
+  if(g.device.isMobile || g.device.isTablet){
+    // edit for mobile
+    const sizeIndex = g.stageSizeList.indexOf(g.editStageSize)
+    const stageSize = g.stageSizeValues[sizeIndex]
+    const stageWidth = stageSize[0]
+    const stageLength = stageSize[1]
+
+    const editorLeft = g.menu._subMenuSX + 255
+    const editorTop = 40
+    const editorCubeWidth = 30
+    const editorWidth = editorCubeWidth * stageWidth
+    const editorHeight = editorCubeWidth * stageLength
+
+    const touches = g.controller.touchEndWithinRect(
+      editorLeft, editorTop, editorWidth, editorHeight
+    )
+    touches.forEach((touch) => {
+      let startX = Math.floor((touch.startX - editorLeft) / editorCubeWidth)
+      let startY = Math.floor((touch.startY - editorTop) / editorCubeWidth)
+      let endX = Math.floor((touch.clientX - editorLeft) / editorCubeWidth)
+      let endY = Math.floor((touch.clientY - editorTop) / editorCubeWidth)
+
+      startX = Math.min(Math.max(startX, 0), stageWidth - 1)
+      startY = Math.min(Math.max(startY, 0), stageLength - 1)
+      endX = Math.min(Math.max(endX, 0), stageWidth - 1)
+      endY = Math.min(Math.max(endY, 0), stageLength - 1)
+
+      if(startX === endX && startY === endY){
+        // change block type
+        const oldBlockType = g.editStageData[startX][startY]
+        const blockTypes = ['n', 'a', 'f']
+        const newBlockTypeIndex = (blockTypes.indexOf(oldBlockType) + 1) % blockTypes.length
+        const newBlockType = blockTypes[newBlockTypeIndex]
+
+        g.editStageData[startX][startY] = newBlockType
+      }
+    })
+
   }
 
   if(g.menu._moving){
@@ -2123,7 +2557,7 @@ function moveCubeToTopLeft() {
 
   g.menu._folding = false
   g.menu._moveTopLeft = true
-  g.menu._moveTopLeftTime = g.nowTime
+  g.menu._moveTopLeftTime = new Date(g.nowTime.getTime())
   g.menu._cubeSrcX = tilePos.x
   g.menu._cubeSrcY = tilePos.y
   g.menu._cubeDstX = cameraPos.x - 55
@@ -2131,6 +2565,7 @@ function moveCubeToTopLeft() {
 
   g.menu.showFadeTile()
 }
+
 function subMenuReturn() {
   g.camera.distance = 20.0
   // FIXME
@@ -2146,7 +2581,7 @@ function subMenuReturn() {
   g.menu._dstCursor = cursor
   g.menu._dstX = g.menu._opPosX[cursor]
   g.menu._dstY = g.menu._opPosY[cursor]
-  g.menu._startTime = g.nowTime
+  g.menu._startTime = new Date(g.nowTime.getTime())
   g.menu._moving = true
   g.menu._cursor = cursor
 
@@ -2179,6 +2614,12 @@ function setSoundVolume() {
   g.se_stagecall_1.volume = vol
   g.se_stagecall_2.volume = vol
   g.se_stagecall_3.volume = vol
+  g.se_stagecall_4.volume = vol
+  g.se_stagecall_5.volume = vol
+  g.se_stagecall_6.volume = vol
+  g.se_stagecall_7.volume = vol
+  g.se_stagecall_8.volume = vol
+  g.se_stagecall_9.volume = vol
   g.se_excellent.volume = vol
   g.se_perfect.volume = vol
   g.se_great.volume = vol
@@ -2219,12 +2660,12 @@ function showIQLoop() {
   if(!g.gameOverFadeOut){
     if(decisionKeyPushed()){
       g.gameOverFadeOut = true
-      g.gameOverFadeOutStartTime = g.nowTime
+      g.gameOverFadeOutStartTime = new Date(g.nowTime.getTime())
     }
   }else{
     const diffTime = g.getElapsedTime(g.gameOverFadeOutStartTime)
     if(diffTime > g.gameOverFadeOutTime){
-      g.continueFadeInStartTime = g.nowTime
+      g.continueFadeInStartTime = new Date(g.nowTime.getTime())
       removeAllObjects()
       g.menu.setMenu('continue')
       g.canvasField.addObject(g.menu)
@@ -2251,12 +2692,12 @@ function showContinueLoop() {
     }
     */
     const srcBGM = g.bgm_gameover
-    let cursor = g.menu._cursor
+    let cursorPos = g.menu._subCursor
     if(touchedMenu >= 0){
-      cursor = touchedMenu
+      cursorPos = touchedMenu
     }
 
-    switch(cursor){
+    switch(cursorPos){
       case 0: {
         // Tweet
         const url = g.shareURL
@@ -2307,7 +2748,7 @@ function showContinueLoop() {
           g.menu._dstCursor = cursor
           g.menu._dstX = g.menu._opPosX[cursor]
           g.menu._dstY = g.menu._opPosY[cursor]
-          g.menu._startTime = g.nowTime
+          g.menu._startTime = new Date(g.nowTime.getTime())
           g.menu._moving = true
           g.menu._cursor = cursor
 
@@ -2337,13 +2778,92 @@ function showContinueLoop() {
 
   const max = 3
   if(g.keyListener.getKeyNewState(g.keyUp)){
-    g.menu._cursor = (g.menu._cursor + max - 1) % max
+    //g.menu._cursor = (g.menu._cursor + max - 1) % max
+    g.menu._subCursor = (g.menu._subCursor + max - 1) % max
   }
   if(g.keyListener.getKeyNewState(g.keyDown)){
-    g.menu._cursor = (g.menu._cursor + 1) % max
+    //g.menu._cursor = (g.menu._cursor + 1) % max
+    g.menu._subCursor = (g.menu._subCursor + 1) % max
   }
   g.keyListener.resetKeyNewState()
   resetTouchState()
+}
+
+function loadRulesData() {
+  const audioDataFile = g.rulesAudioDataURLPrefix + g.ruleNumber 
+                      + '_' + g.deviceType + '_' + g.language + '.txt'
+  const audioPromise = AjaxRequest.get(audioDataFile, { async: true })
+
+  const moveDataFile = g.rulesMoveDataURLPrefix + g.ruleNumber + '.txt'
+  const movePromise = AjaxRequest.get(moveDataFile, { async: true })
+
+  return Promise.all([
+    audioPromise, movePromise
+  ]).then((result) => {
+    g.rulesMoveData = new IQRecorder(result[1])
+    return loadRulesAudio(result[0])
+  })
+}
+
+function loadRulesAudio(audioData) {
+  const lines = audioData.split('\n')
+  const audioPromises = []
+  g.rulesDataArray.length = 0
+  g.rulesDataIndex = 0
+
+  let ext = ''
+  if(g.support_mp3){
+    ext = '.mp3'
+  }else if(g.support_ogg){
+    ext = '.ogg'
+  }else{
+    // audio is not supported...
+    ext = null
+  }
+
+  lines.forEach((line) => {
+    const tokens = line.split(';')
+    if(tokens.length >= 3){
+      const data = {
+        type: tokens[0],
+        time: parseInt(tokens[1], 10),
+        duration: parseInt(tokens[2], 10)
+      }
+
+      if(tokens[0] === 'audio'){
+        // type (='audio'), time, duration, audioFileName, text1, text2, ...
+        if(ext){
+          const audio = new Audio()
+          const fileName = g.rulesAudioDirectory + '/' + tokens[3] + ext
+          const promise = new Promise((resolve, reject) => {
+            audio.addEventListener('canplaythrough', () => { resolve() }, false)
+            audio.addEventListener('error', (error) => { reject(error) }, false)
+          }).catch((error) => {
+            console.log('Audio file load error: ' + audio.src + ': ' + error)
+          })
+          audioPromises.push(promise)
+
+          audio.src = fileName
+          audio.volume = g.soundVolume
+
+          data.audio = audio
+        }else{
+          data.audio = null
+        }
+        data.text = tokens.slice(4)
+      }else if(tokens[0] === 'pause'){
+        // type (='pause'), time, duration
+        // nothing to add
+      }else if(tokens[0] === 'end'){
+        // type (='end'), time, 0(reserved)
+        // nothing to add
+      }
+         
+      g.rulesDataArray.push(data)
+    }
+  })
+
+  return Promise.all(audioPromises)
 }
 
 function setup() {
@@ -2355,11 +2875,25 @@ function setup() {
   let loadDataPromise = null
 
   if(g.testPlay){
+    // test play in the edit mode
     g.stageMax = 1
     g.stage = 1
     g.stageFiles = ['TestPlay'] // just set dummy string
 
     //loadDataPromise = new Promise((resolve, reject) => {
+    loadDataPromise = new Promise((resolve) => {
+      // just resolve
+      resolve()
+    })
+  }else if(g.rulePlay){
+    if(g.ruleNumber == 1){
+      // Basic Rules 1
+      g.stageFiles = ['', g.ruleStageDataFile1]
+    }else if(g.ruleNumber == 2){
+      // Basic Rules 2
+      g.stageFiles = ['', g.ruleStageDataFile2]
+    }
+
     loadDataPromise = new Promise((resolve) => {
       // just resolve
       resolve()
@@ -2410,8 +2944,55 @@ function setup() {
     g.playerObj.addMotionCallback(playSECallback_step, g.se_step_timing_2, 'running')
 
     resetValues()
-    .then(start)
+    .then(() => {
+      if(g.recording){
+        g.recorder = new IQRecorder()
+        g.recorder.startRecord()
+      }
+      if(g.demoPlay){
+        console.log('startSimulation')
+        g.canvasField.startSimulation(g.nowTime, updateDemoFrame)
+        g.demoIndex = 0
+        g.demoStartTime = g.nowTime
+        if(g.rulePlay){
+          g.rulesStartTime = g.nowTime
+        }
+        g.demoRecord = g.recorder.getRecord(0)
+      }
+      start()
+    })
   })
+}
+
+function updateDemoFrame() {
+  console.log('sim callback')
+  g.demoIndex++
+  g.demoRecord = g.recorder.getRecord(g.demoIndex)
+  //console.log('demoIndex: ' + g.demoIndex + ', canvasTime: ' + g.demoRecord.canvasTime)
+
+  if(g.rulePlay) {
+    const rulesElapsedTime = (new Date()) - g.rulesStartTime
+    g.rulesElapsedTime = rulesElapsedTime
+    let rulesData = g.rulesDataArray[g.rulesDataIndex]
+
+    while(rulesElapsedTime > rulesData.time){
+      g.rulesCurrentData = rulesData
+      if(rulesData.type === 'audio'){
+        playSound(rulesData.audio)
+      }else if(rulesData.type === 'pause'){
+        g.rulePause = true
+      }else if(rulesData.type === 'end'){
+        quitRulePlay()
+        break
+      }else{
+        // unknown type
+      }
+
+      g.rulesDataIndex++
+      rulesData = g.rulesDataArray[g.rulesDataIndex]
+    }
+  }
+  return g.demoRecord.canvasTime
 }
 
 /**
@@ -2427,6 +3008,9 @@ function quitTestPlay() {
 
     g.menu.setMenu('top')
     g.menu._cursor = 4  // 'CREATE'
+    //g.menu.setSubMenu()
+    setSubMenu()
+    g.menu._subCursor = 3 // 'Play'
 
     // set light
     g.light.setPosition(-50, 0, -100)
@@ -2445,13 +3029,48 @@ function quitTestPlay() {
 }
 
 /**
+ * go back to rules
+ * @access public
+ * @returns {void}
+ */
+function quitRulePlay() {
+  g.rulePlay = false
+  g.demoPlay = false
+  new IQSceneChanger(3.0, true, g.bgm_stage, g.bgm_menu, showSubMenuLoop, () => {
+    removeAllObjects()
+    g.canvasField.addObject(g.menu)
+    g.camera.lookat(130, 100, -135, 130, 100, 0, 0, -1, 0)
+
+    g.menu.setMenu('top')
+    g.menu._cursor = 3  // 'RULES'
+    setSubMenu()
+    g.menu._subCursor = g.ruleNumber
+
+    // set light
+    g.light.setPosition(-50, 0, -100)
+    g.light.setAmbient(0.6, 0.6, 0.6, 0.0)
+    g.light.setDiffuse(0.7, 0.7, 0.7, 0.0)
+    g.light.setSpecular(0.9, 0.9, 0.9, 0.0)
+    g.renderer.setLight(g.light)
+
+    // title objects: 'RULES'
+    g.menu._foldingTiles.forEach((tile) => {
+      g.canvasField.addObject(tile)
+    })
+
+    g.rulePlay = false
+  })
+}
+
+/**
  * show edited stage data for debug
  * @access public
  * @returns {void}
  */
 function outputEditStageData() {
-  let debugInfo = g.stageStepList[g.editStageStep] + ','
-  const stageSize = g.stageSizeValues[g.editStageSize]
+  let debugInfo = g.editStageStep + ','
+  const sizeIndex = g.stageSizeList.indexOf(g.editStageSize)
+  const stageSize = g.stageSizeValues[sizeIndex]
   for(let y=0; y<stageSize[1]; y++){
     for(let x=0; x<stageSize[0]; x++){
       debugInfo += g.editStageData[x][y]
@@ -2467,7 +3086,7 @@ function downProcess() {
       g.playerObj._state = 'standup'
       g.playerObj.setMotionWithBlending(g.standup, 3)
       g.playerObj.animationTime = 0
-      g.playerObj.standupStartTime = g.nowTime
+      g.playerObj.standupStartTime = new Date(g.nowTime.getTime())
     }
   }else if(g.playerObj._state === 'standup'){
     const diffTime = g.getElapsedTime(g.playerObj.standupStartTime)
@@ -2514,7 +3133,7 @@ function createSubStageProcess() {
       g.playerObj._state = 'down'
       g.playerObj.setMotionWithBlending(g.down, 3)
       g.playerObj.animationTime = 0
-      g.playerObj.downStartTime = g.nowTime
+      g.playerObj.downStartTime = new Date(g.nowTime.getTime())
 
       playSound(g.se_lifted)
     }
@@ -2624,14 +3243,15 @@ function createSubStage() {
     cubePosZ += g.cubeSize
   }
 
-  const startTime = new Date()
+  //const startTime = new Date()
+  const startTime = new Date(g.nowTime.getTime())
   for(let z=0; z<qlen; z++){
     const cubeLine = g.qCubeArray[z]
     const moveTime = g.stageCreateWait + g.stageCreateDelay * z
     for(let x=0; x<g.stageWidth; x++){
       const obj = cubeLine[x]
       obj.state = 'entry'
-      obj.startTime = startTime
+      obj.startTime = new Date(startTime.getTime())
       obj.moveTime = moveTime
       obj.rotateCount = 0
       obj.bx = x
@@ -2642,9 +3262,12 @@ function createSubStage() {
   }
 
   g.subSubStage = 1
-  g.stageCreateStartTime = new Date()
+  //g.stageCreateStartTime = new Date()
+  g.stageCreateStartTime = new Date(g.nowTime.getTime())
 
-  if(g.subStage === 1){
+  if(g.rulePlay){
+    // nothing to do
+  }else if(g.subStage === 1){
     // FIXME
     // stage call
     switch(g.stage){
@@ -2658,6 +3281,30 @@ function createSubStage() {
       }
       case 3: {
         playSound(g.se_stagecall_3)
+        break
+      }
+      case 4: {
+        playSound(g.se_stagecall_4)
+        break
+      }
+      case 5: {
+        playSound(g.se_stagecall_5)
+        break
+      }
+      case 6: {
+        playSound(g.se_stagecall_6)
+        break
+      }
+      case 7: {
+        playSound(g.se_stagecall_7)
+        break
+      }
+      case 8: {
+        playSound(g.se_stagecall_8)
+        break
+      }
+      case 9: {
+        playSound(g.se_stagecall_9)
         break
       }
       default: {
@@ -2737,10 +3384,10 @@ function loadQuestionFile(fileName) {
 
   if(g.testPlay){
     // build test play data
-    const stageSize = g.stageSizeValues[g.editStageSize]
+    const sizeIndex = g.stageSizeList.indexOf(g.editStageSize)
+    const stageSize = g.stageSizeValues[sizeIndex]
     const stageLength = 30
-    const baseStep = g.stageStepList[g.editStageStep]
-    //promise = new Promise((resolve, reject) => {
+    const baseStep = g.editStageStep
     promise = new Promise((resolve) => {
       let testData = 'Test Play\n' // stage name
       testData += stageSize[0] + ',' + stageLength + '\n' // stage size
@@ -2766,6 +3413,10 @@ function loadQuestionFile(fileName) {
     promise = AjaxRequest.get(fileName, {
       async: false
     })
+  }
+  
+  if(g.rulePlay){
+    g.penaltyMax = 4
   }
 
   promise.then((result) => {
@@ -2858,7 +3509,11 @@ function loadQuestionFile(fileName) {
 
 function setQuestion(again) {
   let qNo = -1
-  if(again){
+
+  if(g.rulePlay){
+    qNo = g.rulePlayQuestionNo
+    g.rulePlayQuestionNo++
+  }else if(again){
     qNo = g.questionNo
   }else{
     // select question
@@ -2992,7 +3647,8 @@ function blockRotate() {
         for(let x=0; x<g.stageWidth; x++){
           const cube = cubeLine[x]
           if(cube){
-            cube.fallStartTime = new Date()
+            //cube.fallStartTime = new Date()
+            cube.fallStartTime = new Date(g.nowTime.getTime())
             cubeLine[x] = null
             g.fallCubeArray.push(cube)
             fallen = true
@@ -3006,7 +3662,7 @@ function blockRotate() {
 
     g.markerArray.forEach( (marker) => {
       if(marker.type === 'red'){
-        marker.deleteStartTime = g.nowTime
+        marker.deleteStartTime = new Date(g.nowTime.getTime())
       }
     })
 
@@ -3054,7 +3710,7 @@ function blockRotate() {
         g.playerObj._state = 'down'
         g.playerObj.setMotionWithBlending(g.down, 3)
         g.playerObj.animationTime = 0
-        g.playerObj.downStartTime = g.nowTime
+        g.playerObj.downStartTime = new Date(g.nowTime.getTime())
 
         playSound(g.se_stamped)
       }
@@ -3234,7 +3890,7 @@ function checkMarker() {
           marker.deleteStartTime = null
         }else if(!marker.advantage && !marker.deleteStartTime){
           //marker.erase(g.deletedWaitTime)
-          marker.deleteStartTime = g.nowTime
+          marker.deleteStartTime = new Date(g.nowTime.getTime())
         }
 
         deleted = true
@@ -3257,7 +3913,7 @@ function checkMarker() {
       g.markerArray.forEach( (marker) => {
         if(marker.type === 'red' && marker.advantage && !marker.deleteStartTime){
           //marker.erase()
-          marker.deleteStartTime = g.nowTime
+          marker.deleteStartTime = new Date(g.nowTime.getTime())
         }
       })
     }
@@ -3420,19 +4076,24 @@ function gameOver() {
   new IQSceneChanger(0, false, g.bgm_stage, g.bgm_gameover, null, null)
 
   g.gameOver = true
-  g.gameOverTime = new Date()
+  //g.gameOverTime = new Date()
+  g.gameOverTime = new Date(g.nowTime.getTime())
   g.playerObj.setMotionWithBlending(g.falling, 3)
   g.playerObj.animationTime = 0
   g.playerObj._state = 'falling'
 
-  // set I.Q point
+  // set IQ point and send it to server
+  setIQPoint()
+
+  playSound(g.se_scream)
+}
+
+function setIQPoint() {
   g.iqPoint = Math.floor(g.iqPoint)
   if(g.iqPoint < 0){
     g.iqPoint = 0
   }
   sendScore()
-
-  playSound(g.se_scream)
 }
 
 function breakLineProcess() {
@@ -3503,16 +4164,16 @@ function breakLineProcess() {
 
 function gameOverProcess() {
   if(g.gameOver){
-    const diffTime = g.getElapsedTime(g.gameOverTime) * 0.001
+    const diffTime = g.getElapsedTime(g.gameOverTime)
     g.playerObj._position.y = -60.0 * diffTime * (diffTime + 0.5)
 
     const maxTime = g.gameOverTime1 + g.gameOverTime2 + g.gameOverTime3 * 0.5
                 + g.gameOverRotateTime * 5
                 + g.gameOverWaitTime * 2
                 + g.gameOverIQTime1 + g.gameOverIQTime2
-    const animationStop = (g.gameOverTime1 + g.gameOverTime2) * 0.001
+    const animationStop = g.gameOverTime1 + g.gameOverTime2
 
-    if(diffTime > maxTime * 0.001){
+    if(diffTime > maxTime){
       removeAllObjects()
       g.canvasField.addObject(g.labelObj)
       g.canvasField.setFrameCallback(showIQLoop)
@@ -3566,7 +4227,7 @@ function subSubStageClear() {
   if(!g.missed){
     g.perfect = true
     g.addingLine = true
-    g.perfectTime = g.nowTime
+    g.perfectTime = new Date(g.nowTime.getTime())
     g.perfectCount++
 
     if(g.step < g.baseStep){
@@ -3646,7 +4307,7 @@ function subSubStageClear() {
   }
   if(g.speedUpByMiss){
     g.again = true
-    g.againTime = g.nowTime
+    g.againTime = new Date(g.nowTime.getTime())
   }
   g.speedUpByMiss = false
 
@@ -3696,7 +4357,7 @@ function stageClear() {
   g.bonusScore = 0
 
   g.stageClear = true
-  g.clearTime = g.nowTime
+  g.clearTime = new Date(g.nowTime.getTime())
   g.oldBlockNo = 0
 
   g.playerObj.setMotionWithBlending(g.standing, 10)
@@ -3765,7 +4426,7 @@ function clearProcess() {
       new IQSceneChanger(3.0, true, g.bgm_fanfare, null, endingLoop, () => {
         g.stageClear = false
         g.ending = true
-        g.endingStartTime = g.nowTime
+        g.endingStartTime = new Date(g.nowTime.getTime())
         removeAllObjects()
         g.canvasField.addObject(g.labelObj)
       })
@@ -3898,7 +4559,7 @@ function endingTweetLoop() {
           g.menu._dstCursor = cursor
           g.menu._dstX = g.menu._opPosX[cursor]
           g.menu._dstY = g.menu._opPosY[cursor]
-          g.menu._startTime = g.nowTime
+          g.menu._startTime = new Date(g.nowTime.getTime())
           g.menu._moving = true
           g.menu._cursor = cursor
 
@@ -3956,47 +4617,122 @@ function resetTouchState() {
   g.controller.resetTouchNewState()
 }
 
+function resumeFromPause() {
+  if(g.current_bgm){
+    g.current_bgm.play()
+  }
+  g.canvasField.removeObject(g.menu)
+
+  const pausedTime = (new Date()) - g.pauseStartTime
+  g.addTimeToAllTimer(pausedTime)
+  g.playerObj.setAnimating(true)
+  g.qCubeArray.forEach((cubeLine) => {
+    cubeLine.forEach((cube) => {
+      if(cube){
+        cube.resume(pausedTime)
+      }
+    })
+  })
+
+  g.aCubeArray.forEach((cubeLine) => {
+    cubeLine.forEach((cube) => {
+      if(cube){
+        cube.resume(pausedTime)
+      }
+    })
+  })
+
+  g.markerArray.forEach((marker) => {
+    marker.resume(pausedTime)
+  })
+
+  g.plateMarkerArray.forEach((markerLine) => {
+    markerLine.forEach((marker) => {
+      if(marker){
+        marker.resume(pausedTime)
+      }
+    })
+  })
+
+  g.effectArray.forEach((effect) => {
+    effect.resume(pausedTime)
+  })
+
+  g.labelObj.resume(pausedTime)
+
+  g.pausing = false
+}
+
+function giveup() {
+  /*
+  // FIXME: make it simple
+  const showScoreTime = g.gameOverTime1 + g.gameOverTime2 + g.gameOverTime3 * 0.5
+                      + g.gameOverRotateTime * 2 + g.gameOverWaitTime
+
+  g.pausing = false
+  g.gameOver = true
+  //g.gameOverTime = new Date() - showScoreTime
+  g.gameOverTime = new Date()
+  g.gameOverTime.setMilliseconds(g.gameOverTime.getMilliseconds() - showScoreTime)
+  setIQPoint()
+  
+  //resumeFromPause()
+  new IQSceneChanger(3, true, null, null, () => {
+    removeAllObjects()
+    g.canvasField.addObject(g.labelObj)
+  }, null)
+  */
+  g.canvasField.removeObject(g.menu)
+  g.current_bgm = null
+  resumeFromPause()
+  gameOver()
+}
+
 function update(elapsedTime) {
   const speed = g.characterSpeed
   const force = g.playerObj._force
   force.x = force.y = force.z = 0
   let moving = false
 
+  if(g.recording){
+    g.recorder.addRecord()
+  }
+
+  if(g.demoPlay){
+    if(decisionKeyPushed()){
+      // TODO: back to menu 
+    }
+
+    // FIXME
+      g.keyListener._keyState[g.keyMark] = g.demoRecord.keyState[0]
+      g.keyListener._keyState[g.keyAdvantage] = g.demoRecord.keyState[1]
+      g.keyListener._keyState[g.keySpeedUp] = g.demoRecord.keyState[2]
+      g.keyListener._keyState[g.keyPause] = g.demoRecord.keyState[3]
+      g.keyListener._keyState[g.keyUp] = g.demoRecord.keyState[4]
+      g.keyListener._keyState[g.keyDown] = g.demoRecord.keyState[5]
+      g.keyListener._keyState[g.keyLeft] = g.demoRecord.keyState[6]
+      g.keyListener._keyState[g.keyRight] = g.demoRecord.keyState[7]
+
+      g.keyListener._keyNewState[g.keyMark] = g.demoRecord.keyNewState[0]
+      g.keyListener._keyNewState[g.keyAdvantage] = g.demoRecord.keyNewState[1]
+      g.keyListener._keyNewState[g.keySpeedUp] = g.demoRecord.keyNewState[2]
+      g.keyListener._keyNewState[g.keyPause] = g.demoRecord.keyNewState[3]
+      g.keyListener._keyNewState[g.keyUp] = g.demoRecord.keyNewState[4]
+      g.keyListener._keyNewState[g.keyDown] = g.demoRecord.keyNewState[5]
+      g.keyListener._keyNewState[g.keyLeft] = g.demoRecord.keyNewState[6]
+      g.keyListener._keyNewState[g.keyRight] = g.demoRecord.keyNewState[7]
+  }
+
   if(g.keyListener.getKeyNewState(g.keyPause) || g.controller.getTouchNewState(g.controller.pauseButton)){
     if(g.pausing){
       // resume
-      if(g.current_bgm){
-        g.current_bgm.play()
-      }
-
-      const pausedTime = (new Date()) - g.pauseStartTime
-      let cubePausedTime = pausedTime
-      g.addTimeToAllTimer(pausedTime)
-      g.playerObj.setAnimating(true)
-      g.qCubeArray.forEach((cubeLine) => {
-        cubeLine.forEach((cube) => {
-          if(cube){
-            cube.resume(cubePausedTime)
-            // FIXME: all cubes share the same timer...
-            cubePausedTime = 0
-          }
-        })
-      })
-
-      g.aCubeArray.forEach((cubeLine) => {
-        cubeLine.forEach((cube) => {
-          if(cube){
-            cube.resume(pausedTime)
-          }
-        })
-      })
-
-      g.labelObj.addTime(pausedTime)
-
-      g.pausing = false
+      resumeFromPause()
     }else{
       // pause
-      g.pauseStartTime = new Date()
+      g.menu.setMenu('pause')
+      g.canvasField.addObject(g.menu)
+      //g.pauseStartTime = new Date()
+      g.pauseStartTime = new Date(g.nowTime.getTime())
       if(g.current_bgm){
         g.current_bgm.pause()
       }
@@ -4015,11 +4751,62 @@ function update(elapsedTime) {
           }
         })
       })
+      g.markerArray.forEach((marker) => {
+        marker.pause()
+      })
+      g.plateMarkerArray.forEach((markerLine) => {
+        markerLine.forEach((marker) => {
+          if(marker){
+            marker.pause()
+          }
+        })
+      })
+      g.effectArray.forEach((effect) => {
+        effect.pause()
+      })
+      g.labelObj.pause()
+
       g.pausing = true
     }
   }
 
   if(g.pausing){
+    // give up menu handling
+    if(!g.menu._moving){
+      if(g.keyListener.getKeyNewState(g.keyUp) || g.keyListener.getKeyNewState(g.keyDown)){
+        g.menu._moving = true
+        g.menu._srcMenuItem = g.menu._subCursor
+        g.menu._dstMenuItem = 1 - g.menu._subCursor
+        g.menu._subCursor = g.menu._dstMenuItem
+        g.menu._moveSubMenuTime = (new Date())
+      }
+    }
+
+    if(!g.menu._moving){
+      const touchedMenu = g.menu.getTouchedMenuNumber()
+      if(g.keyListener.getKeyNewState(g.keyMark) || touchedMenu >= 0){
+        let cursorPos = g.menu._subCursor
+        if(touchedMenu >= 0){
+          cursorPos = touchedMenu
+        }
+
+        switch(cursorPos){
+          case 0: {
+            // give up
+            giveup()
+            break
+          }
+          case 1: {
+            // resume
+            resumeFromPause()
+            break
+          }
+          default: {
+            // something is wrong
+          }
+        }
+      }
+    }
     g.keyListener.resetKeyNewState()
     resetTouchState()
     return
@@ -4111,7 +4898,13 @@ function update(elapsedTime) {
 
   // set time
   g.elapsedTime = elapsedTime * 1000.0
-  g.nowTime = new Date()
+  if(g.demoPlay){
+    //console.log('demoPlay: nowTime before: ' + g.nowTime)
+    g.nowTime = new Date(g.demoStartTime.getTime() + g.demoRecord.gameTime)
+    console.log('demoPlay: nowTime after : ' + g.nowTime)
+  }else{
+    g.nowTime = new Date()
+  }
 
   createSubStageProcess()
   downProcess()
@@ -4139,13 +4932,18 @@ function update(elapsedTime) {
   }
   g.keyListener.resetKeyNewState()
   resetTouchState()
+
+  //console.log('frame end')
+}
+
+function removeLoadingDiv() {
+  // remove "loading" div
+  const loadingDiv = document.getElementById('loading')
+  loadingDiv.parentNode.removeChild(loadingDiv)
+  g.loadingDivRemoved = true
 }
 
 function init() {
-  if(g.device.isMobile){
-    document.removeEventListener('touchstart', init, false)
-  }
-
   initGameData()
   initCanvas()
   initModelAndMotion()
@@ -4154,9 +4952,5 @@ function init() {
   loadCookieOption()
 }
 
-if(g.device.isMobile){
-  document.addEventListener('touchstart', init, false)
-}else{
-  document.addEventListener('DOMContentLoaded', init, false)
-}
+document.addEventListener('DOMContentLoaded', init, false)
 

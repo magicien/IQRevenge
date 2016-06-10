@@ -22,6 +22,12 @@ class _IQGameData {
     this.device = this._getDeviceInfo()
 
     /**
+     * Device type ('pc' or 'mb')
+     * @type {string}
+     */
+    this.deviceType = (this.device.isMobile || this.device.isTable) ? 'mb' : 'pc'
+
+    /**
      * controller (only) for mobile
      * @type {IQController}
      */
@@ -174,7 +180,7 @@ class _IQGameData {
      * @type {Array<int>}
      */
     this.soundVolumeList = [
-      -1, 0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, -1
+      0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100
     ]
 
     /**
@@ -182,7 +188,7 @@ class _IQGameData {
      * @type {Array<boolean>}
      */
     this.soundVolumeListEnable = [
-      true, true, true, true, true, true, true, true, true, true, true, true, true
+      true, true, true, true, true, true, true, true, true, true, true
     ]
 
     /**
@@ -231,6 +237,20 @@ class _IQGameData {
     this.personalDailyBest = 0
     this.personalWeeklyBest = 0
 
+    // rules
+    this.rulesAudioDataURLPrefix = './data/rules_audio_'
+    this.rulesAudioDirectory = './snd/rules'
+    this.rulesMoveDataURLPrefix = './data/rules_move_'
+    this.rulesMoveData = null
+    this.rulesStartTime = null
+    this.rulesPrevTime = 0
+
+    this.rulesDataIndex = -1
+    this.rulesDataArray = []
+    this.rulesCurrentData = null
+    this.rulesElapsedTime = 0
+    this.rulesTextFadeTime = 300
+
     // edit
     this.stageSizeValues = [
       [4, 2], [4, 3], [4, 4], [4, 5],
@@ -260,8 +280,8 @@ class _IQGameData {
       this.stageStepListEnable[i] = true
     }
 
-    this.editStageSize = 0
-    this.editStageStep = 0
+    this.editStageSize = this.stageSizeList[0]
+    this.editStageStep = this.stageStepList[0]
     this.editStageData = []
     for(let ex=0; ex<this.stageSizeMaxWidth; ex++){
       this.editStageData[ex] = []
@@ -270,23 +290,18 @@ class _IQGameData {
       }
     }
 
+    // recording
+    this.recording = false
+    this.recorder = null
+    this.demoPlay = false
+    this.demoStartTime = null
+    this.demoIndex = 0
+    this.demoRecord = null
+
     // loading
     this.loading = false
     this.loadStartTime = null
     this.loadingTimer = null
-
-    // menu
-    this.menu = null
-    this.menuNext = false
-    this.menuMoveTime = 300
-    this.menuFoldingTime = 500
-    this.menuRotationTime = 500
-    this.menuRotationSpeed = 3.0
-    this.menuCubeMoveTime = 500
-    this.menuCubeExpandingTime = 500
-    this.showSubMenuTimeMax = 500
-    this.stageCreateWait = 1000
-    this.menuPlayerObj = null
 
     // canvas params
     this.canvasWidth = 640
@@ -296,6 +311,29 @@ class _IQGameData {
     this.renderer = null
     this.animator = null
     this.keyListener = null
+
+    // menu
+    this.menu = null
+    this.menuNext = false
+    this.menuMoveTime = 200
+    this.menuFoldingTime = 500
+    this.menuRotationTime = 500
+    this.menuRotationSpeed = 3.0
+    this.menuCubeMoveTime = 500
+    this.menuCubeExpandingTime = 500
+    this.showSubMenuTimeMax = 500
+    this.stageCreateWait = 1000
+    this.menuPlayerObj = null
+
+    const buffer = 100
+    const buttonWidth = 80
+    this.menuButtonWidth = buttonWidth + buffer
+    this.menuButtonHeight = this.canvasHeight + buttonWidth * 2
+    this.menuLeftButtonY = -buffer
+    this.menuLeftButtonX = -buffer
+    this.menuRightButtonY = -buffer
+    this.menuRightButtonX = this.canvasWidth - buttonWidth
+    this.menuButtonColor = 'rgba(0, 0, 0, 0.7)'
 
     // model
     this.model_miku = null
@@ -358,6 +396,12 @@ class _IQGameData {
     this.se_stagecall_1 = null
     this.se_stagecall_2 = null
     this.se_stagecall_3 = null
+    this.se_stagecall_4 = null
+    this.se_stagecall_5 = null
+    this.se_stagecall_6 = null
+    this.se_stagecall_7 = null
+    this.se_stagecall_8 = null
+    this.se_stagecall_9 = null
     this.se_excellent = null
     this.se_perfect = null
     this.se_great = null
@@ -369,6 +413,7 @@ class _IQGameData {
 
     // sound file
     this.se_directory = './snd'
+    this.se_rules_directory = './snd/rules'
     this.se_select_file = 'select'
     this.se_decision_file = 'decision'
     this.se_substage_file = 'substage'
@@ -400,6 +445,86 @@ class _IQGameData {
     this.se_miku_lifted_file = 'stamped'
     this.se_miku_stamped_file = 'stamped'
     this.se_miku_scream_file = 'scream'
+
+    // basic rules
+
+    /*
+    // true if PC and Mobile have different voice
+    const rule1BaseName = 'basic_rules_1_'
+    const rule1PCVoice = [
+      false, false, true, true, false,
+      false, true, false, false, false,
+      false, false, false, false, false,
+      false, true, false
+    ]
+    this.se_basic_rules_1_files = new Map()
+    const pc1Lang = new Map()
+    pc1Lang.set('en', [])
+    pc1Lang.set('jp', [])
+    this.se_basic_rules_1_files.set('pc', pc1Lang)
+    const mb1Lang = new Map()
+    mb1Lang.set('en', [])
+    mb1Lang.set('jp', [])
+    this.se_basic_rules_1_files.set('mb', mb1Lang)
+
+    this.se_basic_rules_1_files.forEach((langMap, dev) => {
+      langMap.forEach((seArray, lang) => {
+        for(let i=0; i<rule1PCVoice.length; i++){
+          let number = ''
+          if(i < 10){
+            number += '0' + i
+          }else{
+            number += i
+          }
+          
+          let fileName = rule1BaseName + number
+          if(rule1PCVoice[i]){
+            fileName += '_' + dev
+          }
+          fileName += '_' + lang
+
+          seArray.push(fileName)
+        }
+      })
+    })
+
+    const rule2BaseName = 'basic_rules_2_'
+    const rule2PCVoice = [
+      false, false, false, true, false,
+      false, true, false, false, false,
+      false
+    ]
+    this.se_basic_rules_2_files = new Map()
+    const pc2Lang = new Map()
+    pc2Lang.set('en', [])
+    pc2Lang.set('jp', [])
+    this.se_basic_rules_2_files.set('pc', pc2Lang)
+    const mb2Lang = new Map()
+    mb2Lang.set('en', [])
+    mb2Lang.set('jp', [])
+    this.se_basic_rules_2_files.set('mb', mb2Lang)
+
+    this.se_basic_rules_2_files.forEach((langMap, dev) => {
+      langMap.forEach((seArray, lang) => {
+        for(let i=0; i<rule2PCVoice.length; i++){
+          let number = ''
+          if(i < 10){
+            number += '0' + i
+          }else{
+            number += i
+          }
+          
+          let fileName = rule2BaseName + number
+          if(rule1PCVoice[i]){
+            fileName += '_' + dev
+          }
+          fileName += '_' + lang
+
+          seArray.push(fileName)
+        }
+      })
+    })
+    */
 
     // sound play timing
     this.se_step_timing_1 = 0
@@ -533,7 +658,21 @@ class _IQGameData {
     this.questionArray = null
     this.questionUsed = null
 
+    // rule
+    this.rulePlay = false
+    this.rulePause = false
+    this.ruleNumber = 0
+    this.rulePlayQuestionNo = 0
+    this.ruleStageDataFile1 = './question/rule_stage1.txt'
+    this.ruleStageDataFile2 = './question/rule_stage2.txt'
+    
+    // edit
+    this.editStart = false
+    this.editing = false
+    this.testPlay = false
+
     // game state
+    this.loadingDivRemoved = false
     this.sceneChanging = false
     this.stageStarting = false
     this.stageCreating = false
@@ -550,9 +689,6 @@ class _IQGameData {
     this.stageClearSceneChange = false
     this.ending = false
     this.pausing = false
-
-    this.editing = false
-    this.testPlay = false
 
     this.perfect = false
     this.addingLine = false
@@ -598,6 +734,7 @@ class _IQGameData {
     this.whiteColor = '#FFFFFF'
     this.blackColor = '#000000'
     this.grayColor =  '#606060'
+    this.transparent = 'rgba(0, 0, 0, 0)'
 
     // font
     this.fontFamily = 'Expressway,sans-serif'

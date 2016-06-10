@@ -127,7 +127,8 @@ export default class IQCube extends DH3DObject {
     }
 
     IQGameData.deleteCubeArray.push(this)
-    this.deleteStartTime = new Date()
+    //this.deleteStartTime = new Date()
+    this.deleteStartTime = new Date(IQGameData.nowTime.getTime())
   }
 
   pause() {

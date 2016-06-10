@@ -267,6 +267,13 @@ export default class IQController {
     this._disableDefaultEvent(event)
     this._nowTouches = event.touches
 
+    const length = event.changedTouches.length
+    for(let i=0; i<length; i++){
+      const touch = event.changedTouches[i]
+      this._touchStartState.delete(touch.identifier)
+      this._touchNowState.delete(touch.identifier)
+    }
+
     console.log('touchcancel: ' + event)
   }
 
@@ -330,6 +337,10 @@ export default class IQController {
 
   getAnyTouchState() {
     return this._anyTouch
+  }
+
+  getAnyTouchEndState() {
+    return (this._touchEndState.size > 0)
   }
 
   getTouchNewState(index) {

@@ -1,0 +1,17 @@
+BASIC RULES 1
+4,15
+3
+3
+2
+3
+8,nnnnnnnn
+3,ffnffnnf
+8,nnnnnnnn
+1
+1
+1
+1,ffff
+1
+1
+1
+1,ffff

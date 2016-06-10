@@ -44,6 +44,27 @@ export default class IQMenu extends DH2DObject {
     
     this._upTileZ = -40
 
+    // main menu
+    const triangleSize = 30
+    const trianglePadding = 30
+    this._leftButtonP1X = IQGameData.menuLeftButtonX + IQGameData.menuButtonWidth - trianglePadding - triangleSize
+    this._leftButtonP1Y = IQGameData.canvasHeight * 0.5
+
+    this._leftButtonP2X = this._leftButtonP1X + triangleSize
+    this._leftButtonP2Y = this._leftButtonP1Y + triangleSize
+
+    this._leftButtonP3X = this._leftButtonP2X
+    this._leftButtonP3Y = this._leftButtonP1Y - triangleSize
+    
+    this._rightButtonP1X = IQGameData.menuRightButtonX + trianglePadding + triangleSize
+    this._rightButtonP1Y = this._leftButtonP1Y
+
+    this._rightButtonP2X = this._rightButtonP1X - triangleSize
+    this._rightButtonP2Y = this._rightButtonP1Y - triangleSize
+
+    this._rightButtonP3X = this._rightButtonP2X
+    this._rightButtonP3Y = this._rightButtonP1Y + triangleSize
+
     // folding
     this._folding = false
     this._foldingTime = null
@@ -77,6 +98,8 @@ export default class IQMenu extends DH2DObject {
     this._subMenuSY = 130
     this._subMenuDX = 170
     this._subMenuDY = 30
+    this._subMenuParamX = 275
+    this._subMenuParamPadding = this._subMenuParamX - (this._subMenuSX + this._subMenuDX)
     this._moveSubMenuTime = null
     this._menuItem = []
     this._subMenuHoverFillStyle = 'rgba(255, 255, 255, 0.5)'
@@ -117,11 +140,12 @@ export default class IQMenu extends DH2DObject {
     // sub menu = SHARE
     /*
     this._shareSubMenus = $A([
-      'Twitter'
-      'Facebook'
-      'Google+'
-      'mixi'
-      ''
+      'Twitter',
+      'Facebook',
+      'Google+',
+      'mixi',
+      '',
+      '',
       'return'
     ])
     this._shareSubMenuEnable = $A([true, true, true, true, false, true])
@@ -132,9 +156,10 @@ export default class IQMenu extends DH2DObject {
       '',
       '',
       '',
+      '',
       'return'
     ]
-    this._shareSubMenuEnable = [true, true, false, false, false, true]
+    this._shareSubMenuEnable = [true, true, false, false, false, false, true]
 
     // stage edit
     this._createSubMenus = [
@@ -150,6 +175,23 @@ export default class IQMenu extends DH2DObject {
     this._subCreateSize = ''
     this._subCreateStep = 1
 
+    if(IQGameData.device.isMobile || IQGameData.device.isTablet){
+      // disable Edit menu for mobile/tablet
+      this._createSubMenus[2] = ''
+      this._createSubMenuEnable[2] = false
+    }
+
+    // rules
+    this._rulesSubMenus = [
+      'Basic Rules 1',
+      'Basic Rules 2',
+      '',
+      '',
+      '',
+      '',
+      'return'
+    ]
+    this._rulesSubMenuEnable = [true, true, false, false, false, false, true]
 
     // moving
     this._moving = false
@@ -165,8 +207,12 @@ export default class IQMenu extends DH2DObject {
 
     this._cubeScale = 20.0
     this._opMovie = null
+    this._opMovieAudio = null
     this._opMovieMP4URL = './movie/iq_opening.mp4'
     this._opMovieWebMURL = './movie/iq_opening.webm'
+    this._opMovieReady = false
+    this._opMovieStarted = false
+    this._opMoviePlayCallback = () => { this.moviePlayStart() }
 
     //               0         1         2         3
     //               01234567890123456789012345678901234567
@@ -187,6 +233,12 @@ export default class IQMenu extends DH2DObject {
       [6, 'EXTRA'],
       [7, 'EXIT']
     ])
+    this._opMenuEnable = [true, true, true, true, true, true, false, true, true]
+    if(IQGameData.device.isMobile || IQGameData.device.isTablet){
+      // window.close() doesn't work for mobile, so disable exit menu
+      this._opMenuEnable[7] = false
+    }
+
     this._opPosX = [100, 150, 110, 140, 130, 100, 160, 160, 220]
     this._opPosY = [190, 190, 160, 130, 100,  90,  70,  90,  90]
     this._opActiveTiles = [
@@ -205,7 +257,6 @@ export default class IQMenu extends DH2DObject {
     this._opStayTiles = []
     this._opUpTiles = []
     this._opDownTiles = []
-    this._opMenuEnable = [true, true, true, false, true, true, false, true, true]
 
     this._opSubMenus = []
     this._opSubMenuEnable = []
@@ -232,25 +283,55 @@ export default class IQMenu extends DH2DObject {
 
   initOpeningMovie() {
     const mov = document.createElement('video')
+    const audio = new Audio()
     document.body.appendChild(mov)
     mov.setAttribute('style', 'display:none')
 
-    const obj = this
     this._opMovie = mov
-    mov.addEventListener('canplaythrough', () => { obj.movieLoadedCallback() }, false)
+    this._opMovieAudio = audio
+
+    const audioPromise = new Promise((resolve, reject) => {
+      audio.addEventListener('canplaythrough', () => { resolve() }, false)
+      audio.addEventListener('error', (error) => { reject(error) }, false)
+    })
+    const videoPromise = new Promise((resolve, reject) => {
+      mov.addEventListener('canplaythrough', () => { resolve() }, false)
+      mov.addEventListener('error', (error) => { reject(error) }, false)
+    })
+
+    const obj = this
+    Promise.all([audioPromise, videoPromise]).then(() => {
+      obj.movieLoadedCallback()
+    }).catch((error) => {
+      // maybe the video codec is not supported... just skip the video
+      IQGameData.openingMovieError = true
+    })
+
     if(navigator.userAgent.match(/Chrome/)){
       if(mov.canPlayType('video/webm')){
+        audio.setAttribute('src', this._opMovieWebMURL)
+        audio.load()
         mov.setAttribute('src', this._opMovieWebMURL)
+        mov.load()
       }else if(mov.canPlayType('video/mp4')){
+        audio.setAttribute('src', this._opMovieMP4URL)
+        audio.load()
         mov.setAttribute('src', this._opMovieMP4URL)
+        mov.load()
       }else{
         console.error('error: cannot play movie')
       }
     }else{
       if(mov.canPlayType('video/mp4')){
+        audio.setAttribute('src', this._opMovieMP4URL)
+        audio.load()
         mov.setAttribute('src', this._opMovieMP4URL)
+        mov.load()
       }else if(mov.canPlayType('video/webm')){
+        audio.setAttribute('src', this._opMovieWebMURL)
+        audio.load()
         mov.setAttribute('src', this._opMovieWebMURL)
+        mov.load()
       }else{
         console.error('error: cannot play movie')
       }
@@ -259,7 +340,26 @@ export default class IQMenu extends DH2DObject {
 
   movieLoadedCallback() {
     this._opMovie.volume = IQGameData.soundVolume
-    this._opMovie.play()
+    this._opMovieReady = true
+    //if(IQGameData.device.isMobile){
+    if(IQGameData.device.isMobile || IQGameData.device.isTablet){
+      // iPhone can't play a video automatically.
+      document.addEventListener('touchstart', this._opMoviePlayCallback, false)
+    }else{
+      this._opMovie.play()
+      this._opMovieStarted = true
+    }
+  }
+
+  /**
+   * callback function for mobile to play movie
+   * @access public
+   * @returns {void}
+   */
+  moviePlayStart() {
+    document.removeEventListener('touchstart', this._opMoviePlayCallback, false)
+    this._opMovieAudio.play()
+    this._opMovieStarted = true
   }
 
   initMenuTile() {
@@ -866,14 +966,35 @@ export default class IQMenu extends DH2DObject {
     this._menu = menu
     if(this._opMovie && menu !== 'opening'){
       this._opMovie.pause()
+      this._opMovieAudio.pause()
     }
     this._cursor = 0
     this._moving = false
     this.resetMenuItem()
 
-    IQGameData.camera.perspective(45.0, IQGameData.canvasWidth / IQGameData.canvasHeight, IQGameData.cameraNear, IQGameData.cameraFar)
+    if(menu !== 'pause'){
+      IQGameData.camera.perspective(45.0, IQGameData.canvasWidth / IQGameData.canvasHeight, IQGameData.cameraNear, IQGameData.cameraFar)
+    }
 
     switch(menu){
+      case 'pause': {
+        const width = 200
+        const menuItems = ['Yes', 'No']
+        this._subCursor = 1
+        for(let i=0; i<menuItems.length; i++){
+          this.setMenuItem(i, {
+            x: (IQGameData.canvasWidth - width) * 0.5,
+            y: 135 + i * this._subMenuDY,
+            width: width,
+            height: this._subMenuDY,
+            textAlign: 'center',
+            font: '20px bold sans-serif',
+            text: menuItems[i]
+          })
+        }
+
+        break
+      }
       case 'continue': {
         const width = 200
         const menuItems = ['Tweet', 'Yes', 'No']
@@ -933,7 +1054,12 @@ export default class IQMenu extends DH2DObject {
       font: item.font !== undefined ? item.font : '20px bold sans-serif',
       fillStyle: item.fillStyle !== undefined ? item.fillStyle : IQGameData.whiteColor,
       strokeStyle: item.strokeStyle !== undefined ? item.strokeStyle : IQGameData.whiteColor,
-      text: item.text !== undefined ? item.text : ''
+      text: item.text !== undefined ? item.text : '',
+      enable: item.enable !== undefined ? item.enable : true,
+      onTouch: item.onTouch,
+      onDecision: item.onDecision,
+      onLeft: item.onLeft,
+      onRight: item.onRight
     }
 
     switch(menuItem.textAlign){
@@ -988,7 +1114,12 @@ export default class IQMenu extends DH2DObject {
             c.fillStyle = item.fillStyle
             c.strokeStyle = item.strokeStyle
 
-            this.drawText(item.text, item.tx, item.ty * s + sy * (1 - s))
+            let text = item.text
+            if(typeof item.text === 'function'){
+              text = item.text()
+            }
+
+            this.drawText(text, item.tx, item.ty * s + sy * (1 - s))
           }
         })
         return
@@ -1003,13 +1134,19 @@ export default class IQMenu extends DH2DObject {
         c.fillStyle = item.fillStyle
         c.strokeStyle = item.strokeStyle
 
-        this.drawText(item.text, item.tx, item.ty)
+        let text = item.text
+        if(typeof item.text === 'function'){
+          text = item.text()
+        }
+
+        this.drawText(text, item.tx, item.ty)
       }
     })
 
     if(IQGameData.device.isMobile || IQGameData.device.isTablet){
+      // draw frame
       this._menuItem.forEach((item) => {
-        if(item){
+        if(item && item.enable){
           if(IQGameData.controller.hoverWithinRect(item.x, item.y, item.width, item.height).length > 0){
             c.fillStyle = this._subMenuHoverFillStyle
             c.strokeStyle = this._subMenuHoverStrokeStyle
@@ -1021,6 +1158,29 @@ export default class IQMenu extends DH2DObject {
           }
         }
       })
+    }
+  }
+
+  handleMenuItemAction() {
+    const menuNo = this.getTouchedMenuNumber()
+    const touchedItem = this._menuItem[menuNo]
+    
+    if(menuNo >= 0 && touchedItem.onTouch){
+      touchedItem.onTouch()
+    }
+
+    const listener = IQGameData.keyListener
+    const selectedItem = this._menuItem[this._subCursor]
+    if(listener.getKeyNewState(IQGameData.keyMark) && selectedItem.onDecision){
+      selectedItem.onDecision()
+    }
+    
+    if(listener.getKeyNewState(IQGameData.keyLeft) && selectedItem.onLeft){
+      selectedItem.onLeft()
+    }
+
+    if(listener.getKeyNewState(IQGameData.keyRight) && selectedItem.onRight){
+      selectedItem.onRight()
     }
   }
 
@@ -1054,7 +1214,7 @@ export default class IQMenu extends DH2DObject {
     let height = 0
 
     if(this._moving){
-      const cursorDiffTime = IQGameData.getElapsedTime(IQGameData.menu._moveSubMenuTime)
+      const cursorDiffTime = (new Date()) - this._moveSubMenuTime
       const maxTime = IQGameData.menuMoveTime
       let s = 0
       const t = 2.0 * cursorDiffTime / maxTime
@@ -1064,12 +1224,17 @@ export default class IQMenu extends DH2DObject {
         s = -0.5 * (t * (t - 4) + 2)
       }
 
+      if(cursorDiffTime > maxTime){
+        this._moving = false
+        s = 1
+      }
+
       const srcItem = this._menuItem[this._srcMenuItem]
       const dstItem = this._menuItem[this._dstMenuItem]
       x = srcItem.x * (1 - s) + dstItem.x * s
       y = srcItem.y * (1 - s) + dstItem.y * s
-      width = srcItem.width * s + dstItem.width * (1 - s)
-      height = srcItem.height * s + dstItem.height * (1 - s)
+      width = srcItem.width * (1 - s) + dstItem.width * s
+      height = srcItem.height * (1 - s) + dstItem.height * s
     }else{
       const item = this._menuItem[this._subCursor]
       x = item.x
@@ -1090,16 +1255,16 @@ export default class IQMenu extends DH2DObject {
    */
   drawEditCursor(canvas) {
     const imgLeft = this._subMenuSX + 255
-    const imgTop = this._subMenuSY + 45
+    const imgTop = 45
     const imgSize = 30
     const strokeWidth = 4
     const width = imgSize + strokeWidth
     const height = imgSize + strokeWidth
-    let x = 0
-    let y = 0
+    let x = imgLeft + imgSize * this._editCursorX - strokeWidth * 0.5
+    let y = imgTop  + imgSize * this._editCursorY - strokeWidth * 0.5
 
     if(this._moving){
-      const cursorDiffTime = IQGameData.getElapsedTime(IQGameData.menu._moveSubMenuTime)
+      const cursorDiffTime = IQGameData.getElapsedTime(this._moveSubMenuTime)
       const maxTime = IQGameData.menuMoveTime
       const srcX = imgLeft + imgSize * this._editCursorSX - strokeWidth * 0.5
       const srcY = imgTop  + imgSize * this._editCursorSY - strokeWidth * 0.5
@@ -1113,9 +1278,6 @@ export default class IQMenu extends DH2DObject {
 
       x = s * x + (1 - s) * srcX
       y = s * y + (1 - s) * srcY
-    }else{
-      x = imgLeft + imgSize * this._editCursorX - strokeWidth * 0.5
-      y = imgTop  + imgSize * this._editCursorY - strokeWidth * 0.5
     }
 
     canvas.save()
@@ -1133,7 +1295,7 @@ export default class IQMenu extends DH2DObject {
   getTouchedMenuNumber() {
     for(let i=0; i<this._menuItem.length; i++){
       const item = this._menuItem[i]
-      if(item){
+      if(item && item.enable){
         if(IQGameData.controller.touchEndWithinRect(item.x, item.y, item.width, item.height).length > 0){
           return i
         }
@@ -1142,23 +1304,45 @@ export default class IQMenu extends DH2DObject {
     return -1
   }
 
-  getSubOptionName() {
-    const c = this._subCursor
+  getSubOptionName(number) {
+    let c = this._subCursor
+    if(number !== undefined){
+      c = number
+    }
+      
     return this._opSubMenus[c]
   }
 
   setSubMenu() {
     const opMenuName = this.getOptionName()
+    const params = []
+    const callbacks = []
+    let width = this._subMenuDX
+    let paramWidth = 0
+
     switch(opMenuName){
       case 'SCORE': {
         this._opSubMenus = this._scoreSubMenus
         this._opSubMenuEnable = this._scoreSubMenuEnable
-
+        params[0] = () => this._subScoreCharacter
+        params[1] = () => this._subScoreLevel
+        paramWidth = 110
        break
       }
       case 'OPTION': {
         this._opSubMenus = this._optionSubMenus
         this._opSubMenuEnable = this._optionSubMenuEnable
+        params[0] = () => IQGameData.level
+        params[1] = () => IQGameData.character
+        params[2] = () => Math.floor(IQGameData.soundVolume * 100)
+        params[3] = () => IQGameData.languageNameList.get(IQGameData.language)
+        paramWidth = 110
+        break
+      }
+      case 'RULES': {
+        this._opSubMenus = this._rulesSubMenus
+        this._opSubMenuEnable = this._rulesSubMenuEnable
+        width = 180
         break
       }
       case 'SHARE': {
@@ -1169,6 +1353,9 @@ export default class IQMenu extends DH2DObject {
       case 'CREATE': {
         this._opSubMenus = this._createSubMenus
         this._opSubMenuEnable = this._createSubMenuEnable
+        params[0] = () => IQGameData.editStageSize
+        params[1] = () => IQGameData.editStageStep
+        paramWidth = 75
         break
       }
       default: {
@@ -1178,15 +1365,44 @@ export default class IQMenu extends DH2DObject {
 
     this.resetMenuItem()
     for(let i=0; i<this._opSubMenus.length; i++){
+      let itemY = this._subMenuSY + (i - 0.5) * this._subMenuDY
+      let menuWidth = width
+      if(params[i]){
+        menuWidth += this._subMenuParamPadding + paramWidth
+
+        this.setMenuItem(10 + i, {
+          x: this._subMenuParamX - 10,
+          y: itemY,
+          width: paramWidth,
+          height: this._subMenuDY,
+          textAlign: 'left',
+          font: '24px bold ' + IQGameData.fontFamily,
+          fillStyle: IQGameData.whiteColor,
+          text: params[i],
+          enable: false
+        })
+      }
+
+      let callback = callbacks[i]
+      if(!callback){
+        callback = {}
+      }
+
       this.setMenuItem(i, {
         x: this._subMenuSX - 10,
-        y: this._subMenuSY + (i - 0.5) * this._subMenuDY,
-        width: this._subMenuDX,
+        y: itemY,
+        width: menuWidth,
         height: this._subMenuDY,
         textAlign: 'left',
         font: '24px bold ' + IQGameData.fontFamily,
         fillStyle: IQGameData.whiteColor,
-        text: this._opSubMenus[i]
+        text: this._opSubMenus[i],
+        enable: this._opSubMenuEnable[i],
+
+        onTouch: callback.onTouch,
+        onDecision: callback.onDecision,
+        onLeft: callback.onLeft,
+        onRight: callback.onRight
       })
     }
   }
@@ -1200,36 +1416,119 @@ export default class IQMenu extends DH2DObject {
 
     const name = this.getOptionName()
     if(name === 'OPTION'){
-      IQGameData.menu._opSubSubMenus = IQGameData.levelList
-      IQGameData.menu._opSubSubMenuEnable = IQGameData.levelListEnable
-      IQGameData.menu._subSubCursor = IQGameData.levelList.indexOf(IQGameData.level)
+      this._opSubSubMenus = IQGameData.levelList
+      this._opSubSubMenuEnable = IQGameData.levelListEnable
+      this._subSubCursor = IQGameData.levelList.indexOf(IQGameData.level)
     }else if(name === 'SCORE'){
-      IQGameData.menu._opSubSubMenus = IQGameData.characterList
-      IQGameData.menu._opSubSubMenuEnable = IQGameData.characterListEnable
-      IQGameData.menu._subSubCursor = IQGameData.levelList.indexOf(IQGameData.character)
+      this._opSubSubMenus = IQGameData.characterList
+      this._opSubSubMenuEnable = IQGameData.characterListEnable
+      this._subSubCursor = IQGameData.levelList.indexOf(IQGameData.character)
 
-      IQGameData.menu._subScoreCharacter = IQGameData.character
-      IQGameData.menu._subScoreLevel = IQGameData.level
+      this._subScoreCharacter = IQGameData.character
+      this._subScoreLevel = IQGameData.level
     }else if(name === 'CREATE'){
-      IQGameData.menu._opSubSubMenus = IQGameData.stageSizeList
-      IQGameData.menu._opSubSubMenuEnable = IQGameData.stageSizeListEnable
-      IQGameData.menu._subSubCursor = IQGameData.editStageSize
+      this._opSubSubMenus = IQGameData.stageSizeList
+      this._opSubSubMenuEnable = IQGameData.stageSizeListEnable
+      this._subSubCursor = IQGameData.stageSizeList.indexOf(IQGameData.editStageSize)
+    }else if(name === 'RULES'){
+      // nothing to do
     }
   }
 
   render() {
     const c = IQGameData.canvasField.get2DContext()
 
+    c.textAlign    = 'center'
+    c.textBaseline = 'middle'
+    c.font         = '24px bold ' + IQGameData.fontFamily
+    c.fillStyle    = IQGameData.whiteColor
+    c.strokeStyle  = IQGameData.blackColor
+
     if(this._menu === 'opening'){
-      // opening movie
-      c.drawImage(this._opMovie, 0, 0)
+      if(!this._opMovieReady){
+        let loadingStr = "Loading."
+        const dotMax = 3
+        const dotNum = Math.floor((new Date()).getMilliseconds() / 300) % dotMax
+        for(let i=0; i<dotNum; i++){
+          loadingStr += "."
+        }
+        for(let i=dotNum; i<dotMax; i++){
+          loadingStr += " "
+        }
+
+        // loading movie
+        c.fillText(loadingStr, IQGameData.canvasWidth / 2, IQGameData.canvasHeight / 2)
+      }else if(this._opMovieReady && !this._opMovieStarted){
+        // waiting to play movie
+        c.fillText("Touch to start", IQGameData.canvasWidth / 2, IQGameData.canvasHeight / 2)
+      }else{
+        // opening movie
+        //if(IQGameData.device.isMobile){
+        if(IQGameData.device.isMobile || IQGameData.device.isTablet){
+          this._opMovie.currentTime = this._opMovieAudio.currentTime
+        }
+        c.drawImage(this._opMovie, 0, 0)
+      }
     }else if(this._menu === 'top'){
       // FIXME: showMenuLoopからこっちに移動する？
       // setup context
 
-      if(IQGameData.menu._showSubMenu){
-        const menuDiffTime = IQGameData.getElapsedTime(IQGameData.menu._showSubMenuTime)
-        const opName = IQGameData.menu.getOptionName()
+      if(!this._showSubMenu){
+        //if(IQGameData.device.isMobile || IQGameData.dvice.isTablet){
+        if(!this._folding && !this._moveTopLeft && !this._expanding){
+          // main menu
+          const gradWidth = 40
+          const dxWidth = 15
+          const dx = (Math.abs(Math.sin(IQGameData.nowTime * 0.004)) - 0.5) * dxWidth
+
+          // left
+          const leftGrad = c.createLinearGradient(IQGameData.menuButtonWidth, 0, IQGameData.menuButtonWidth - gradWidth, 0)
+          leftGrad.addColorStop(0.0, IQGameData.transparent)
+          leftGrad.addColorStop(0.1, IQGameData.menuButtonColor)
+          leftGrad.addColorStop(1.0, IQGameData.menuButtonColor)
+          c.fillStyle = leftGrad
+          c.clearRect(
+            IQGameData.menuLeftButtonX, IQGameData.menuLeftButtonY,
+            IQGameData.menuButtonWidth, IQGameData.menuButtonHeight
+          )
+          c.fillRect(
+            IQGameData.menuLeftButtonX, IQGameData.menuLeftButtonY,
+            IQGameData.menuButtonWidth, IQGameData.menuButtonHeight
+          )
+
+          c.fillStyle = IQGameData.whiteColor
+          c.beginPath()
+          c.moveTo(this._leftButtonP1X + dx, this._leftButtonP1Y)
+          c.lineTo(this._leftButtonP2X + dx, this._leftButtonP2Y)
+          c.lineTo(this._leftButtonP3X + dx, this._leftButtonP3Y)
+          c.fill()
+
+          // right
+          const rightGrad = c.createLinearGradient(0, 0, gradWidth, 0)
+          rightGrad.addColorStop(0.0, IQGameData.transparent)
+          rightGrad.addColorStop(0.1, IQGameData.menuButtonColor)
+          rightGrad.addColorStop(1.0, IQGameData.menuButtonColor)
+          c.fillStyle = rightGrad
+          c.clearRect(
+            IQGameData.menuRightButtonX, IQGameData.menuRightButtonY,
+            IQGameData.menuButtonWidth, IQGameData.menuButtonHeight
+          )
+          c.fillRect(
+            IQGameData.menuRightButtonX, IQGameData.menuRightButtonY,
+            IQGameData.menuButtonWidth, IQGameData.menuButtonHeight
+          )
+
+          c.fillStyle = IQGameData.whiteColor
+          c.beginPath()
+          c.moveTo(this._rightButtonP1X - dx, this._rightButtonP1Y)
+          c.lineTo(this._rightButtonP2X - dx, this._rightButtonP2Y)
+          c.lineTo(this._rightButtonP3X - dx, this._rightButtonP3Y)
+          c.fill()
+        }
+      }else{
+        // sub menu
+        const menuDiffTime = IQGameData.getElapsedTime(this._showSubMenuTime)
+        const opName = this.getOptionName()
 
         c.textAlign    = 'left'
         c.textBaseline = 'middle'
@@ -1250,6 +1549,7 @@ export default class IQMenu extends DH2DObject {
           }
 
           if(opName === 'OPTION'){
+            /*
             const params = []
             params[0] = IQGameData.level
             params[1] = IQGameData.character
@@ -1262,6 +1562,7 @@ export default class IQMenu extends DH2DObject {
               c.fillText(params[i], x, y)
               y += dy * s
             }
+            */
           }else if(opName === 'SCORE'){
             // nothing to do
           }else if(opName === 'RULES'){
@@ -1287,6 +1588,7 @@ export default class IQMenu extends DH2DObject {
           }
 
           if(opName === 'OPTION'){
+            /*
             const params = []
 
             params[0] = IQGameData.level
@@ -1300,10 +1602,12 @@ export default class IQMenu extends DH2DObject {
               c.fillText(params[i], x, y)
               y += dy
             }
+            */
           }else if(opName === 'SCORE'){
             //const headX = sx
             //const headY = sy
 
+            // draw score table
             const x1 = sx + 180
             const x2 = sx + 280
             const x3 = sx + 390
@@ -1335,8 +1639,10 @@ export default class IQMenu extends DH2DObject {
 
             const scoreCharacter = this._subScoreCharacter
             const scoreLevel = this._subScoreLevel
+            /*
             c.fillText(scoreCharacter, x1, sy     )
             c.fillText(scoreLevel,     x1, sy + 30)
+            */
 
             c.fillText('Best I.Q', x1, y1)
             c.fillText('Daily',    x1, y2)
@@ -1354,10 +1660,11 @@ export default class IQMenu extends DH2DObject {
 
             c.textAlign    = 'left'
           }else if(opName === 'RULES'){
-            /* TODO: implement */
+            // nothing to do
           }else if(opName === 'SHARE'){
-            /* TODO: implement */
+            // nothing to do
           }else if(opName === 'CREATE'){
+            /*
             const params = []
 
             params[0] = IQGameData.stageSizeList[IQGameData.editStageSize]
@@ -1369,15 +1676,18 @@ export default class IQMenu extends DH2DObject {
               c.fillText(params[i], x, y)
               y += dy
             }
+            */
 
-            x = sx + 250
-            y = 40
+            // stage editor
+            let x = sx + 250
+            let y = 40
             const w = 280
             const h = 310
             c.strokeStyle = IQGameData.whiteColor
             c.strokeRect(x, y, w, h)
 
-            const editStageSizeValue = IQGameData.stageSizeValues[IQGameData.editStageSize]
+            const sizeIndex = IQGameData.stageSizeList.indexOf(IQGameData.editStageSize)
+            const editStageSizeValue = IQGameData.stageSizeValues[sizeIndex]
             const editWidth = editStageSizeValue[0]
             const editLength = editStageSizeValue[1]
 
@@ -1403,6 +1713,7 @@ export default class IQMenu extends DH2DObject {
               imgY += imgSize
             }
 
+            /*
             if(IQGameData.editing){
               // draw edit cursor
               const strokeWidth = 4
@@ -1412,7 +1723,7 @@ export default class IQMenu extends DH2DObject {
               const height = imgSize + strokeWidth
 
               if(this._moving){
-                const cursorDiffTime = IQGameData.getElapsedTime(IQGameData.menu._moveSubMenuTime)
+                const cursorDiffTime = IQGameData.getElapsedTime(this._moveSubMenuTime)
                 const maxTime = IQGameData.menuMoveTime
                 const srcX = imgLeft + imgSize * this._editCursorSX - strokeWidth * 0.5
                 const srcY = imgTop  + imgSize * this._editCursorSY - strokeWidth * 0.5
@@ -1434,14 +1745,17 @@ export default class IQMenu extends DH2DObject {
               c.strokeRect(x, y, width, height)
               c.restore()
             }
+            */
           }
 
+          /*
           let x = sx
           let y = sy
           for(let i=0; i<this._opSubMenus.length; i++){
             c.fillText(this._opSubMenus[i], x, y)
             y += dy
           }
+          */
 
           // drawCursor
           /*
@@ -1451,7 +1765,7 @@ export default class IQMenu extends DH2DObject {
             const width = 170
             const height = dy
             if(this._moving && !IQGameData.editing){
-              const cursorDiffTime = IQGameData.getElapsedTime(IQGameData.menu._moveSubMenuTime)
+              const cursorDiffTime = IQGameData.getElapsedTime(this._moveSubMenuTime)
               const maxTime = IQGameData.menuMoveTime
               let s = 0
               const t = 2.0 * cursorDiffTime / maxTime
@@ -1469,6 +1783,17 @@ export default class IQMenu extends DH2DObject {
           */
         }
       }
+      
+    }else if(this._menu === 'pause'){
+      // game over
+      c.textAlign    = 'center'
+      c.textBaseline = 'middle'
+      c.font         = '24px bold sans-serif'
+      c.fillStyle    = IQGameData.whiteColor
+      c.strokeStyle  = IQGameData.whiteColor
+
+      this.drawText('GIVE UP?', IQGameData.canvasWidth * 0.5, 50)
+
     }else if(this._menu === 'continue'){
       // game over
       c.textAlign    = 'center'
@@ -1479,34 +1804,6 @@ export default class IQMenu extends DH2DObject {
 
       this.drawText('CONTINUE?', IQGameData.canvasWidth * 0.5, 50)
 
-      /*
-      c.textAlign    = 'center'
-      c.font         = '20px bold sans-serif'
-      const fy = 150
-      const dy = 35
-      let x = IQGameData.canvasWidth * 0.5
-      let y = fy
-      this.drawText('Tweet', x, y); y+= dy
-      this.drawText('Yes',   x, y); y+= dy
-      this.drawText('No',    x, y); y+= dy
-
-      // drawCursor
-      const width = 200
-      const height = dy
-      if(IQGameData.device.isMobile || IQGameData.device.isTablet){
-        c.strokeStyle = IQGameData.whiteColor
-        y = fy - dy * 0.5
-        x = (IQGameData.canvasWidth - width) * 0.5
-        for(let i=0; i<3; i++){
-          c.strokeRect(x, y, width, height)
-        }
-      }else{
-        c.strokeStyle = IQGameData.redColor
-        y = fy + dy * (this._cursor - 0.5)
-        x = (IQGameData.canvasWidth - width) * 0.5
-        c.strokeRect(x, y, width, height)
-      }
-      */
     }else if(this._menu === 'endtweet'){
       // game completed
       c.textAlign    = 'center'

@@ -34,7 +34,7 @@ export default class IQSceneChanger extends DH2DObject {
     this._afterBGM = afterBGM
     this._afterLoop = afterLoop
     this._sceneChangeCallback = sceneChangeCallback
-    this._startTime = IQGameData.nowTime
+    this._startTime = new Date(IQGameData.nowTime.getTime())
     this._sceneChanged = false
 
     IQGameData.sceneChanging = true

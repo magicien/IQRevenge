@@ -487,7 +487,8 @@ export default class IQStage extends DH3DObject {
     IQGameData.stageLength--
     IQGameData.breakTopCubeX = IQGameData.stageWidth
 
-    IQGameData.breakStartTime = new Date()
+    //IQGameData.breakStartTime = new Date()
+    IQGameData.breakStartTime = new Date(IQGameData.nowTime.getTime())
     IQGameData.breaking = true
   }
 

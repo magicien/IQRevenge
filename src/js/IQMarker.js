@@ -52,6 +52,9 @@ export default class IQMarker extends DH3DObject {
     /** @type {IQPlate} */
     this.markerPlate = null
 
+    /** @type {boolean} */
+    this.paused = false
+
     switch(type){
       case 'red':
         this.setType('red')
@@ -84,9 +87,9 @@ export default class IQMarker extends DH3DObject {
       case 'red':
         this.setModel(IQMarker.model_r.clone())
         if(!IQGameData.rotating && !this._getCube()){
-          this.startTime = IQGameData.nowTime
+          this.startTime = new Date(IQGameData.nowTime.getTime())
         }else if(IQGameData.rotating && !this._getNextCube()){
-          this.startTime = IQGameData.nowTime
+          this.startTime = new Date(IQGameData.nowTime.getTime())
         }else{
           this.startTime = null
         }
@@ -173,6 +176,32 @@ export default class IQMarker extends DH3DObject {
 
   _getNextCube() {
     return this._getCubeAt(this.cubeZ - 1, this.cubeX)
+  }
+
+  pause() {
+    if(!this.paused){
+      return
+    }
+    this.paused = false
+  }
+
+  resume(pausedTime = 0) {
+    if(!this.paused){
+      return
+    }
+    this.paused = false
+
+    const timers = [
+      this.startTime,
+      this.moveTime,
+      this.deleteStartTime
+    ]
+    
+    timers.forEach((timer) => {
+      if(timer){
+        timer.setMilliseconds(timer.getMilliseconds() + pausedTime)
+      }
+    })
   }
 
 /*

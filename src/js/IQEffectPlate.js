@@ -36,6 +36,9 @@ export default class IQEffectPlate extends DH3DObject {
     /** @type {Image} */
     this._dynamicTexture = null
 
+    /** @type {boolean} */
+    this.paused = false
+
     if(delay){
       this.delay = delay
     }
@@ -62,7 +65,8 @@ export default class IQEffectPlate extends DH3DObject {
     this.addMoveCallback(() => {
       obj.update()
     })
-    this.startTime = new Date()
+    //this.startTime = new Date()
+    this.startTime = new Date(IQGameData.nowTime.getTime())
 
     IQGameData.canvasField.addObject(this, true)
     IQGameData.effectArray.push(this)
@@ -112,6 +116,29 @@ export default class IQEffectPlate extends DH3DObject {
   erase() {
     IQGameData.effectArray = IQGameData.effectArray.filter((effect) => { return effect !== this })
     IQGameData.canvasField.removeObject(this)
+  }
+
+  pause() {
+    if(this.paused){
+      return
+    }
+    this.paused = true
+  }
+
+  resume(pausedTime = 0) {
+    if(!this.paused){
+      return
+    }
+    this.paused = false
+
+    const timers = [
+      this.startTime
+    ]
+    timers.forEach((timer) => {
+      if(timer){
+        timer.setMilliseconds(timer.getMilliseconds() + pausedTime)
+      }
+    })
   }
 }
 

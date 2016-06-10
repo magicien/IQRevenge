@@ -1,0 +1,14 @@
+audio;0;0;basic_rules_2_00_en
+pause;4000;4000
+audio;5000;2587;basic_rules_2_01_en;The player can use the advantage cube;to efficiently capture the cubes.
+audio;8000;3031;basic_rules_2_02_en;When the player captures an advantage cube,;the spot will be marked in green.
+audio;12000;3292;basic_rules_2_03_pc_en;The player can capture the surrounding cubes;by pressing the X key.
+audio;16000;2560;basic_rules_2_04_en;All the cubes in the marked area will be captured.
+audio;19000;1986;basic_rules_2_05_en;Mark and capture an advantage cube.
+audio;21000;5251;basic_rules_2_06_pc_en;Then capture the surrounding cubes by pressing the X key.
+audio;27000;2143;basic_rules_2_07_en;With the advantage cube,;the player should be able to efficiently capture multiple cubes.
+pause;30000;3000
+audio;30000;2325;basic_rules_2_08_en;But at the same time, the player must make sure;forbidden cubes are not in the marked area.
+audio;33000;4676;basic_rules_2_09_en;The number on the top right of the screen is;the target number of the moves to capture the necessary cubes.
+audio;38000;3109;basic_rules_2_10_en;When the player captures all the necessary cubes;within this number of moves, a perfect bonus is awarded.
+end;61000;0
