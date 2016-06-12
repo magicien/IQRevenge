@@ -4,8 +4,8 @@ import {
   AjaxRequest,
   Bone,
   Camera,
-  CanvasField,
-  KeyListener,
+//  CanvasField,
+//  KeyListener,
   Light,
   MMDAnimator,
 //  PMDReader,
@@ -22,6 +22,7 @@ import IQCanvas from './IQCanvas'
 import IQCube from './IQCube'
 import IQEffectPlate from './IQEffectPlate'
 import IQGameData from './IQGameData'
+import IQKeyListener from './IQKeyListener'
 import IQLabel from './IQLabel'
 import IQMarker from './IQMarker'
 import IQMarkerPlate from './IQMarkerPlate'
@@ -341,6 +342,7 @@ function playerMoveCallback() {
         // FIXME: Do not use 'new' for side effects
         new IQSceneChanger(0, false, g.bgm_stagecall, g.bgm_stage, null, null)
       }
+      console.log('stageCreateEnd: ' + diffTime)
 
       g.cameraXAngleGoal = -0.3
       g.cameraYAngleGoal = Math.PI
@@ -573,7 +575,7 @@ function initCanvas() {
   g.light = new Light()
 
   // key listener
-  g.keyListener = new KeyListener()
+  g.keyListener = new IQKeyListener()
 
   // cube
   IQCube.setup()
@@ -1254,7 +1256,9 @@ function playSECallback_step(){
 }
 
 function pauseSound(audio){
-  audio.pause()
+  if(audio){
+    audio.pause()
+  }
   //for(let i=0; i<audio.children.length; i++){
   //  audio.children[i].pause()
   //}
@@ -1415,13 +1419,15 @@ function setSubMenu() {
 
     case 'RULES': {
       const rule1Menu = g.menu._menuItem[0]
+      rule1Menu.onDecision = () => { startRules(1) }
+      /*
       rule1Menu.onDecision = () => {
         new IQSceneChanger(2.0, true, g.bgm_menu, g.bgm_stagecall, null, () => {
           g.rulePlay = true
-          //g.demoPlay = true
           g.ruleNumber = 1
           g.rulePlayQuestionNo = 0
-          g.rulesCurrentData = null
+          g.rulesCurrentAudio = null
+          g.rulesCurrentPause = null
 
           stop()
           loadRulesData()
@@ -1437,18 +1443,24 @@ function setSubMenu() {
           })
         })
       }
+      */
       rule1Menu.onTouch = rule1Menu.onDecision
 
       const rule2Menu = g.menu._menuItem[1]
+      rule2Menu.onDecision = () => { startRules(2) }
+      /*
       rule2Menu.onDecision = () => {
         new IQSceneChanger(2.0, true, g.bgm_menu, g.bgm_stagecall, null, () => {
           g.rulePlay = true
           g.ruleNumber = 2
           g.rulePlayQuestionNo = 0
+          g.rulesCurrentAudio = null
+          g.rulesCurrentPause = null
           stop()
           setup()
         })
       }
+      */
       rule2Menu.onTouch = rule2Menu.onDecision
 
       const returnMenu = g.menu._menuItem[6]
@@ -1569,6 +1581,30 @@ function setSubMenu() {
       // nothing to do
     }
   }
+}
+
+function startRules(ruleNo) {
+  new IQSceneChanger(2.0, true, g.bgm_menu, g.bgm_stagecall, null, () => {
+    g.demoPlay = true
+    g.rulePlay = true
+    g.ruleNumber = ruleNo
+    g.rulePlayQuestionNo = 0
+    g.rulesCurrentAudio = null
+    g.rulesCurrentPause = null
+
+    stop()
+    loadRulesData()
+    .then(setup)
+    .catch((error) => {
+      console.error('loadRulesData error: ' + error)
+    })
+    .then(() => {
+      // for debug
+      g.rulesAudioArray.forEach((audio) => {
+        console.log(audio.src + ': ' + audio.duration)
+      })
+    })
+  })
 }
 
 function showMenuLoop() {
@@ -1959,6 +1995,9 @@ function showMenuLoop() {
   if(g.keyListener.getKeyNewState('R')){
     g.recording = !g.recording
     console.log('g.recording = ' + g.recording)
+    if(!g.recording){
+      g.canvasField.setMspf(0)
+    }
   }
   if(g.keyListener.getKeyNewState('T')){
     if(g.recorder){
@@ -2801,13 +2840,14 @@ function loadRulesData() {
     audioPromise, movePromise
   ]).then((result) => {
     g.rulesMoveData = new IQRecorder(result[1])
-    return loadRulesAudio(result[0])
+    return loadRulesAudio(result[0]).then(mergeRulesData)
   })
 }
 
 function loadRulesAudio(audioData) {
   const lines = audioData.split('\n')
   const audioPromises = []
+  let resumeData = null
   g.rulesDataArray.length = 0
   g.rulesDataIndex = 0
 
@@ -2828,6 +2868,11 @@ function loadRulesAudio(audioData) {
         type: tokens[0],
         time: parseInt(tokens[1], 10),
         duration: parseInt(tokens[2], 10)
+      }
+
+      if(resumeData && resumeData.time < data.time){
+        g.rulesDataArray.push(resumeData)
+        resumeData = null
       }
 
       if(tokens[0] === 'audio'){
@@ -2851,12 +2896,24 @@ function loadRulesAudio(audioData) {
           data.audio = null
         }
         data.text = tokens.slice(4)
+        data.callback = simAudioCallback
       }else if(tokens[0] === 'pause'){
         // type (='pause'), time, duration
-        // nothing to add
+        if(tokens.length > 4){
+          data.spotX = parseInt(tokens[3])
+          data.spotY = parseInt(tokens[4])
+        }
+        data.callback = simPauseCallback
+
+        resumeData = {
+          type: 'resume',
+          time: (data.time + data.duration),
+          duration: data.duration,
+          callback: simResumeCallback
+        }
       }else if(tokens[0] === 'end'){
         // type (='end'), time, 0(reserved)
-        // nothing to add
+        data.callback = simEndCallback
       }
          
       g.rulesDataArray.push(data)
@@ -2864,6 +2921,99 @@ function loadRulesAudio(audioData) {
   })
 
   return Promise.all(audioPromises)
+}
+
+function mergeRulesData() {
+  let addTime = 0
+  let controlIndex = 1
+  let audioLength = g.rulesDataArray.length
+  let newArray = []
+
+  for(let audioIndex = 0; audioIndex < audioLength; audioIndex++){
+    const audioData = g.rulesDataArray[audioIndex]
+    let controlData = g.rulesMoveData.getRecord(controlIndex)
+    while(controlData && (controlData.gameTime + addTime) < audioData.time){
+      let prevData = g.rulesMoveData.getRecord(controlIndex - 1)
+      controlData.type = 'control'
+      controlData.time = controlData.gameTime + addTime
+      controlData.callback = simControlCallback
+      controlData.elapsedTime = controlData.canvasTime - prevData.canvasTime
+      controlData.gameTime += addTime
+
+      newArray.push(controlData)
+
+      controlIndex++
+      controlData = g.rulesMoveData.getRecord(controlIndex)
+    }
+
+    if(audioData.type === 'pause'){
+      addTime += audioData.duration
+    }
+    newArray.push(audioData)
+  }
+
+  g.rulesDataArray = newArray
+}
+
+function simFrameCallback(diffTime) {
+  g.rulesElapsedTime = diffTime
+}
+
+function simControlCallback(data, elapsedTime) {
+  g.demoGameTime = data.gameTime
+
+  if(decisionKeyPushed()){
+    // go back to menu
+    quitRulePlay()
+  }
+
+  g.keyListener._keyState[g.keyMark] = data.keyState[0]
+  g.keyListener._keyState[g.keyAdvantage] = data.keyState[1]
+  g.keyListener._keyState[g.keySpeedUp] = data.keyState[2]
+  g.keyListener._keyState[g.keyPause] = data.keyState[3]
+  g.keyListener._keyState[g.keyUp] = data.keyState[4]
+  g.keyListener._keyState[g.keyDown] = data.keyState[5]
+  g.keyListener._keyState[g.keyLeft] = data.keyState[6]
+  g.keyListener._keyState[g.keyRight] = data.keyState[7]
+
+  g.keyListener._keyNewState[g.keyMark] = data.keyNewState[0]
+  g.keyListener._keyNewState[g.keyAdvantage] = data.keyNewState[1]
+  g.keyListener._keyNewState[g.keySpeedUp] = data.keyNewState[2]
+  g.keyListener._keyNewState[g.keyPause] = data.keyNewState[3]
+  g.keyListener._keyNewState[g.keyUp] = data.keyNewState[4]
+  g.keyListener._keyNewState[g.keyDown] = data.keyNewState[5]
+  g.keyListener._keyNewState[g.keyLeft] = data.keyNewState[6]
+  g.keyListener._keyNewState[g.keyRight] = data.keyNewState[7]
+}
+
+function simAudioCallback(data) {
+  if(g.rulesCurrentAudio){
+    pauseSound(g.rulesCurrentAudio.audio)
+  }
+
+  console.log('time: ' + data.time)
+  data.text.forEach((text) => {
+    console.log(text)
+  })
+
+  g.rulesCurrentAudio = data
+  playSound(data.audio)
+}
+
+function simPauseCallback(data) {
+  g.rulePause = true
+  g.rulesCurrentPause = data
+  g.canvasField.pauseSimulation()
+}
+
+function simResumeCallback(data) {
+  g.rulePause = false
+  g.rulesCurrentPause = null
+  g.canvasField.resumeSimulation()
+}
+
+function simEndCallback(data) {
+  quitRulePlay()
 }
 
 function setup() {
@@ -2945,42 +3095,60 @@ function setup() {
 
     resetValues()
     .then(() => {
+      // record/demo moved to createSubStage()
+      /*
       if(g.recording){
         g.recorder = new IQRecorder()
         g.recorder.startRecord()
+        g.recordElapsedTime = 0
+        g.canvasField.setMspf(g.recordMspf)
       }
       if(g.demoPlay){
         console.log('startSimulation')
-        g.canvasField.startSimulation(g.nowTime, updateDemoFrame)
+        // FIXME: do not update nowTime
+        g.nowTime = new Date()
+        g.canvasField.startSimulation(g.nowTime, g.rulesDataArray, simFrameCallback)
         g.demoIndex = 0
-        g.demoStartTime = g.nowTime
+        g.demoStartTime = new Date(g.nowTime.getTime())
         if(g.rulePlay){
-          g.rulesStartTime = g.nowTime
+          g.rulesStartTime = new Date(g.nowTime.getTime())
         }
-        g.demoRecord = g.recorder.getRecord(0)
+        //g.demoRecord = g.recorder.getRecord(0)
       }
+      */
       start()
     })
   })
 }
 
-function updateDemoFrame() {
-  console.log('sim callback')
-  g.demoIndex++
-  g.demoRecord = g.recorder.getRecord(g.demoIndex)
-  //console.log('demoIndex: ' + g.demoIndex + ', canvasTime: ' + g.demoRecord.canvasTime)
+/*
+function updateDemoFrame(nowTime) {
+  // FIXME: separate audio processing and control processing
+  //console.log('sim callback')
+  if(!g.rulePause){
+    g.demoIndex++
+    g.demoRecord = g.recorder.getRecord(g.demoIndex)
+    //console.log('demoIndex: ' + g.demoIndex + ', canvasTime: ' + g.demoRecord.canvasTime)
+  }
 
   if(g.rulePlay) {
-    const rulesElapsedTime = (new Date()) - g.rulesStartTime
+    //const rulesElapsedTime = (new Date()) - g.rulesStartTime
+    const rulesElapsedTime = nowTime - g.rulesStartTime
     g.rulesElapsedTime = rulesElapsedTime
     let rulesData = g.rulesDataArray[g.rulesDataIndex]
 
     while(rulesElapsedTime > rulesData.time){
-      g.rulesCurrentData = rulesData
       if(rulesData.type === 'audio'){
+        g.rulesCurrentAudio = rulesData
         playSound(rulesData.audio)
       }else if(rulesData.type === 'pause'){
         g.rulePause = true
+        g.rulesCurrentPause = rulesData
+        g.canvasField.pauseSimulation()
+      }else if(rulesData.type === 'resume'){
+        g.rulePause = false
+        g.rulesCurrentPause = null
+        g.canvasField.resumeSimulation(rulesData.duration)
       }else if(rulesData.type === 'end'){
         quitRulePlay()
         break
@@ -2994,6 +3162,7 @@ function updateDemoFrame() {
   }
   return g.demoRecord.canvasTime
 }
+*/
 
 /**
  * go back to edit from test play
@@ -3002,9 +3171,13 @@ function updateDemoFrame() {
  */
 function quitTestPlay() {
   new IQSceneChanger(3.0, true, g.bgm_stage, g.bgm_menu, showSubMenuLoop, () => {
+    const createCursor = 4
     removeAllObjects()
     g.canvasField.addObject(g.menu)
-    g.camera.lookat(130, 100, -135, 130, 100, 0, 0, -1, 0)
+    g.camera.lookat(
+      g.menu._opPosX[createCursor], g.menu._opPosY[createCursor], -135,
+      g.menu._opPosX[createCursor], g.menu._opPosY[createCursor], 0,
+    0, -1, 0)
 
     g.menu.setMenu('top')
     g.menu._cursor = 4  // 'CREATE'
@@ -3034,17 +3207,35 @@ function quitTestPlay() {
  * @returns {void}
  */
 function quitRulePlay() {
-  g.rulePlay = false
-  g.demoPlay = false
   new IQSceneChanger(3.0, true, g.bgm_stage, g.bgm_menu, showSubMenuLoop, () => {
+    g.rulePlay = false
+    g.demoPlay = false
+
+    g.canvasField.endSimulation()
+    g.keyListener.resetKeyState()
+
+    // stop rules audio
+    g.rulesDataArray.forEach((data) => {
+      if(data.audio){
+        data.audio.pause()
+      }
+    })
+
+    const rulesCursor = 3
     removeAllObjects()
+    // FIXME: do it elsewhere
+    g.menu.setFadeTileAlpha(0)
     g.canvasField.addObject(g.menu)
-    g.camera.lookat(130, 100, -135, 130, 100, 0, 0, -1, 0)
+    g.camera.lookat(
+      g.menu._opPosX[rulesCursor], g.menu._opPosY[rulesCursor], -135,
+      g.menu._opPosX[rulesCursor], g.menu._opPosY[rulesCursor], 0,
+      0, -1, 0
+    )
 
     g.menu.setMenu('top')
-    g.menu._cursor = 3  // 'RULES'
+    g.menu._cursor = rulesCursor  // 'RULES'
     setSubMenu()
-    g.menu._subCursor = g.ruleNumber
+    g.menu._subCursor = g.ruleNumber - 1
 
     // set light
     g.light.setPosition(-50, 0, -100)
@@ -3058,8 +3249,28 @@ function quitRulePlay() {
       g.canvasField.addObject(tile)
     })
 
-    g.rulePlay = false
+    g.keyListener.resetKeyState()
+
+    restoreSettingFromRules()
   })
+}
+
+function saveSettingForRules() {
+  g.rulesSettingBackup.character = g.character
+  g.rulesSettingBackup.characterSpeed = g.characterSpeed
+  g.rulesSettingBackup.showMarker = g.showMarker
+  g.rulesSettingBackup.rotateWaitTime = g.rotateWaitTime
+  g.rulesSettingBackup.rotateTime = g.rotateTime
+  g.rulesSettingBackup.penaltyMax = g.penaltyMax
+}
+
+function restoreSettingFromRules() {
+  g.character = g.rulesSettingBackup.character
+  g.characterSpeed = g.rulesSettingBackup.characterSpeed
+  g.showMarker = g.rulesSettingBackup.showMarker
+  g.rotateWaitTime = g.rulesSettingBackup.rotateWaitTime
+  g.rotateTime = g.rulesSettingBackup.rotateTime
+  g.penaltyMax = g.rulesSettingBackup.penaltyMax
 }
 
 /**
@@ -3265,6 +3476,25 @@ function createSubStage() {
   //g.stageCreateStartTime = new Date()
   g.stageCreateStartTime = new Date(g.nowTime.getTime())
 
+  if(g.subStage === 1){
+    if(g.recording){
+      g.recorder = new IQRecorder()
+      g.recorder.startRecord()
+      g.recordElapsedTime = 0
+      g.canvasField.setMspf(g.recordMspf)
+    }
+    if(g.demoPlay){
+      console.log('startSimulation')
+      g.canvasField.startSimulation(g.nowTime, g.rulesDataArray, simFrameCallback)
+      g.demoIndex = 0
+      g.demoStartTime = new Date(g.nowTime.getTime())
+      if(g.rulePlay){
+        g.rulesStartTime = new Date(g.nowTime.getTime())
+      }
+      //g.demoRecord = g.recorder.getRecord(0)
+    }
+  }
+
   if(g.rulePlay){
     // nothing to do
   }else if(g.subStage === 1){
@@ -3416,6 +3646,14 @@ function loadQuestionFile(fileName) {
   }
   
   if(g.rulePlay){
+    saveSettingForRules()
+  
+    // level normal
+    g.character = 'Miku'
+    g.characterSpeed = 250
+    g.showMarker = true
+    g.rotateWaitTime = 600
+    g.rotateTime = 900
     g.penaltyMax = 4
   }
 
@@ -4326,7 +4564,9 @@ function subSubStageClear() {
 }
 
 function subStageClear() {
-  if(g.subStage === g.subStageMax){
+  if(g.rulePlay){
+    // do not create sub stage
+  }else if(g.subStage === g.subStageMax){
     stageClear()
   }else{
     g.subStage++
@@ -4694,13 +4934,31 @@ function update(elapsedTime) {
   force.x = force.y = force.z = 0
   let moving = false
 
+  // set time
+  g.elapsedTime = elapsedTime * 1000.0
+  if(g.demoPlay){
+    //console.log('demoPlay: nowTime before: ' + g.nowTime)
+    //g.nowTime = new Date(g.demoStartTime.getTime() + g.demoRecord.gameTime)
+    // FIXME: do not use canvasField
+    g.nowTime = new Date(g.demoStartTime.getTime() + g.demoGameTime)
+    //console.log('demoPlay: nowTime after : ' + g.nowTime)
+  }else if(g.recording){
+    g.recordElapsedTime += g.recordMspf
+    g.nowTime = new Date(g.recorder.startTime.getTime() + g.recordElapsedTime)
+  }else{
+    g.nowTime = new Date()
+  }
+
   if(g.recording){
+    g.keyListener.freeze()
     g.recorder.addRecord()
   }
 
+  /*
   if(g.demoPlay){
     if(decisionKeyPushed()){
-      // TODO: back to menu 
+      // go back to menu
+      quitRulePlay()
     }
 
     // FIXME
@@ -4722,6 +4980,7 @@ function update(elapsedTime) {
       g.keyListener._keyNewState[g.keyLeft] = g.demoRecord.keyNewState[6]
       g.keyListener._keyNewState[g.keyRight] = g.demoRecord.keyNewState[7]
   }
+  */
 
   if(g.keyListener.getKeyNewState(g.keyPause) || g.controller.getTouchNewState(g.controller.pauseButton)){
     if(g.pausing){
@@ -4896,16 +5155,6 @@ function update(elapsedTime) {
     g.speedUp = false
   }
 
-  // set time
-  g.elapsedTime = elapsedTime * 1000.0
-  if(g.demoPlay){
-    //console.log('demoPlay: nowTime before: ' + g.nowTime)
-    g.nowTime = new Date(g.demoStartTime.getTime() + g.demoRecord.gameTime)
-    console.log('demoPlay: nowTime after : ' + g.nowTime)
-  }else{
-    g.nowTime = new Date()
-  }
-
   createSubStageProcess()
   downProcess()
   blockRotate()
@@ -4953,4 +5202,8 @@ function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init, false)
+
+document.addEventListener('mouseup', (event) => {
+  console.log('mouseup: time: ' + g.rulesElapsedTime + ', pos: (' + event.clientX + ', ' + event.clientY + ')')
+}, false)
 

@@ -1,21 +1,27 @@
 audio;0;0;basic_rules_1_00_en
-pause;4000;4000
-audio;5000;2587;basic_rules_1_01_en;The concept of the game is to try to capture the cubes.
-audio;8000;3031;basic_rules_1_02_pc_en;The player can mark spot on the stage by pressing the Z key.
-audio;12000;3292;basic_rules_1_03_pc_en;By pressing the Z key again, the player can deactivate the mark.
-audio;16000;2560;basic_rules_1_04_en;The game is played by marking a spot;and then successfully deactivating the spot.
-audio;19000;1986;basic_rules_1_05_en;First mark the spot where cube should be captured.
-audio;21000;5251;basic_rules_1_06_pc_en;When the cube is about to land on the marked spot,;press the Z key.;The marked spot is then deactivated and the cube is captured.
-audio;27000;2143;basic_rules_1_07_en;Repeat this to capture all the necessary cubes.
-pause;30000;3000
-audio;30000;2325;basic_rules_1_08_en;When cubes are left fall off the stage,
-audio;33000;4676;basic_rules_1_09_en;the number of the fallen cubes will be calculated on the block scale.
-audio;38000;3109;basic_rules_1_10_en;Every time the number of fallen cubes exceeds that of the block scale,;the player loses the last row of the stage.
-audio;42000;2378;basic_rules_1_11_en;First mark this the player must prevent the cubes falling off the stage.
-audio;45000;1881;basic_rules_1_12_en;However not all of the cubes should be captured.
-audio;47000;1045;basic_rules_1_13_en;The player must not capture the black cubes called forbidden cubes.
-audio;49000;2169;basic_rules_1_14_en;For every forbidden cube captured,;the player will lose the last row of the stage.
-audio;52000;2639;basic_rules_1_15_en;Let the forbidden cubes pass by and fall off the stage. 
-audio;55000;2038;basic_rules_1_16_pc_en;The player can accelerate the speed of the cubes;by pressing the C key.
-audio;58000;2325;basic_rules_1_17_en;When the player is avalanched by the cubes fallen off the stage,;the game is over.
-end;61000;0
+pause;4313;5339
+audio;4813;3539;basic_rules_1_01_en;The concept of the game is to try to capture the cubes.
+pause;10968;6113
+audio;11468;3895;basic_rules_1_02_pc_en;The player can mark spot on the stage by pressing the Z key.
+pause;20099;6547
+audio;20599;4477;basic_rules_1_03_pc_en;By pressing the Z key again, the player can deactivate the mark.
+pause;28046;9646
+audio;28546;5192;basic_rules_1_04_en;The game is played by marking a spot;and then successfully deactivating the spot.
+audio;34238;2954;basic_rules_1_05_en;First mark the spot where cube should be captured.
+pause;38342;9995
+audio;38842;8431;basic_rules_1_06_pc_en;When the cube is about to land on the marked spot,;press the Z key.;The marked spot is then deactivated and the cube is captured.
+audio;53058;3080;basic_rules_1_07_en;Repeat this to capture all the necessary cubes.
+audio;59022;2509;basic_rules_1_08_en;When cubes are left fall off the stage,
+pause;63538;12369;591;327
+audio;64038;11309;basic_rules_1_09_en;the number of the fallen cubes will be calculated on the block scale.;Every time the number of fallen cubes exceeds that of the block scale,;the player loses the last row of the stage.
+pause;78908;6202
+audio;79408;4416;basic_rules_1_10_en;First mark this the player must prevent the cubes falling off the stage.
+audio;86660;2763;basic_rules_1_11_en;However not all of the cubes should be captured.
+pause;90693;4948;377;170
+audio;91193;3948;basic_rules_1_12_en;The player must not capture the black cubes called forbidden cubes.
+audio;95641;2117;basic_rules_1_13_en;For every forbidden cube captured,
+audio;99176;2752;basic_rules_1_14_en;the player will lose the last row of the stage.
+audio;102759;3890;basic_rules_1_15_en;Let the forbidden cubes pass by and fall off the stage. 
+audio;108641;4799;basic_rules_1_16_pc_en;The player can accelerate the speed of the cubes;by pressing the C key.
+audio;137846;5290;basic_rules_1_17_en;When the player is avalanched by the cubes fallen off the stage,;the game is over.
+end;152832;0

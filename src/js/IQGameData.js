@@ -247,9 +247,13 @@ class _IQGameData {
 
     this.rulesDataIndex = -1
     this.rulesDataArray = []
-    this.rulesCurrentData = null
+    this.rulesCurrentAudio = null
+    this.rulesCurrentPause = null
     this.rulesElapsedTime = 0
     this.rulesTextFadeTime = 300
+    this.rulesSpotLightRadius = 60
+
+    this.rulesSettingBackup = {}
 
     // edit
     this.stageSizeValues = [
@@ -293,8 +297,11 @@ class _IQGameData {
     // recording
     this.recording = false
     this.recorder = null
+    this.recordMspf = Math.floor(1000 / 60)
+    this.recordElapsedTime = 0
     this.demoPlay = false
     this.demoStartTime = null
+    this.demoGameTime = 0
     this.demoIndex = 0
     this.demoRecord = null
 

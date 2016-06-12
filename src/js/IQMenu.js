@@ -1480,12 +1480,13 @@ export default class IQMenu extends DH2DObject {
           const gradWidth = 40
           const dxWidth = 15
           const dx = (Math.abs(Math.sin(IQGameData.nowTime * 0.004)) - 0.5) * dxWidth
+          const gradStop = gradWidth / IQGameData.menuButtonWidth
 
           // left
-          const leftGrad = c.createLinearGradient(IQGameData.menuButtonWidth, 0, IQGameData.menuButtonWidth - gradWidth, 0)
+          const leftGrad = c.createLinearGradient(IQGameData.menuButtonWidth, 0, 0, 0)
           leftGrad.addColorStop(0.0, IQGameData.transparent)
-          leftGrad.addColorStop(0.1, IQGameData.menuButtonColor)
-          leftGrad.addColorStop(1.0, IQGameData.menuButtonColor)
+          leftGrad.addColorStop(gradStop, IQGameData.menuButtonColor)
+          //leftGrad.addColorStop(1.0, IQGameData.menuButtonColor)
           c.fillStyle = leftGrad
           c.clearRect(
             IQGameData.menuLeftButtonX, IQGameData.menuLeftButtonY,
@@ -1504,9 +1505,9 @@ export default class IQMenu extends DH2DObject {
           c.fill()
 
           // right
-          const rightGrad = c.createLinearGradient(0, 0, gradWidth, 0)
+          const rightGrad = c.createLinearGradient(0, 0, IQGameData.menuButtonWidth, 0)
           rightGrad.addColorStop(0.0, IQGameData.transparent)
-          rightGrad.addColorStop(0.1, IQGameData.menuButtonColor)
+          rightGrad.addColorStop(gradStop, IQGameData.menuButtonColor)
           rightGrad.addColorStop(1.0, IQGameData.menuButtonColor)
           c.fillStyle = rightGrad
           c.clearRect(

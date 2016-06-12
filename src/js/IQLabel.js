@@ -744,12 +744,22 @@ export default class IQLabel extends DH2DObject {
     } // if(g.stageClear)
 
     if(IQGameData.rulePlay){
-      const data = IQGameData.rulesCurrentData
+      const data = IQGameData.rulesCurrentAudio
+      const pauseData = IQGameData.rulesCurrentPause
       const time = IQGameData.rulesElapsedTime
 
       // for debug
       c.fillStyle = IQGameData.whiteColor
-      c.fillText(IQGameData.rulesElapsedTime, 500, 100)
+      c.fillText(time, 500, 30)
+
+      if(pauseData && pauseData.spotX !== undefined){
+        // draw spot light
+        c.fillStyle = 'rgba(255, 255, 255, 0.5)'
+        c.beginPath()
+        c.arc(pauseData.spotX, pauseData.spotY, IQGameData.rulesSpotLightRadius, 0, 2 * Math.PI)
+        c.rect(IQGameData.canvasWidth, 0, -IQGameData.canvasWidth, IQGameData.canvasHeight)
+        c.fill("evenodd")
+      }
 
       if(data){
         const startTime = data.time

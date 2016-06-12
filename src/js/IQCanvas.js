@@ -26,13 +26,33 @@ export default class IQCanvas extends CanvasField {
     this.simStartTime = null
 
     /** @type {int} */
-    this.simElapsedTime = 0
+    // this.simElapsedTime = 0
 
     /** @type {int} */
-    this.simNextElapsedTime = 0
+    // this.simNextElapsedTime = 0
+
+    /** @type {Array<object>} */
+    this.simList = []
+
+    /** @type {int} */
+    this.simListIndex = -1
 
     /** @type {function} */
-    this.simGetElapsedTimeFunc = null
+    this.simFrameCallback = null
+
+    /** @type {boolean} */
+    this.moveEnable = true
+
+    /** @type {int} */
+    this.mspf = null
+  }
+
+  getMspf() {
+    return this.mpsf
+  }
+
+  setMspf(mspf = 0) {
+    this.mspf = mspf
   }
 
   /**
@@ -42,12 +62,13 @@ export default class IQCanvas extends CanvasField {
    * @returns {void}
    */
   _callNextFrame() {
+  /*
     // "Reflect" is not yet implemented...
     this._requestAnimationFrame.call(window, () => {
       if(this.simulation){
         const nowTime = new Date()
         const diffTime = nowTime - this.simStartTime
-
+        
         if(diffTime < this.simNextElapsedTime){
           console.log('callNextFrame skip')
           if(this._animating){
@@ -57,17 +78,19 @@ export default class IQCanvas extends CanvasField {
         }
 
         let canvasTime = this.simNextElapsedTime - this.simElapsedTime
+        let nextTime = this.simGetElapsedTimeFunc(nowTime)
+
         this.simElapsedTime = this.simNextElapsedTime
-        this.simNextElapsedTime = this.simGetElapsedTimeFunc()
-        
+        this.simNextElapsedTime = nextTime
+
         while(this.simNextElapsedTime <= diffTime){
-          this.drawPicture(canvasTime, true) 
-          //this.drawPicture(canvasTime, false) 
+          this.drawPicture(canvasTime, !this.moveEnable, true) // skipRender
           canvasTime = this.simNextElapsedTime - this.simElapsedTime
           this.simElapsedTime = this.simNextElapsedTime
-          this.simNextElapsedTime = this.simGetElapsedTimeFunc()
+          this.simNextElapsedTime = this.simGetElapsedTimeFunc(nowTime)
         }
-        this.drawPicture(canvasTime)
+
+        this.drawPicture(canvasTime, !this.moveEnable)
       }else{
         this.drawPicture()
       }
@@ -76,17 +99,55 @@ export default class IQCanvas extends CanvasField {
         this._callNextFrame()
       }
     })
-    //Reflect.apply(this._requestAnimationFrame, window, () => { obj.drawPicture() } )
+  */
+
+    // "Reflect" is not yet implemented...
+    this._requestAnimationFrame.call(window, () => {
+      if(this.simulation){
+        const nowTime = new Date()
+        const diffTime = nowTime - this.simStartTime
+
+        //IQGameData.rulesElapsedTime = diffTime
+
+        if(this.simFrameCallback){
+          this.simFrameCallback(diffTime)
+        }
+
+        let simData = this.simList[this.simListIndex]
+        while(simData && simData.time <= diffTime){
+          if(simData.callback){
+            simData.callback(simData, diffTime)
+          }
+          if(simData.type === 'control'){
+            this.currentSimData = simData
+            this.drawPicture(simData.elapsedTime, !this.moveEnable, true) // skipRender
+          }
+          this.simListIndex++
+          simData = this.simList[this.simListIndex]
+        }
+        this._renderObjects()
+      }else if(this.mspf > 0){
+        this.drawPicture(this.mspf)
+      }else{
+        this.drawPicture()
+      }
+
+      if(this._animating){
+        this._callNextFrame()
+      }
+    })
+
   }
 
   /**
    * draw one frame
    * @access public
    * @param {float} msec - if msec is set, use the given time (ms) to calc physics instead of real time
-   * @param {boolean} skipRender - if skipRender is true, render() function will be not called. (only calc physics)
+   * @param {boolean} skipMove - if skipMove is true, move() and animate() function will be not called.
+   * @param {boolean} skipRender - if skipRender is true, render() function will be not called.
    * @returns {void}
    */
-  drawPicture(msec, skipRender = false) {
+  drawPicture(msec, skipMove = false, skipRender = false) {
     let elapsedTime = 0
     const nowTime = (new Date()).getTime()
 
@@ -104,6 +165,21 @@ export default class IQCanvas extends CanvasField {
       this._frameCallback(elapsedTime)
     }
 
+    if(!skipMove){
+      this._moveObjects(elapsedTime)
+    }
+
+    // render objects
+    if(!skipRender){
+      this._renderObjects()
+    }
+
+    //if(this._animating){
+    //  this._callNextFrame()
+    //}
+  }
+
+  _moveObjects(elapsedTime = 0) {
     // update objects position and call callback function
     this._objs.forEach((obj) => {
       obj.move(elapsedTime)
@@ -122,69 +198,95 @@ export default class IQCanvas extends CanvasField {
     this._alphaObjs.forEach((obj) => {
       obj.animate(elapsedTime)
     })
-
-    // render objects
-    if(!skipRender){
-      this._2DContext.clearRect(0, 0, this._canvasWidth, this._canvasHeight)
-      this._gl.clear(this._gl.COLOR_BUFFER_BIT | this._gl.DEPTH_BUFFER_BIT | this._gl.STENCIL_BUFFER_BIT)
-
-      if(this._mirrorOn){
-        // render with mirror effect
-        // FIXME: multipass
-
-        // draw without mirror
-        this._objs.forEach( (obj) => {
-          // FIXME
-          if(obj._renderer){
-            const gl = obj._renderer._gl
-            obj._renderer.enableStencil()
-            gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE)
-            if(obj._mirror){
-              // fill 16 to mirror area
-              gl.stencilFunc(gl.ALWAYS, 16, obj._renderer._stencilMask)
-            }else{
-              // fill 0 to not mirror area
-              gl.stencilFunc(gl.ALWAYS,  0, obj._renderer._stencilMask)
-            }
-          }
-          obj.render()
-        })
-
-        // update stencil buffer
-        const refObjs = this._refObjs
-        this._objs.forEach((obj) => {
-          if(obj._mirror){
-            // FIXME
-            obj._renderer.enableStencil()
-            obj.renderMirror(refObjs)
-          }
-        })
-
-        this._alphaObjs.forEach((obj) => {
-          obj._renderer.disableStencil()
-          obj.render()
-        })
-      }else{
-        // render without mirror effect
-        this._objs.forEach( (obj) => {
-          obj.render()
-        })
-        this._alphaObjs.forEach( (obj) => {
-          obj.render()
-        })
-      }
-
-      this._gl.flush()
-    }
-
-    //if(this._animating){
-    //  this._callNextFrame()
-    //}
   }
 
+  _renderObjects() {
+    this._2DContext.clearRect(0, 0, this._canvasWidth, this._canvasHeight)
+    this._gl.clear(this._gl.COLOR_BUFFER_BIT | this._gl.DEPTH_BUFFER_BIT | this._gl.STENCIL_BUFFER_BIT)
+
+    if(this._mirrorOn){
+      // render with mirror effect
+      // FIXME: multipass
+
+      // draw without mirror
+      this._objs.forEach( (obj) => {
+        // FIXME
+        if(obj._renderer){
+          const gl = obj._renderer._gl
+          obj._renderer.enableStencil()
+          gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE)
+          if(obj._mirror){
+            // fill 16 to mirror area
+            gl.stencilFunc(gl.ALWAYS, 16, obj._renderer._stencilMask)
+          }else{
+            // fill 0 to not mirror area
+            gl.stencilFunc(gl.ALWAYS,  0, obj._renderer._stencilMask)
+          }
+        }
+        obj.render()
+      })
+
+      // update stencil buffer
+      const refObjs = this._refObjs
+      this._objs.forEach((obj) => {
+        if(obj._mirror){
+          // FIXME
+          obj._renderer.enableStencil()
+          obj.renderMirror(refObjs)
+        }
+      })
+
+      this._alphaObjs.forEach((obj) => {
+        obj._renderer.disableStencil()
+        obj.render()
+      })
+    }else{
+      // render without mirror effect
+      this._objs.forEach( (obj) => {
+        obj.render()
+      })
+      this._alphaObjs.forEach( (obj) => {
+        obj.render()
+      })
+    }
+
+    this._gl.flush()
+  }
+
+  /*
   startSimulation(startTime, getElapsedTimeCallback) {
     this.simulation = true
-    this.simStartTime = startTime
+    this.simStartTime = new Date(startTime.getTime())
+    this.simElapsedTime = 0
+    this.simNextElapsedTime = 0
     this.simGetElapsedTimeFunc = getElapsedTimeCallback
+    this.moveEnable = true
+  }
+  */
+  startSimulation(startTime, simList, simFrameCallback) {
+    this.simulation = true
+    this.simStartTime = new Date(startTime.getTime())
+    //this.simElapsedTime = 0
+    //this.simNextElapsedTime = 0
+    this.moveEnable = true
+    this.simList = simList
+    this.simListIndex = 0
+    this.simFrameCallback = simFrameCallback
+  }
+
+  endSimulation() {
+    this.simulation = false
+    this.simStartTime = null
+    this.simFrameCallback = null
+    this.moveEnable = true
+  }
+
+  pauseSimulation() {
+    this.moveEnable = false
+  }
+
+  resumeSimulation() {
+    this.moveEnable = true
+    //this.simStartTime.setMilliseconds(this.simStartTime.getMilliseconds() + pausedTime)
   }
 }
