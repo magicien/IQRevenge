@@ -78,6 +78,16 @@ export default class IQMenu extends DH2DObject {
     this._cubeDstX = 0
     this._cubeDstY = 0
 
+    this._topLeftDX = 55
+    this._topLeftDY = 25
+    this._topLeftDZ = 155
+    this._topLeftTiltRot = Math.atan2(
+      this._topLeftDY,
+      Math.sqrt(this._topLeftDX * this._topLeftDX + this._topLeftDZ * this._topLeftDZ)
+    )
+    this._topLeftTiltAxis = new Vector3(this._topLeftDZ, 0, this._topLeftDX)
+    this._topLeftTiltAxis.normalize()
+
     // expanding
     this._expanding = false
     this._expandingTime = null

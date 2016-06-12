@@ -668,6 +668,7 @@ class _IQGameData {
     // rule
     this.rulePlay = false
     this.rulePause = false
+    this.ruleQuitting = false
     this.ruleNumber = 0
     this.rulePlayQuestionNo = 0
     this.ruleStageDataFile1 = './question/rule_stage1.txt'
@@ -832,6 +833,16 @@ class _IQGameData {
    */
   getElapsedTime(time) {
     return this.nowTime - time
+  }
+
+  /**
+   * get elapsed time from given time
+   * @access public
+   * @param {Date} time - Date object to compare time difference
+   * @returns {int} - elapsed time from given time (ms)
+   */
+  getElapsedRealTime(time) {
+    return (new Date()) - time
   }
 
   /**

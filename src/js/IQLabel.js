@@ -749,8 +749,8 @@ export default class IQLabel extends DH2DObject {
       const time = IQGameData.rulesElapsedTime
 
       // for debug
-      c.fillStyle = IQGameData.whiteColor
-      c.fillText(time, 500, 30)
+      //c.fillStyle = IQGameData.whiteColor
+      //c.fillText(time, 500, 30)
 
       if(pauseData && pauseData.spotX !== undefined){
         // draw spot light

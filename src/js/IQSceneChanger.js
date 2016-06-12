@@ -20,8 +20,9 @@ export default class IQSceneChanger extends DH2DObject {
    * @param {Audio} afterBGM -
    * @param {Function} afterLoop -
    * @param {Function} sceneChangeCallback -
+   * @param {boolean} useRealTime -
    */
-  constructor(changeTime, blackOut, beforeBGM, afterBGM, afterLoop, sceneChangeCallback) {
+  constructor(changeTime, blackOut, beforeBGM, afterBGM, afterLoop, sceneChangeCallback, useRealTime = false) {
     super()
 
     /** @type {boolean} */
@@ -34,7 +35,12 @@ export default class IQSceneChanger extends DH2DObject {
     this._afterBGM = afterBGM
     this._afterLoop = afterLoop
     this._sceneChangeCallback = sceneChangeCallback
-    this._startTime = new Date(IQGameData.nowTime.getTime())
+    this._useRealTime = useRealTime
+    if(this._useRealTime){
+      this._startTime = new Date()
+    }else{
+      this._startTime = new Date(IQGameData.nowTime.getTime())
+    }
     this._sceneChanged = false
 
     IQGameData.sceneChanging = true
@@ -43,7 +49,14 @@ export default class IQSceneChanger extends DH2DObject {
 
   render() {
     const c = IQGameData.canvasField.get2DContext()
-    const diffTime = IQGameData.getElapsedTime(this._startTime) * 0.001
+    let diffTime = 0
+
+    if(this._useRealTime){
+      diffTime = IQGameData.getElapsedRealTime(this._startTime) * 0.001
+    }else{
+      diffTime = IQGameData.getElapsedTime(this._startTime) * 0.001
+    }
+
     let r = 0
     if(this._changeTime > 0){
       r = 2.0 * diffTime / this._changeTime
@@ -60,11 +73,6 @@ export default class IQSceneChanger extends DH2DObject {
         this._beforeBGM.volume = (1.0 - s) * IQGameData.soundVolume
       }
     }else if(!this._sceneChanged){
-      /*
-      const s = r * (r - 4) + 4
-      if(s > 1.0)
-        s = 1.0
-      */
       const s = 1.0
       alpha = s
 

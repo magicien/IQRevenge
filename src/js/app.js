@@ -321,13 +321,13 @@ function playerMoveCallback() {
       g.camera.lookat(ox, oy, oz, cx, cy, cz, 0, 1, 0)
 
       return
-
     }
     g.cameraXAngle = g.cameraXAngleGoal
     g.cameraYAngle = g.cameraYAngleGoal
     g.cameraTargetX = g.cameraTargetXGoal
     g.cameraTargetY = g.cameraTargetYGoal
     g.cameraTargetZ = g.cameraTargetZGoal
+    // <- g.gameOver
   }else if(g.stageStarting){
     // start
     const speed = g.cubeSize * 1000.0 / g.stageCreateDelay
@@ -342,7 +342,6 @@ function playerMoveCallback() {
         // FIXME: Do not use 'new' for side effects
         new IQSceneChanger(0, false, g.bgm_stagecall, g.bgm_stage, null, null)
       }
-      console.log('stageCreateEnd: ' + diffTime)
 
       g.cameraXAngleGoal = -0.3
       g.cameraYAngleGoal = Math.PI
@@ -1119,6 +1118,7 @@ function resetValues(stage, remainScores) {
   g.stageClear = false
   g.stageClearSceneChange = false
   g.ending = false
+  g.pausing = false
 
   g.perfect = false
   g.addingLine = false
@@ -1801,7 +1801,15 @@ function showMenuLoop() {
     const h = (t - 1.0) * g.menuRotationSpeed
     const r = h + Math.sqrt(t + h * h)
     const tile = g.menu._foldingTiles[0]
-    tile._model.rootBone.rotate.createAxis(g.yaxis, -r)
+
+    const tileRot = tile._model.rootBone.rotate
+    tileRot.createAxis(g.yaxis, -r)
+    /*
+    const tiltR = new Vector4()
+    tiltR.createAxis(g.menu._topLeftTiltAxis, g.menu._topLeftTiltRot)
+    //tiltR.createAxis(g.xaxis, g.menu._topLeftTiltRot)
+    tileRot.cross(tiltR, tileRot)
+    */
 
     cx = g.menu._opPosX[g.menu._cursor]
     cy = g.menu._opPosY[g.menu._cursor]
@@ -1816,6 +1824,7 @@ function showMenuLoop() {
       cube.setScale(g.menu._cubeScale * 0.5)
       cubePos.x = g.menu._cubeDstX
       cubePos.y = g.menu._cubeDstY
+      cubePos.z = g.menu._upTileZ + g.menu._cubeScale * 0.25
 
       g.menu._moveTopLeft = false
       g.menu._expanding = true
@@ -1844,11 +1853,13 @@ function showMenuLoop() {
       }
       const cubeX = s * g.menu._cubeDstX + (1 - s) * g.menu._cubeSrcX
       const cubeY = s * g.menu._cubeDstY + (1 - s) * g.menu._cubeSrcY
+      const cubeZ = g.menu._upTileZ + s * g.menu._cubeScale * 0.25
       const cubeScale = g.menu._cubeScale * (1.0 - s * 0.5)
 
       cube.setScale(cubeScale)
       cubePos.x = cubeX
       cubePos.y = cubeY
+      cubePos.z = cubeZ
     } 
 
     // fade out
@@ -1860,8 +1871,15 @@ function showMenuLoop() {
     const h = (t - 1.0) * g.menuRotationSpeed
     const r = h + Math.sqrt(t + h * h)
     const tile = g.menu._foldingTiles[0]
-    //tile._model.rootBone.rotate.createAxis(g.menuCubeRotateAxis, -r)
-    tile._model.rootBone.rotate.createAxis(g.yaxis, -r)
+
+    const tileRot = tile._model.rootBone.rotate
+    tileRot.createAxis(g.yaxis, -r)
+    /*
+    const tiltR = new Vector4()
+    tiltR.createAxis(g.menu._topLeftTiltAxis, g.menu._topLeftTiltRot)
+    //tiltR.createAxis(g.xaxis, g.menu._topLeftTiltRot)
+    tileRot.cross(tiltR, tileRot)
+    */
 
     // camera position
     cx = g.menu._opPosX[g.menu._cursor]
@@ -1879,8 +1897,15 @@ function showMenuLoop() {
       const t = rotDiffTime / g.menuRotationTime
       const r = g.menu._expandingSrcRot + rotSpeed * t
       const tile = g.menu._foldingTiles[0]
-      //tile._model.rootBone.rotate.createAxis(g.menuCubeRotateAxis, -r)
-      tile._model.rootBone.rotate.createAxis(g.yaxis, -r)
+
+      const tileRot = tile._model.rootBone.rotate
+      tileRot.createAxis(g.yaxis, -r)
+      /*
+      const tiltR = new Vector4()
+      tiltR.createAxis(g.menu._topLeftTiltAxis, g.menu._topLeftTiltRot)
+      //tiltR.createAxis(g.xaxis, g.menu._topLeftTiltRot)
+      tileRot.cross(tiltR, tileRot)
+      */
     }else if(expandingDiffTime < time2){
       if(!g.menu._expandingRotFinished){
         g.menu._expandingRotFinished = true
@@ -1987,6 +2012,16 @@ function showMenuLoop() {
     const childBone = tileObjs[0]._model.rootBone.childBoneArray[0]
     childBone.rotate = new Vector4(0, 0, 0, 1)
     childBone.offset = new Vector3(0, 0, -0.5)
+
+    /*
+    const tiltBone = new Bone()
+    tiltBone.rotate = new Vector4(1, 0, 0, 0)
+    tiltBone.offset = new Vector3(0, 0, 0)
+
+    tileObjs[0]._model.rootBone.removeChild(childBone)
+    tileObjs[0]._model.rootBone.addChild(tiltBone)
+    tiltBone.addChild(childBone)
+    */
 
     playSound(g.se_decision)
   }
@@ -2599,8 +2634,8 @@ function moveCubeToTopLeft() {
   g.menu._moveTopLeftTime = new Date(g.nowTime.getTime())
   g.menu._cubeSrcX = tilePos.x
   g.menu._cubeSrcY = tilePos.y
-  g.menu._cubeDstX = cameraPos.x - 55
-  g.menu._cubeDstY = cameraPos.y - 25
+  g.menu._cubeDstX = cameraPos.x - g.menu._topLeftDX
+  g.menu._cubeDstY = cameraPos.y - g.menu._topLeftDY
 
   g.menu.showFadeTile()
 }
@@ -2957,15 +2992,15 @@ function mergeRulesData() {
 
 function simFrameCallback(diffTime) {
   g.rulesElapsedTime = diffTime
-}
-
-function simControlCallback(data, elapsedTime) {
-  g.demoGameTime = data.gameTime
 
   if(decisionKeyPushed()){
     // go back to menu
     quitRulePlay()
   }
+}
+
+function simControlCallback(data, elapsedTime) {
+  g.demoGameTime = data.gameTime
 
   g.keyListener._keyState[g.keyMark] = data.keyState[0]
   g.keyListener._keyState[g.keyAdvantage] = data.keyState[1]
@@ -2990,11 +3025,6 @@ function simAudioCallback(data) {
   if(g.rulesCurrentAudio){
     pauseSound(g.rulesCurrentAudio.audio)
   }
-
-  console.log('time: ' + data.time)
-  data.text.forEach((text) => {
-    console.log(text)
-  })
 
   g.rulesCurrentAudio = data
   playSound(data.audio)
@@ -3193,9 +3223,10 @@ function quitTestPlay() {
     g.renderer.setLight(g.light)
 
     // title objects: 'CREATE'
-    g.menu._foldingTiles.forEach((tile) => {
-      g.canvasField.addObject(tile)
-    })
+    let len = g.menu.getOptionName().length
+    for(let i=0; i<len; i++){
+      g.canvasField.addObject(g.menu._foldingTiles[i])
+    }
 
     g.testPlay = false
   })
@@ -3207,9 +3238,15 @@ function quitTestPlay() {
  * @returns {void}
  */
 function quitRulePlay() {
+  if(g.ruleQuitting){
+    return
+  }
+  g.ruleQuitting = true
+    
   new IQSceneChanger(3.0, true, g.bgm_stage, g.bgm_menu, showSubMenuLoop, () => {
     g.rulePlay = false
     g.demoPlay = false
+    g.ruleQuitting = false
 
     g.canvasField.endSimulation()
     g.keyListener.resetKeyState()
@@ -3245,14 +3282,15 @@ function quitRulePlay() {
     g.renderer.setLight(g.light)
 
     // title objects: 'RULES'
-    g.menu._foldingTiles.forEach((tile) => {
-      g.canvasField.addObject(tile)
-    })
+    let len = g.menu.getOptionName().length
+    for(let i=0; i<len; i++){
+      g.canvasField.addObject(g.menu._foldingTiles[i])
+    }
 
     g.keyListener.resetKeyState()
 
     restoreSettingFromRules()
-  })
+  }, true)
 }
 
 function saveSettingForRules() {
@@ -3484,14 +3522,12 @@ function createSubStage() {
       g.canvasField.setMspf(g.recordMspf)
     }
     if(g.demoPlay){
-      console.log('startSimulation')
       g.canvasField.startSimulation(g.nowTime, g.rulesDataArray, simFrameCallback)
       g.demoIndex = 0
       g.demoStartTime = new Date(g.nowTime.getTime())
       if(g.rulePlay){
         g.rulesStartTime = new Date(g.nowTime.getTime())
       }
-      //g.demoRecord = g.recorder.getRecord(0)
     }
   }
 
@@ -4311,7 +4347,11 @@ function gameOver() {
     return
 
   // FIXME
-  new IQSceneChanger(0, false, g.bgm_stage, g.bgm_gameover, null, null)
+  let music = g.bgm_gameover
+  if(g.rulePlay || g.testPlay){
+    music = null
+  }
+  new IQSceneChanger(0, false, g.bgm_stage, music, null, null)
 
   g.gameOver = true
   //g.gameOverTime = new Date()
@@ -4402,7 +4442,7 @@ function breakLineProcess() {
 
 function gameOverProcess() {
   if(g.gameOver){
-    const diffTime = g.getElapsedTime(g.gameOverTime)
+    const diffTime = g.getElapsedTime(g.gameOverTime) * 0.001
     g.playerObj._position.y = -60.0 * diffTime * (diffTime + 0.5)
 
     const maxTime = g.gameOverTime1 + g.gameOverTime2 + g.gameOverTime3 * 0.5
@@ -4411,11 +4451,11 @@ function gameOverProcess() {
                 + g.gameOverIQTime1 + g.gameOverIQTime2
     const animationStop = g.gameOverTime1 + g.gameOverTime2
 
-    if(diffTime > maxTime){
+    if(diffTime > maxTime * 0.001){
       removeAllObjects()
       g.canvasField.addObject(g.labelObj)
       g.canvasField.setFrameCallback(showIQLoop)
-    }else if(diffTime > animationStop){
+    }else if(diffTime > animationStop * 0.001){
       g.playerObj.setAnimating(false)
     }
   }

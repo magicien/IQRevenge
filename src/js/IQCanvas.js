@@ -107,8 +107,6 @@ export default class IQCanvas extends CanvasField {
         const nowTime = new Date()
         const diffTime = nowTime - this.simStartTime
 
-        //IQGameData.rulesElapsedTime = diffTime
-
         if(this.simFrameCallback){
           this.simFrameCallback(diffTime)
         }
