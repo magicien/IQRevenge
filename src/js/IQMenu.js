@@ -1008,6 +1008,7 @@ export default class IQMenu extends DH2DObject {
       case 'continue': {
         const width = 200
         const menuItems = ['Tweet', 'Yes', 'No']
+        this._subCursor = 0
         for(let i=0; i<menuItems.length; i++){
           this.setMenuItem(i, {
             x: (IQGameData.canvasWidth - width) * 0.5,
@@ -1024,6 +1025,10 @@ export default class IQMenu extends DH2DObject {
       default: {
         // nothing to do
       }
+    }
+
+    if(this._subCursor >= this._menuItem.length){
+      this._subCursor = 0
     }
   }
 

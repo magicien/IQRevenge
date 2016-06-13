@@ -37,6 +37,10 @@ const g = IQGameData
 
 //function playerMoveCallback(obj) {
 function playerMoveCallback() {
+  if(g.pausing){
+    return
+  }
+
   if(!g.gameOver && !g.stageClear){
     if(g.playerObj._position.x < g.minX){
       g.playerObj._position.x = g.minX
@@ -1149,6 +1153,7 @@ function resetValues(stage, remainScores) {
 
   // canvas
   g.canvasField.enableMirror()
+  g.canvasField.moveEnable = true
 
   // camera
   g.camera.bind(null)
@@ -1169,6 +1174,9 @@ function resetValues(stage, remainScores) {
   g.light.setDiffuse(0.7, 0.7, 0.7, 0.0)
   g.light.setSpecular(0.9, 0.9, 0.9, 0.0)
   g.renderer.setLight(g.light)
+
+  // cube
+  IQCube.resetTexture()
 
   // player
   g.playerObj.setMotion(g.standing)
@@ -3052,6 +3060,7 @@ function setup() {
     return
   }
 
+
   let loadDataPromise = null
 
   if(g.testPlay){
@@ -3201,6 +3210,8 @@ function updateDemoFrame(nowTime) {
  */
 function quitTestPlay() {
   new IQSceneChanger(3.0, true, g.bgm_stage, g.bgm_menu, showSubMenuLoop, () => {
+    g.pausing = false
+
     const createCursor = 4
     removeAllObjects()
     g.canvasField.addObject(g.menu)
@@ -3229,7 +3240,8 @@ function quitTestPlay() {
     }
 
     g.testPlay = false
-  })
+    g.canvasField.moveEnable = true
+  }, true)
 }
 
 /**
@@ -4962,10 +4974,39 @@ function giveup() {
     g.canvasField.addObject(g.labelObj)
   }, null)
   */
-  g.canvasField.removeObject(g.menu)
+  g.canvasField.moveEnable = false
   g.current_bgm = null
-  resumeFromPause()
-  gameOver()
+  //g.canvasField.removeObject(g.menu)
+  //resumeFromPause()
+  //gameOver()
+
+  if(g.testPlay){
+    //g.canvasField.removeObject(g.menu)
+    //resumeFromPause()
+    quitTestPlay()
+  }else{
+    new IQSceneChanger(2.0, true, null, g.bgm_menu, showMenuLoop, () => {
+      g.pausing = false
+
+      g.canvasField.moveEnable = true
+      removeAllObjects()
+      g.canvasField.addObject(g.menu)
+      g.menu.setMenu('top')
+      g.camera.distance = 20.0
+      g.menu.addTilesToCanvas()
+      g.menu.initMenuParams()
+      g.canvasField.addObject(g.menu._opTileObj, true)
+
+      // set light
+      g.light.setPosition(-50, 0, -100)
+      g.light.setAmbient(0.6, 0.6, 0.6, 0.0)
+      g.light.setDiffuse(0.7, 0.7, 0.7, 0.0)
+      g.light.setSpecular(0.9, 0.9, 0.9, 0.0)
+      g.renderer.setLight(g.light)
+
+      subMenuReturn()
+    }, true)
+  }
 }
 
 function update(elapsedTime) {
@@ -4977,11 +5018,7 @@ function update(elapsedTime) {
   // set time
   g.elapsedTime = elapsedTime * 1000.0
   if(g.demoPlay){
-    //console.log('demoPlay: nowTime before: ' + g.nowTime)
-    //g.nowTime = new Date(g.demoStartTime.getTime() + g.demoRecord.gameTime)
-    // FIXME: do not use canvasField
     g.nowTime = new Date(g.demoStartTime.getTime() + g.demoGameTime)
-    //console.log('demoPlay: nowTime after : ' + g.nowTime)
   }else if(g.recording){
     g.recordElapsedTime += g.recordMspf
     g.nowTime = new Date(g.recorder.startTime.getTime() + g.recordElapsedTime)
@@ -5030,7 +5067,6 @@ function update(elapsedTime) {
       // pause
       g.menu.setMenu('pause')
       g.canvasField.addObject(g.menu)
-      //g.pauseStartTime = new Date()
       g.pauseStartTime = new Date(g.nowTime.getTime())
       if(g.current_bgm){
         g.current_bgm.pause()
@@ -5134,53 +5170,6 @@ function update(elapsedTime) {
   }
 
 
-  // XXX: DEBUG
-  /*
-  if(g.keyListener.getKeyNewState('S')){
-    createSubStage()
-  }
-  if(g.keyListener.getKeyNewState('A')){
-    createSubSubStage()
-  }
-  if(g.keyListener.getKeyNewState('D')){
-    g.stageObj.breakOneLine()
-    playSound(g.se_break)
-  }
-  if(g.keyListener.getKeyNewState('F')){
-    gameOver()
-  }
-  if(g.keyListener.getKeyNewState('G')){
-    g.camera.bindXAngle = -0.1
-    g.camera.distance = 180.0
-  }
-  if(g.keyListener.getKeyNewState('H')){
-    g.camera.bindXAngle = -0.9
-    g.camera.distance = 250.0
-  }
-  if(g.keyListener.getKeyNewState('Y')){
-    g.score = 4000
-    g.baseStep = 12
-    g.step = 13
-    g.penalty = 3
-  }
-  if(g.keyListener.getKeyNewState('R')){
-    resetGame()
-  }
-  if(g.keyListener.getKeyNewState('Q')){
-    const date1 = new Date()
-    const date2 = new Date()
-    const dateExpire = new Date()
-    const daySeconds = 24 * 60 * 60 * 1000
-    date1.setTime(date1.getTime() - 3*daySeconds)
-    dateExpire.setTime(dateExpire.getTime() + 7*daySeconds)
-    const cookieText = 'IQ=110@' + Math.floor(date1 / daySeconds)
-                   + ':70@' + Math.floor(date2 / daySeconds) + ''
-    cookieText += 'expires=' + dateExpire.toGMTString()
-
-    document.cookie = cookieText
-  }
-  */
-
   if(g.keyListener.getKeyNewState(g.keyMark) || g.controller.getTouchNewState(g.controller.markerButton)){
     if(checkControllable()){
       setMarker()
@@ -5221,8 +5210,6 @@ function update(elapsedTime) {
   }
   g.keyListener.resetKeyNewState()
   resetTouchState()
-
-  //console.log('frame end')
 }
 
 function removeLoadingDiv() {

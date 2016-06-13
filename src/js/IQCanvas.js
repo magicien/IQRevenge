@@ -125,9 +125,9 @@ export default class IQCanvas extends CanvasField {
         }
         this._renderObjects()
       }else if(this.mspf > 0){
-        this.drawPicture(this.mspf)
+        this.drawPicture(this.mspf, !this.moveEnable)
       }else{
-        this.drawPicture()
+        this.drawPicture(null, !this.moveEnable)
       }
 
       if(this._animating){

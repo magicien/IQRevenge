@@ -831,7 +831,11 @@ class _IQGameData {
    * @param {Date} time - Date object to compare time difference
    * @returns {int} - elapsed time from given time (ms)
    */
-  getElapsedTime(time) {
+  getElapsedTime(time, ignorePause = false) {
+    if(this.pausing && !ignorePause){
+      return this.pauseStartTime - time
+    }
+
     return this.nowTime - time
   }
 
