@@ -1,10 +1,5 @@
 'use strict'
 
-/*
-import {
-
-} from '../../modules/DH3DLibrary/src/js/main'
-*/
 import IQGameData from './IQGameData'
 
 /**
@@ -213,7 +208,6 @@ export default class IQController {
 
       console.log('touchstart: id: ' + touch.identifier)
     }
-    //console.log('touchstart: ' + event)
   }
 
   /**
@@ -234,7 +228,6 @@ export default class IQController {
       this._touchNowState.delete(touch.identifier)
       this._touchEndState.set(touch.identifier, touch)
     }
-    console.log('touchend: ' + event)
   }
 
   /**
@@ -252,9 +245,7 @@ export default class IQController {
       const touch = event.changedTouches[i]
       touch.timeStamp = event.timeStamp
       this._touchNowState.set(touch.identifier, touch)
-      console.log('touchmove: id: ' + touch.identifier)
     }
-    //console.log('touchmove: ' + event)
   }
 
   /**
@@ -400,8 +391,6 @@ export default class IQController {
       }
     })
 
-    //console.log('firstTouch found')
-
     if(firstTouch === null){
       return null
     }
@@ -520,13 +509,6 @@ export default class IQController {
     c.arc(this._btn1CenterX, this._btn1CenterY, this._btnOuterRadius, 0, this._2pi)
     c.stroke()
 
-    /*
-    if(g.markerOn){
-      c.fillStyle = this._btnFireColor
-    }else{
-      c.fillStyle = this._btn1Color
-    }
-    */
     c.fillStyle = this._btn1Color
 
     c.beginPath()

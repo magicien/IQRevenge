@@ -1172,27 +1172,8 @@ export default class IQStage extends DH3DObject {
     return waitCube
   }
 
-/*
-  getTextureUV(stage) {
-    if(stage < 1 || stage > 12) {
-      stage = 1
-    }
-*/
   getTextureUV() {
     const arr = []
-    /*
-    const width = 0.25
-    const delta = 0.015
-    const x0 = ((stage - 1) % 4) * width
-    const x1 = x0 + width
-    const y0 = Math.floor((stage - 1) / 4) * width + width
-    const y1 = y0 + width
-
-    x0 += delta
-    x1 -= delta
-    y0 += delta
-    y1 -= delta
-    */
     const x0 = 0
     const x1 = 1
     const y0 = 0
@@ -1208,5 +1189,4 @@ export default class IQStage extends DH3DObject {
 }
 
 IQStage.setup = () => { /* nothing to do */ }
-
 

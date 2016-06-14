@@ -140,7 +140,6 @@ export default class IQMarker extends DH3DObject {
    * @returns {void}
    */
   setPositionWithCube(cubeZ, cubeX) {
-    //const yPadding = 0.34 * g.cubeSize
     const yPadding = 1.0
     const x = (cubeX - IQGameData.stageWidth * 0.5 + 0.5) * IQGameData.cubeSize
     const y = IQGameData.cubeSize + yPadding
@@ -158,7 +157,6 @@ export default class IQMarker extends DH3DObject {
   }
 
   _getCubeAt(z, x) {
-    //const cubeZ = z - g.aCubeZ - 1
     const cubeZ = z - IQGameData.aCubeZ
     if(cubeZ < 0)
       return null
@@ -203,14 +201,6 @@ export default class IQMarker extends DH3DObject {
       }
     })
   }
-
-/*
-  updateRotate() {
-    const rotateTime = 3000
-    const rot = (g.nowTime % rotateTime) * Math.PI * 2.0 / rotateTime 
-    this.setRotateAxis(g.yaxis, rot)
-  }
-*/
 }
 
 IQMarker.initialized = false

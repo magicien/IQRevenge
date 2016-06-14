@@ -78,7 +78,6 @@ export default class IQLabel extends DH2DObject {
       const diffTime = g.getElapsedTime(g.gameOverTime)
       let dx = 50
       let x = (g.canvasWidth - dx * (strlen - 1)) * 0.5
-      //var startTime = g.gameOverTime1 + g.gameOverTime2 + g.gameOverTime3
       const startTime = g.gameOverTime1 + g.gameOverTime2 + g.gameOverTime3 * 0.5
 
       if(g.testPlay){
@@ -808,7 +807,7 @@ export default class IQLabel extends DH2DObject {
             })
           }
         }else if(data.type === 'pause'){
-          // TODO: implement
+          // nothing to do
         }
       }
     } // if(g.rulePlay)
@@ -826,8 +825,6 @@ export default class IQLabel extends DH2DObject {
       if(g.device.isMobile || g.device.isTablet){
         this._controller.drawResumeButton(c)
       }
-
-
     } // if(g.pausing)
   }
 
@@ -868,7 +865,6 @@ export default class IQLabel extends DH2DObject {
     const c = g.canvasField.get2DContext()
 
     if(!this._beforeTime){
-      //this._beforeTime = g.nowTime
       this._beforeTime = new Date(g.nowTime.getTime())
       this._messageCycle = Math.floor(g.nowTime / this._messageSpeed) * this._messageSpeed
     }

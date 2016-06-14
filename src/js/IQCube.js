@@ -106,7 +106,6 @@ export default class IQCube extends DH3DObject {
     // FIXME: wait before delete
     this.marker = marker
 
-    //IQGameData.canvasField.removeObject(this)
     const obj = this
     IQGameData.aCubeArray.forEach( (cubeLine) => {
       const index = cubeLine.indexOf(obj)
@@ -116,7 +115,7 @@ export default class IQCube extends DH3DObject {
     })
 
     if(this.type === 'forbidden'){
-      // penalty
+      // penalty: nothing to do here
     }else{
       // get point
       if(marker.advantage){
@@ -127,7 +126,6 @@ export default class IQCube extends DH3DObject {
     }
 
     IQGameData.deleteCubeArray.push(this)
-    //this.deleteStartTime = new Date()
     this.deleteStartTime = new Date(IQGameData.nowTime.getTime())
   }
 

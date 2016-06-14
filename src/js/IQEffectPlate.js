@@ -65,7 +65,6 @@ export default class IQEffectPlate extends DH3DObject {
     this.addMoveCallback(() => {
       obj.update()
     })
-    //this.startTime = new Date()
     this.startTime = new Date(IQGameData.nowTime.getTime())
 
     IQGameData.canvasField.addObject(this, true)
@@ -186,7 +185,6 @@ IQEffectPlate.setup = function() {
     const canvas = document.createElement('canvas')
     canvas.width = w
     canvas.height = h
-    //canvas.toString = () => { return 'effectPlate_' + i }
 
     const c = canvas.getContext('2d')
     const grad = c.createLinearGradient(0, y0, 0, y0 + yGrad)

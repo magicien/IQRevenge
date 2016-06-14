@@ -453,86 +453,6 @@ class _IQGameData {
     this.se_miku_stamped_file = 'stamped'
     this.se_miku_scream_file = 'scream'
 
-    // basic rules
-
-    /*
-    // true if PC and Mobile have different voice
-    const rule1BaseName = 'basic_rules_1_'
-    const rule1PCVoice = [
-      false, false, true, true, false,
-      false, true, false, false, false,
-      false, false, false, false, false,
-      false, true, false
-    ]
-    this.se_basic_rules_1_files = new Map()
-    const pc1Lang = new Map()
-    pc1Lang.set('en', [])
-    pc1Lang.set('jp', [])
-    this.se_basic_rules_1_files.set('pc', pc1Lang)
-    const mb1Lang = new Map()
-    mb1Lang.set('en', [])
-    mb1Lang.set('jp', [])
-    this.se_basic_rules_1_files.set('mb', mb1Lang)
-
-    this.se_basic_rules_1_files.forEach((langMap, dev) => {
-      langMap.forEach((seArray, lang) => {
-        for(let i=0; i<rule1PCVoice.length; i++){
-          let number = ''
-          if(i < 10){
-            number += '0' + i
-          }else{
-            number += i
-          }
-          
-          let fileName = rule1BaseName + number
-          if(rule1PCVoice[i]){
-            fileName += '_' + dev
-          }
-          fileName += '_' + lang
-
-          seArray.push(fileName)
-        }
-      })
-    })
-
-    const rule2BaseName = 'basic_rules_2_'
-    const rule2PCVoice = [
-      false, false, false, true, false,
-      false, true, false, false, false,
-      false
-    ]
-    this.se_basic_rules_2_files = new Map()
-    const pc2Lang = new Map()
-    pc2Lang.set('en', [])
-    pc2Lang.set('jp', [])
-    this.se_basic_rules_2_files.set('pc', pc2Lang)
-    const mb2Lang = new Map()
-    mb2Lang.set('en', [])
-    mb2Lang.set('jp', [])
-    this.se_basic_rules_2_files.set('mb', mb2Lang)
-
-    this.se_basic_rules_2_files.forEach((langMap, dev) => {
-      langMap.forEach((seArray, lang) => {
-        for(let i=0; i<rule2PCVoice.length; i++){
-          let number = ''
-          if(i < 10){
-            number += '0' + i
-          }else{
-            number += i
-          }
-          
-          let fileName = rule2BaseName + number
-          if(rule1PCVoice[i]){
-            fileName += '_' + dev
-          }
-          fileName += '_' + lang
-
-          seArray.push(fileName)
-        }
-      })
-    })
-    */
-
     // sound play timing
     this.se_step_timing_1 = 0
     this.se_step_timing_2 = 0
@@ -768,8 +688,6 @@ class _IQGameData {
     this.xaxis = new Vector3(1.0, 0.0, 0.0)
     this.yaxis = new Vector3(0.0, 1.0, 0.0)
     this.zaxis = new Vector3(0.0, 0.0, 1.0)
-    
-    //this.menuCubeRotateAxis = new Vector3(0.0, 1.0, -0.3)
 
     // cube data
     this.cubeSize = 25
@@ -829,6 +747,7 @@ class _IQGameData {
    * get elapsed time from given time
    * @access public
    * @param {Date} time - Date object to compare time difference
+   * @param {boolean} ignorePause - 
    * @returns {int} - elapsed time from given time (ms)
    */
   getElapsedTime(time, ignorePause = false) {

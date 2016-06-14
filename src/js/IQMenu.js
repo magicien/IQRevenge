@@ -124,42 +124,18 @@ export default class IQMenu extends DH2DObject {
     this._subScoreLevel = ''
 
     // sub menu = OPTION
-    /*
-    this._optionSubMenus = $A([
-      'Level'
-      'Character'
-      'KeyConfig'
-      'SoundVolume'
-      'Language'
-      ''
-      'return'
-    ])
-    this._optionSubMenuEnable = $A([true, true, true, true, true, false, true])
-    */
     this._optionSubMenus = [
       'Level',
       'Character',
       'Volume',
       'Language',
-      '',
+      '', // do we need KeyConfig?
       '',
       'return'
     ]
     this._optionSubMenuEnable = [true, true, true, true, false, false, true]
 
     // sub menu = SHARE
-    /*
-    this._shareSubMenus = $A([
-      'Twitter',
-      'Facebook',
-      'Google+',
-      'mixi',
-      '',
-      '',
-      'return'
-    ])
-    this._shareSubMenuEnable = $A([true, true, true, true, false, true])
-    */
     this._shareSubMenus = [
       'Twitter',
       'Facebook',
@@ -827,15 +803,7 @@ export default class IQMenu extends DH2DObject {
 
   setFadeTileAlpha(alpha) {
     const material = this._fadeTileObj._model.materialArray[0]
-    /*
-    material.ambient.w = alpha
-    material.diffuse.w = alpha
-    material.specular.w = alpha
-    material.emission.w = alpha
-    */
     material.alpha = alpha
-
-    //this._fadeTileObj.updateMaterial()
   }
 
   removeWithoutMenuCube() {
@@ -906,31 +874,6 @@ export default class IQMenu extends DH2DObject {
   }
 
   setupMenuPlayerObj() {
-    // camera
-    /*
-    g.camera.bind(null)
-    g.camera.setBindOffset(0, 15.0, 0)
-    g.camera.perspective(45.0, g.canvasWidth / g.canvasHeight, g.cameraNear, g.cameraFar)
-    g.camera.projMat.translate(g.camera.projMat, 0, 0, 0)
-    g.camera.distance = 250.0
-    g.cameraYAngleGoal = g.cameraYAngle = Math.PI
-    g.cameraXAngleGoal = g.cameraXAngle = -0.9
-    g.canvasField.setCamera(g.camera)
-    */
-
-    // renderer
-    //g.renderer.setClearColor(0,0,0,1)
-
-    // light
-    //g.light.setPosition(30, 70, -100)
-    /*
-    g.light.setPosition(-50, 0, -100)
-    g.light.setAmbient(0.6, 0.6, 0.6, 0.0)
-    g.light.setDiffuse(0.7, 0.7, 0.7, 0.0)
-    g.light.setSpecular(0.9, 0.9, 0.9, 0.0)
-    g.renderer.setLight(g.light)
-    */
-
     // player
     if(IQGameData.character === 'Miku'){
       IQGameData.menuPlayerObj.setModel(IQGameData.model_miku)
@@ -962,8 +905,6 @@ export default class IQMenu extends DH2DObject {
 
   getMenuTiles(index) {
     const arr = this._opActiveTiles[index]
-    // DEBUG
-    //IQGameData.hoge = arr
     const tiles = []
     const obj = this
     arr.forEach( (pos) => {
@@ -1565,20 +1506,7 @@ export default class IQMenu extends DH2DObject {
           }
 
           if(opName === 'OPTION'){
-            /*
-            const params = []
-            params[0] = IQGameData.level
-            params[1] = IQGameData.character
-            params[2] = Math.floor(IQGameData.soundVolume * 100)
-            params[3] = IQGameData.languageNameList.get(IQGameData.language)
-
-            const x = sx + 200
-            let y = sy
-            for(let i=0; i<params.length; i++){
-              c.fillText(params[i], x, y)
-              y += dy * s
-            }
-            */
+            // nothing to do
           }else if(opName === 'SCORE'){
             // nothing to do
           }else if(opName === 'RULES'){
@@ -1588,37 +1516,13 @@ export default class IQMenu extends DH2DObject {
           }else if(opName === 'CREATE'){
             // nothing to do
           }
-
-        /*
-          const x = sx
-          let y = sy
-          for(let i=0; i<this._opSubMenus.length; i++){
-            c.fillText(this._opSubMenus[i], x, y)
-            y += dy * s
-          }
-        */
-
         }else{
           if(!this._showSubMenuReady){
             this._showSubMenuReady = true
           }
 
           if(opName === 'OPTION'){
-            /*
-            const params = []
-
-            params[0] = IQGameData.level
-            params[1] = IQGameData.character
-            params[2] = Math.floor(IQGameData.soundVolume * 100)
-            params[3] = IQGameData.languageNameList.get(IQGameData.language)
-
-            const x = sx + 200
-            let y = sy
-            for(let i=0; i<params.length; i++){
-              c.fillText(params[i], x, y)
-              y += dy
-            }
-            */
+            // nothing to do
           }else if(opName === 'SCORE'){
             //const headX = sx
             //const headY = sy
@@ -1655,10 +1559,6 @@ export default class IQMenu extends DH2DObject {
 
             const scoreCharacter = this._subScoreCharacter
             const scoreLevel = this._subScoreLevel
-            /*
-            c.fillText(scoreCharacter, x1, sy     )
-            c.fillText(scoreLevel,     x1, sy + 30)
-            */
 
             c.fillText('Best I.Q', x1, y1)
             c.fillText('Daily',    x1, y2)
@@ -1680,20 +1580,6 @@ export default class IQMenu extends DH2DObject {
           }else if(opName === 'SHARE'){
             // nothing to do
           }else if(opName === 'CREATE'){
-            /*
-            const params = []
-
-            params[0] = IQGameData.stageSizeList[IQGameData.editStageSize]
-            params[1] = IQGameData.stageStepList[IQGameData.editStageStep]
-
-            let x = sx + 175
-            let y = sy
-            for(let i=0; i<params.length; i++){
-              c.fillText(params[i], x, y)
-              y += dy
-            }
-            */
-
             // stage editor
             let x = sx + 250
             let y = 40
@@ -1728,78 +1614,9 @@ export default class IQMenu extends DH2DObject {
               }
               imgY += imgSize
             }
-
-            /*
-            if(IQGameData.editing){
-              // draw edit cursor
-              const strokeWidth = 4
-              x = imgLeft + imgSize * this._editCursorX - strokeWidth * 0.5
-              y = imgTop  + imgSize * this._editCursorY - strokeWidth * 0.5
-              const width = imgSize + strokeWidth
-              const height = imgSize + strokeWidth
-
-              if(this._moving){
-                const cursorDiffTime = IQGameData.getElapsedTime(this._moveSubMenuTime)
-                const maxTime = IQGameData.menuMoveTime
-                const srcX = imgLeft + imgSize * this._editCursorSX - strokeWidth * 0.5
-                const srcY = imgTop  + imgSize * this._editCursorSY - strokeWidth * 0.5
-                let s = 0
-                const t = 2.0 * cursorDiffTime / maxTime
-                if(t < 1){
-                  s = 0.5 * t * t
-                }else{
-                  s = -0.5 * (t * (t - 4) + 2)
-                }
-
-                x = s * x + (1 - s) * srcX
-                y = s * y + (1 - s) * srcY
-              }
-
-              c.save()
-              c.strokeStyle = IQGameData.redColor
-              c.lineWidth = strokeWidth
-              c.strokeRect(x, y, width, height)
-              c.restore()
-            }
-            */
           }
-
-          /*
-          let x = sx
-          let y = sy
-          for(let i=0; i<this._opSubMenus.length; i++){
-            c.fillText(this._opSubMenus[i], x, y)
-            y += dy
-          }
-          */
-
-          // drawCursor
-          /*
-          if(!IQGameData.editing && !IQGameData.device.isMobile && !IQGameData.device.isTablet){
-            c.strokeStyle = IQGameData.redColor
-            x = sx - 10
-            const width = 170
-            const height = dy
-            if(this._moving && !IQGameData.editing){
-              const cursorDiffTime = IQGameData.getElapsedTime(this._moveSubMenuTime)
-              const maxTime = IQGameData.menuMoveTime
-              let s = 0
-              const t = 2.0 * cursorDiffTime / maxTime
-              if(t < 1){
-                s = 0.5 * t * t
-              }else{
-                s = -0.5 * (t * (t - 4) + 2)
-              }
-              y = s * this._dstY + (1 - s) * this._srcY
-            }else{
-              y = sy + dy * (this._subCursor - 0.5)
-            }
-            c.strokeRect(x, y, width, height)
-          }
-          */
         }
       }
-      
     }else if(this._menu === 'pause'){
       // game over
       c.textAlign    = 'center'
@@ -1838,16 +1655,6 @@ export default class IQMenu extends DH2DObject {
       let y = fy
       this.drawText('Tweet',        x, y); y+= dy
       this.drawText('Back To Menu', x, y); y+= dy
-
-      // drawCursor
-      /*
-      c.strokeStyle = IQGameData.redColor
-      y = fy + dy * (this._cursor - 0.5)
-      const width = 300
-      const height = dy
-      x = (IQGameData.canvasWidth - width) * 0.5
-      c.strokeRect(x, y, width, height)
-      */
     }
 
     this.drawMenuItem(c)
@@ -1871,43 +1678,6 @@ IQMenu.file_cube_a = 'x/cube_tex_a.bmp'
 
 IQMenu.openingMoive = null
 IQMenu.setup = () => {
-  /*
-  const _opMovieMP4URL = './movie/iq_opening.mp4'
-  const _opMovieWebMURL = './movie/iq_opening.webm'
-  const moviePromise = new Promise((resolve, reject) => {
-    const mov = document.createElement('video')
-    document.body.appendChild(mov)
-    mov.setAttribute('style', 'display:none')
-
-    IQMenu.openingMovie = mov
-    mov.addEventListener('canplay',  () => { resolve() })
-    mov.addEventListener('error', (e) => { reject(e) })
-
-    //mov.addEventListener('canplaythrough', () => { this.movieLoadedCallback() }, false)
-    if(navigator.userAgent.match(/Chrome/)){
-      if(mov.canPlayType('video/webm')){
-        mov.setAttribute('src', _opMovieWebMURL)
-      }else if(mov.canPlayType('video/mp4')){
-        mov.setAttribute('src', _opMovieMP4URL)
-      }else{
-        console.error('error: cannot play movie')
-      }
-    }else{
-      if(mov.canPlayType('video/mp4')){
-        mov.setAttribute('src', _opMovieMP4URL)
-      }else if(mov.canPlayType('video/webm')){
-        mov.setAttribute('src', _opMovieWebMURL)
-      }else{
-        console.error('error: cannot play movie')
-      }
-    }
-  })
-  .then(() => {
-    console.info('movie canplay')
-    //this.movieLoadedCallback()
-  })
-  */
-
   IQMenu.bgImage = new Image()
   const bgImagePromise = new Promise((resolve, reject) => {
     IQMenu.bgImage.addEventListener('load',  () => { resolve() })
@@ -1937,7 +1707,6 @@ IQMenu.setup = () => {
   IQMenu.cubeAImage.src = IQMenu.file_cube_a
 
   const promise = Promise.all([
-    //moviePromise,
     ModelBank.getModel(IQMenu.file_cube),
     bgImagePromise,
     cubeNImagePromise,

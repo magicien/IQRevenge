@@ -64,7 +64,6 @@ export default class IQMarkerPlate extends DH3DObject {
     this.addMoveCallback( () => {
       obj.update()
     })
-    //this.startTime = new Date()
     this.startTime = new Date(IQGameData.nowTime.getTime())
   }
 
@@ -100,13 +99,11 @@ export default class IQMarkerPlate extends DH3DObject {
       case 'red':
         this.type = 'red'
         this.textures = IQMarkerPlate.redTextures
-        //this.startTime = new Date()
         this.startTime = new Date(IQGameData.nowTime.getTime())
         break
       case 'green':
         this.type = 'green'
         this.textures = IQMarkerPlate.greenTextures
-        //this.startTime = new Date()
         this.startTime = new Date(IQGameData.nowTime.getTime())
         break
       case 'blue':
@@ -213,7 +210,6 @@ IQMarkerPlate.setup = function() {
       const canvas = document.createElement('canvas')
       canvas.width = w
       canvas.height = h
-      //canvas.toString = () => { return 'markerPlate_' + color + '_' + i }
 
       const c = canvas.getContext('2d')
       if(i === frames - 1){
@@ -227,7 +223,6 @@ IQMarkerPlate.setup = function() {
       c.clearRect(0, 0, w, h)
       c.fillRect(0, 0, w, h)
 
-      //IQMarkerPlate.texture = TextureBank.getTexture(IQMarkerPlate.canvas)
       colorTextures[color][i] = TextureBank.getTexture(canvas)
     }
     r0 += step

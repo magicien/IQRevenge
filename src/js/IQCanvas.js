@@ -62,45 +62,6 @@ export default class IQCanvas extends CanvasField {
    * @returns {void}
    */
   _callNextFrame() {
-  /*
-    // "Reflect" is not yet implemented...
-    this._requestAnimationFrame.call(window, () => {
-      if(this.simulation){
-        const nowTime = new Date()
-        const diffTime = nowTime - this.simStartTime
-        
-        if(diffTime < this.simNextElapsedTime){
-          console.log('callNextFrame skip')
-          if(this._animating){
-            this._callNextFrame()
-          }
-          return
-        }
-
-        let canvasTime = this.simNextElapsedTime - this.simElapsedTime
-        let nextTime = this.simGetElapsedTimeFunc(nowTime)
-
-        this.simElapsedTime = this.simNextElapsedTime
-        this.simNextElapsedTime = nextTime
-
-        while(this.simNextElapsedTime <= diffTime){
-          this.drawPicture(canvasTime, !this.moveEnable, true) // skipRender
-          canvasTime = this.simNextElapsedTime - this.simElapsedTime
-          this.simElapsedTime = this.simNextElapsedTime
-          this.simNextElapsedTime = this.simGetElapsedTimeFunc(nowTime)
-        }
-
-        this.drawPicture(canvasTime, !this.moveEnable)
-      }else{
-        this.drawPicture()
-      }
-
-      if(this._animating){
-        this._callNextFrame()
-      }
-    })
-  */
-
     // "Reflect" is not yet implemented...
     this._requestAnimationFrame.call(window, () => {
       if(this.simulation){
@@ -171,10 +132,6 @@ export default class IQCanvas extends CanvasField {
     if(!skipRender){
       this._renderObjects()
     }
-
-    //if(this._animating){
-    //  this._callNextFrame()
-    //}
   }
 
   _moveObjects(elapsedTime = 0) {
@@ -251,21 +208,9 @@ export default class IQCanvas extends CanvasField {
     this._gl.flush()
   }
 
-  /*
-  startSimulation(startTime, getElapsedTimeCallback) {
-    this.simulation = true
-    this.simStartTime = new Date(startTime.getTime())
-    this.simElapsedTime = 0
-    this.simNextElapsedTime = 0
-    this.simGetElapsedTimeFunc = getElapsedTimeCallback
-    this.moveEnable = true
-  }
-  */
   startSimulation(startTime, simList, simFrameCallback) {
     this.simulation = true
     this.simStartTime = new Date(startTime.getTime())
-    //this.simElapsedTime = 0
-    //this.simNextElapsedTime = 0
     this.moveEnable = true
     this.simList = simList
     this.simListIndex = 0
@@ -285,6 +230,5 @@ export default class IQCanvas extends CanvasField {
 
   resumeSimulation() {
     this.moveEnable = true
-    //this.simStartTime.setMilliseconds(this.simStartTime.getMilliseconds() + pausedTime)
   }
 }

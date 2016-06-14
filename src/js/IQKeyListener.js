@@ -26,22 +26,6 @@ export default class IQKeyListener extends KeyListener {
   }
 
   keyDownCallback(event = window.event) {
-    /*
-    if(this.frozen){
-      let keyChar = this._keyHash.get(event.keyCode)
-      if(keyChar === undefined){
-        keyChar = String.fromCharCode(event.keyCode)
-      }
-
-      this.stockedEvents.push({
-        type: 'keyDown',
-        keyChar: keyChar
-      })
-    }else{
-      this._keyDownCallback(event)
-    }
-    */
-
     this.stockedEvents.push(event)
     if(!this.frozen){
       this.processKeyEvent()
@@ -65,22 +49,6 @@ export default class IQKeyListener extends KeyListener {
   }
 
   keyUpCallback(event = window.event) {
-    /*
-    if(this.frozen){
-      let keyChar = this._keyHash.get(event.keyCode)
-      if(keyChar === undefined){
-        keyChar = String.fromCharCode(event.keyCode)
-      }
-
-      this.stockedEvents.push({
-        type: 'keyUp',
-        keyChar: keyChar
-      })
-    }else{
-      this._keyUpCallback(event)
-    }
-    */
-
     this.stockedEvents.push(event)
     if(!this.frozen){
       this.processKeyEvent()
@@ -108,20 +76,6 @@ export default class IQKeyListener extends KeyListener {
 
     this.frozen = false
     this.processKeyEvent()
-    /*
-    while(this.stockedEvents.length > 0){
-      let event = this.stockedEvents.shift()
-      if(event.type === 'keyDown'){
-        if(!this._keyState[event.keyChar]){
-          this._keyNewState[event.keyChar] = true
-        }
-        this._keyState[event.keyChar] = true
-        this._anyKey = true
-      }else if(event.type === 'keyUp'){
-        this._keyState[event.keyChar] = false
-      }
-    }
-    */
   }
 
   processKeyEvent() {
