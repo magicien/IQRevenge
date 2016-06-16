@@ -864,11 +864,17 @@ export default class IQLabel extends DH2DObject {
     const g = this._gameData
     const c = g.canvasField.get2DContext()
 
-    if(!this._beforeTime){
-      this._beforeTime = new Date(g.nowTime.getTime())
-      this._messageCycle = Math.floor(g.nowTime / this._messageSpeed) * this._messageSpeed
+    let nowTime = g.nowTime
+    if(g.pausing){
+      nowTime = g.pauseStartTime
     }
-    while(this._messageCycle + this._messageSpeed < g.nowTime){
+
+    if(!this._beforeTime){
+      this._beforeTime = new Date(nowTime.getTime())
+      this._messageCycle = Math.floor(nowTime / this._messageSpeed) * this._messageSpeed
+    }
+
+    while(this._messageCycle + this._messageSpeed < nowTime){
       for(let i=0; i<this._messages.length; i++){
         this._messages[i] = this._messages[i+1]
       }
@@ -915,7 +921,7 @@ export default class IQLabel extends DH2DObject {
       }
     }
 
-    this._beforeTime = new Date(g.nowTime.getTime())
+    this._beforeTime = new Date(nowTime.getTime())
   }
 
   pause() {

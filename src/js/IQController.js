@@ -276,6 +276,13 @@ export default class IQController {
     this._touchEndState.clear()
   }
 
+  resetTouchState() {
+    this.resetTouchNewState()
+    this._touchStartState.clear()
+    this._touchNowState.clear()
+    this._nowTouches.length = 0
+  }
+
   /**
    * check if there's any touch hovering within a given rect
    * @access public

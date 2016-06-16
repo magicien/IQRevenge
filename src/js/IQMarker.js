@@ -140,7 +140,7 @@ export default class IQMarker extends DH3DObject {
    * @returns {void}
    */
   setPositionWithCube(cubeZ, cubeX) {
-    const yPadding = 1.0
+    const yPadding = 2.0
     const x = (cubeX - IQGameData.stageWidth * 0.5 + 0.5) * IQGameData.cubeSize
     const y = IQGameData.cubeSize + yPadding
     const z = cubeZ * IQGameData.cubeSize

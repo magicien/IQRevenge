@@ -972,7 +972,7 @@ function loadCookieOption() {
   g.showMarker     = levelData.get('showMarker')
   g.rotateWaitTime = levelData.get('rotateWaitTime')
   g.rotateTime     = levelData.get('rotateTime')
-  g.penaltyMax     = levelData.get('penaltyMax')
+  g.penaltyDiff    = levelData.get('penaltyDiff')
 
   // character setting
   g.character   = g.cookieManager.getCookie(g.cookieOptionCharacter)
@@ -2321,7 +2321,7 @@ function updateOptionValue() {
   g.showMarker     = levelData.get('showMarker')
   g.rotateWaitTime = levelData.get('rotateWaitTime')
   g.rotateTime     = levelData.get('rotateTime')
-  g.penaltyMax     = levelData.get('penaltyMax')
+  g.penaltyDiff    = levelData.get('penaltyDiff')
 
   // Character
   const characterData = g.characterData.get(g.character)
@@ -2822,7 +2822,7 @@ function saveSettingForRules() {
   g.rulesSettingBackup.showMarker = g.showMarker
   g.rulesSettingBackup.rotateWaitTime = g.rotateWaitTime
   g.rulesSettingBackup.rotateTime = g.rotateTime
-  g.rulesSettingBackup.penaltyMax = g.penaltyMax
+  g.rulesSettingBackup.penaltyDiff = g.penaltyDiff
 }
 
 function restoreSettingFromRules() {
@@ -2831,7 +2831,7 @@ function restoreSettingFromRules() {
   g.showMarker = g.rulesSettingBackup.showMarker
   g.rotateWaitTime = g.rulesSettingBackup.rotateWaitTime
   g.rotateTime = g.rulesSettingBackup.rotateTime
-  g.penaltyMax = g.rulesSettingBackup.penaltyMax
+  g.penaltyDiff = g.rulesSettingBackup.penaltyDiff
 }
 
 /**
@@ -2949,6 +2949,7 @@ function createStage(stageFile) {
     g.maxZ = (g.stageLength - 0.5) * g.cubeSize - e
     g.stageStarting = true
 
+    g.penaltyMax = g.stageWidth + g.penaltyDiff
     g.subStage = 1
 
     const work = g.stageCreateWait
@@ -3211,6 +3212,7 @@ function loadQuestionFile(fileName) {
     g.showMarker = true
     g.rotateWaitTime = 600
     g.rotateTime = 900
+    g.penaltyDiff = 0
     g.penaltyMax = 4
   }
 

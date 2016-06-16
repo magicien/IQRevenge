@@ -94,7 +94,7 @@ class _IQGameData {
      *  - showMarker {boolean} = player can see the marker or not
      *  - rotateWaitTime {int} = time (msec) before cube rotates
      *  - rotateTime {int} = time (msec) which it takes to rotate cube
-     *  - penaltyMax {int} = number of penalties to break stage block
+     *  - penaltyDiff {int} = number of penalties to break stage block
      * @type {Map<string,Map<string,*>>}
      */
     this.levelData = new Map([
@@ -102,25 +102,25 @@ class _IQGameData {
         ['showMarker', true],
         ['rotateWaitTime', 750],
         ['rotateTime', 1050],
-        ['penaltyMax', 5]
+        ['penaltyDiff', 1]
       ])],
       ['Normal', new Map([
         ['showMarker', true],
         ['rotateWaitTime', 600],
         ['rotateTime', 900],
-        ['penaltyMax', 4]
+        ['penaltyDiff', 0]
       ])],
       ['Hard', new Map([
         ['showMarker', false],
         ['rotateWaitTime', 450],
         ['rotateTime', 750],
-        ['penaltyMax', 3]
+        ['penaltyDiff', -1]
       ])],
       ['Extreme', new Map([
         ['showMarker', false],
         ['rotateWaitTime', 400],
         ['rotateTime', 700],
-        ['penaltyMax', 2]
+        ['penaltyDiff', -2]
       ])]
     ])
 
@@ -559,6 +559,7 @@ class _IQGameData {
     this.subSubStageMax = 0
     this.baseStep = 0
     this.step = 0
+    this.penaltyDiff = 0
     this.penaltyMax = 0
     this.penaltyQueue = 0
     this.penalty = 0
