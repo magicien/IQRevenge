@@ -536,6 +536,7 @@ function initGameData() {
 
 function initCanvas() {
   g.canvasField = new IQCanvas('iqCanvas')
+  g.canvasField.skipTimeCallback = skipTimeCallback
   g.canvasField.enableMirror()
 
   // camera
@@ -1050,7 +1051,9 @@ function updateStageList() {
 function removeAllObjects() {
   // remove all objects
   g.canvasField._objs.forEach( (obj) => {
-    g.canvasField.removeObject(obj)
+    if(!(obj instanceof IQSceneChanger)){
+      g.canvasField.removeObject(obj)
+    }
   })
   // FIXME
   g.canvasField._alphaObjs.forEach( (obj) => {
@@ -1715,9 +1718,7 @@ function showMenuLoop() {
           // FIXME: Do not use 'new' for side effects
           new IQSceneChanger(3.0, true, g.bgm_menu, g.bgm_stagecall, null, () => {
             stop()
-            g.canvasField.removeObject(g.menu)
-            // FIXME
-            g.canvasField.removeObject(g.menu._opTileObj, true)
+            removeAllObjects()
             setup()
           })
           break
@@ -2602,6 +2603,56 @@ function mergeRulesData() {
   }
 
   g.rulesDataArray = newArray
+}
+
+function skipTimeCallback(skipTime) {
+  g.addTimeToAllTimer(skipTime)
+
+  if(g.qCubeArray){
+    g.qCubeArray.forEach((cubeLine) => {
+      cubeLine.forEach((cube) => {
+        if(cube){
+          cube.addTime(skipTime)
+        }
+      })
+    })
+  }
+
+  if(g.aCubeArray){
+    g.aCubeArray.forEach((cubeLine) => {
+      cubeLine.forEach((cube) => {
+        if(cube){
+          cube.addTime(skipTime)
+        }
+      })
+    })
+  }
+
+  if(g.markerArray){
+    g.markerArray.forEach((marker) => {
+      marker.addTime(skipTime)
+    })
+  }
+
+  if(g.plateMarkerArray){
+    g.plateMarkerArray.forEach((markerLine) => {
+      markerLine.forEach((marker) => {
+        if(marker){
+          marker.addTime(skipTime)
+        }
+      })
+    })
+  }
+
+  if(g.effectArray){
+    g.effectArray.forEach((effect) => {
+      effect.addTime(skipTime)
+    })
+  }
+
+  if(g.labelObj){
+    g.labelObj.addTime(skipTime)
+  }
 }
 
 function simFrameCallback(diffTime) {
@@ -4435,8 +4486,8 @@ function resumeFromPause() {
   g.canvasField.removeObject(g.menu)
 
   const pausedTime = (new Date()) - g.pauseStartTime
+
   g.addTimeToAllTimer(pausedTime)
-  g.playerObj.setAnimating(true)
   g.qCubeArray.forEach((cubeLine) => {
     cubeLine.forEach((cube) => {
       if(cube){
@@ -4471,6 +4522,7 @@ function resumeFromPause() {
 
   g.labelObj.resume(pausedTime)
 
+  g.playerObj.setAnimating(true)
   g.pausing = false
 }
 

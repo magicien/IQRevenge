@@ -95,7 +95,7 @@ export default class IQSceneChanger extends DH2DObject {
         this._sceneChangeCallback()
       }
 
-      IQGameData.canvasField.addObject(this)
+      //IQGameData.canvasField.addObject(this)
     }else if(r < 2.0){
       const s = r * (r - 4) + 4
       alpha = s

@@ -40,11 +40,17 @@ export default class IQCanvas extends CanvasField {
     /** @type {function} */
     this.simFrameCallback = null
 
+    /** @type {function} */
+    this.skipTimeCallback = null
+
     /** @type {boolean} */
     this.moveEnable = true
 
     /** @type {int} */
     this.mspf = null
+
+    /** @type {int} */
+    this.maxMSPF = 60
   }
 
   getMspf() {
@@ -64,14 +70,15 @@ export default class IQCanvas extends CanvasField {
   _callNextFrame() {
     // "Reflect" is not yet implemented...
     this._requestAnimationFrame.call(window, () => {
+      const nowTime = (new Date()).getTime()
+
       if(this.simulation){
-        const nowTime = new Date()
         const diffTime = nowTime - this.simStartTime
 
         if(this.simFrameCallback){
           this.simFrameCallback(diffTime)
         }
-
+        
         let simData = this.simList[this.simListIndex]
         while(simData && simData.time <= diffTime){
           if(simData.callback){
@@ -88,25 +95,39 @@ export default class IQCanvas extends CanvasField {
       }else if(this.mspf > 0){
         this.drawPicture(this.mspf, !this.moveEnable)
       }else{
-        this.drawPicture(null, !this.moveEnable)
+        let elapsedTime = nowTime - this._prevTime
+        if(this._prevTime === null){
+          elapsedTime = 0
+        }else if(elapsedTime > this.maxMSPF){
+          // if it's too slow, skip time not to move too much in one frame
+          const skipTime = elapsedTime - this.maxMSPF
+          if(this.skipTimeCallback){
+            this.skipTimeCallback(skipTime)
+          }
+          elapsedTime = this.maxMSPF
+        }
+
+        this.drawPicture(elapsedTime, !this.moveEnable)
       }
 
+      this._prevTime = nowTime
       if(this._animating){
         this._callNextFrame()
       }
     })
-
   }
 
   /**
    * draw one frame
    * @access public
-   * @param {float} msec - if msec is set, use the given time (ms) to calc physics instead of real time
+   * @param {float} msec - elapsed time from previous frame
    * @param {boolean} skipMove - if skipMove is true, move() and animate() function will be not called.
    * @param {boolean} skipRender - if skipRender is true, render() function will be not called.
    * @returns {void}
    */
+  //drawPicture(msec, skipMove = false, skipRender = false) {
   drawPicture(msec, skipMove = false, skipRender = false) {
+    /*
     let elapsedTime = 0
     const nowTime = (new Date()).getTime()
 
@@ -118,6 +139,11 @@ export default class IQCanvas extends CanvasField {
       elapsedTime = (nowTime - this._prevTime) * 0.001
     }
     this._prevTime = nowTime
+    */
+    let elapsedTime = msec * 0.001
+    if(typeof msec !== 'number'){
+      elapsedTime = 0
+    }
 
     this.reshape()
     if(this._frameCallback){

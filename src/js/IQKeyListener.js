@@ -85,7 +85,7 @@ export default class IQKeyListener extends KeyListener {
     this.processing = true
 
     while(this.stockedEvents.length > 0){
-      let event = this.stockedEvents.shift()
+      const event = this.stockedEvents.shift()
       if(event.type === 'keydown'){
         this._keyDownCallback(event)
       }else if(event.type === 'keyup'){

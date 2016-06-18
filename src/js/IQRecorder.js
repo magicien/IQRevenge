@@ -78,7 +78,7 @@ export default class IQRecorder {
   }
 
   stringToKeyState(string) {
-    let result = []
+    const result = []
 
     string.split('').forEach((ch) => {
       result.push(ch === '1')
@@ -88,12 +88,12 @@ export default class IQRecorder {
   }
   
   parseString(string) {
-    let result = []
+    const result = []
 
     const lines = string.split('\n')
     lines.forEach((line) => {
       const tokens = line.split(',')
-      if(tokens.length == 4){
+      if(tokens.length === 4){
         result.push({
           canvasTime: parseInt(tokens[0], 10),
           gameTime: parseInt(tokens[1], 10),

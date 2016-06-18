@@ -1041,7 +1041,7 @@ export default class IQMenu extends DH2DObject {
   drawMenuItem(canvas) {
     const c = canvas
 
-    if(this._menuItem.length == 0){
+    if(this._menuItem.length === 0){
       // nothing to draw
       return
     }
@@ -1151,7 +1151,7 @@ export default class IQMenu extends DH2DObject {
       // don't use cursor for mobile/tablet
       return
     }
-    if(this._menuItem.length == 0){
+    if(this._menuItem.length === 0){
       // nothing to draw
       return
     }

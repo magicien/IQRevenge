@@ -148,13 +148,17 @@ export default class IQCube extends DH3DObject {
 
     IQCube.resetTexture()
 
+    this.addTime(pausedTime)
+  }
+
+  addTime(msec) {
     const timerArray = [
       this.startTime,
       this.deleteStartTime
     ]
     timerArray.forEach((timer) => {
       if(timer){
-        timer.setMilliseconds(timer.getMilliseconds() + pausedTime)
+        timer.setMilliseconds(timer.getMilliseconds() + msec)
       }
     })
   }

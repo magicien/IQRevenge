@@ -189,6 +189,10 @@ export default class IQMarker extends DH3DObject {
     }
     this.paused = false
 
+    this.addTime(pausedTime, true)
+  }
+
+  addTime(msec, resume = false) {
     const timers = [
       this.startTime,
       this.moveTime,
@@ -197,9 +201,17 @@ export default class IQMarker extends DH3DObject {
     
     timers.forEach((timer) => {
       if(timer){
-        timer.setMilliseconds(timer.getMilliseconds() + pausedTime)
+        timer.setMilliseconds(timer.getMilliseconds() + msec)
       }
     })
+
+    if(this.markerPlate){
+      if(resume){
+        this.markerPlate.resume(msec)
+      }else{
+        this.markerPlate.addTime(msec)
+      }
+    }
   }
 }
 

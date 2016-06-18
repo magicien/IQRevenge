@@ -751,13 +751,13 @@ export default class IQLabel extends DH2DObject {
       //c.fillStyle = IQGameData.whiteColor
       //c.fillText(time, 500, 30)
 
-      if(pauseData && pauseData.spotX !== undefined){
+      if(pauseData && typeof pauseData.spotX === 'number'){
         // draw spot light
         c.fillStyle = 'rgba(255, 255, 255, 0.5)'
         c.beginPath()
         c.arc(pauseData.spotX, pauseData.spotY, IQGameData.rulesSpotLightRadius, 0, 2 * Math.PI)
         c.rect(IQGameData.canvasWidth, 0, -IQGameData.canvasWidth, IQGameData.canvasHeight)
-        c.fill("evenodd")
+        c.fill('evenodd')
       }
 
       if(data){
@@ -782,7 +782,7 @@ export default class IQLabel extends DH2DObject {
             const bgAlpha = textAlpha * 0.5
 
             y = 80
-            let center = IQGameData.canvasWidth / 2
+            const center = IQGameData.canvasWidth / 2
             padding = 10
             const textHeight = 18
 

@@ -130,12 +130,16 @@ export default class IQEffectPlate extends DH3DObject {
     }
     this.paused = false
 
+    this.addTime(pausedTime)
+  }
+
+  addTime(msec) {
     const timers = [
       this.startTime
     ]
     timers.forEach((timer) => {
       if(timer){
-        timer.setMilliseconds(timer.getMilliseconds() + pausedTime)
+        timer.setMilliseconds(timer.getMilliseconds() + msec)
       }
     })
   }
