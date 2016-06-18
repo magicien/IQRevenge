@@ -371,8 +371,10 @@ function playerMoveCallback() {
   }else{
     // normal
     //g.cameraXAngleGoal = -0.9
-    g.cameraXAngleGoal = -0.3 - 0.05 * g.questionLength
-    g.cameraYAngleGoal = Math.PI + pos.x / g.maxX * g.cameraYAngleMax
+    //g.cameraXAngleGoal = -0.3 - 0.05 * g.questionLength
+    g.cameraXAngleGoal = -0.3 - 0.06 * g.questionLength
+    //g.cameraYAngleGoal = Math.PI + pos.x / g.maxX * g.cameraYAngleMax
+    g.cameraYAngleGoal = Math.PI + pos.x / g.maxX * (g.cameraYAngleMax + (g.questionLength - 2) * 0.05)
     g.cameraTargetXGoal = pos.x
     g.cameraTargetYGoal = pos.y
     g.cameraTargetZGoal = pos.z
@@ -493,7 +495,8 @@ function playerMoveCallback() {
   const siny = Math.sin(g.cameraYAngle)
   const cosy = Math.cos(g.cameraYAngle)
 
-  const d = g.camera.distance
+  //const d = g.camera.distance
+  const d = g.camera.distance + (g.questionLength - 2) * 15.0
 
   const ox = g.cameraTargetX + bindOffsetX
   const oy = g.cameraTargetY + bindOffsetY
@@ -1016,6 +1019,34 @@ function saveCookieOption() {
   g.cookieManager.setCookie(g.cookieOptionKeyEscape,    g.keyEscape)
 }
 
+function setStageToCookie() {
+  g.cookieManager.setCookie(g.cookieStage, g.selectableMaxStage)
+}
+
+function getStageFromCookie() {
+  g.selectableMaxStage = g.cookieManager.getCookie(g.cookieStage)
+
+  if(!g.selectableMaxStage){
+    g.selectableMaxStage = 1
+  }
+
+  if(g.selectedStage > g.selectableMaxStage){
+    g.selectedStage = 1
+  }
+
+  updateStageList()
+}
+
+function updateStageList() {
+  let i = 0
+  for(; i<g.selectableMaxStage; i++){
+    g.stageListEnable[i] = true
+  }
+  for(; i<g.stageListEnable.length; i++){
+    g.stageListEnable[i] = false
+  }
+}
+
 function removeAllObjects() {
   // remove all objects
   g.canvasField._objs.forEach( (obj) => {
@@ -1328,12 +1359,17 @@ function setSubMenu() {
       levelMenu.onRight = () => { g.level = incrementParam(g.level, g.levelList, g.levelListEnable) }
       levelMenu.onTouch = levelMenu.onRight
 
-      const charaMenu = g.menu._menuItem[1]
+      const stageMenu = g.menu._menuItem[1]
+      stageMenu.onLeft  = () => { g.selectedStage = decrementParam(g.selectedStage, g.stageList, g.stageListEnable) }
+      stageMenu.onRight = () => { g.selectedStage = incrementParam(g.selectedStage, g.stageList, g.stageListEnable) }
+      stageMenu.onTouch = stageMenu.onRight
+
+      const charaMenu = g.menu._menuItem[2]
       charaMenu.onLeft  = () => { g.character = decrementParam(g.character, g.characterList, g.characterListEnable) }
       charaMenu.onRight = () => { g.character = incrementParam(g.character, g.characterList, g.characterListEnable) }
       charaMenu.onTouch = charaMenu.onRight
 
-      const volumeMenu = g.menu._menuItem[2]
+      const volumeMenu = g.menu._menuItem[3]
       volumeMenu.onLeft = () => {
         g.soundVolumeValue = decrementParam(g.soundVolumeValue, g.soundVolumeList, g.soundVolumeListEnable, true)
         g.soundVolume = g.soundVolumeValue * 0.01
@@ -1350,7 +1386,7 @@ function setSubMenu() {
         setSoundVolume()
       }
 
-      const langMenu = g.menu._menuItem[3]
+      const langMenu = g.menu._menuItem[4]
       langMenu.onLeft  = () => { g.language = decrementParam(g.language, g.languageList, g.languageListEnable) }
       langMenu.onRight = () => { g.language = incrementParam(g.language, g.languageList, g.languageListEnable) }
       langMenu.onTouch = langMenu.onRight
@@ -1522,7 +1558,8 @@ function showMenuLoop() {
   g.nowTime = new Date()
 
   let c = g.menu._cursor
-  if(!g.menu._moving && !g.menu._folding && !g.menu._moveTopLeft && !g.sceneChanging){
+  if(!g.menu._moving && !g.menu._folding && !g.menu._moveTopLeft
+     && !g.menu._expanding && !g.sceneChanging){
     let move = false
 
     const leftTouches = g.controller.touchEndWithinRect(
@@ -1918,25 +1955,9 @@ function showMenuLoop() {
       console.log(g.recorder.toString())
     }
   }
-  if(g.keyListener.getKeyNewState('Y')){
-    AjaxRequest.get('./data/rules_move_1.txt', { async: false })
-    .then((result) => {
-      console.log('test_move.txt loaded')
-      g.recorder = new IQRecorder(result)
-      if(g.recorder.toString() === result){
-        console.log('parse succeeded')
-      }else{
-        console.log('something is wrong.')
-        console.log('result:')
-        console.log(g.recorder.toString())
-      }
-    }).catch((error) => {
-      console.log('error: ' + error)
-    })
-  }
-  if(g.keyListener.getKeyNewState('D')){
-    g.demoPlay = !g.demoPlay
-    console.log('g.demoPlay = ' + g.demoPlay)
+  if(g.keyListener.getKeyNewState('U')){
+    g.selectableMaxStage = 9
+    updateStageList()
   }
 
   g.keyListener.resetKeyNewState()
@@ -1950,7 +1971,7 @@ function showSubMenuLoop() {
   let subName = g.menu.getSubOptionName()
   let startEditing = false
 
-  if(!g.menu._moving && g.menu._showSubMenuReady && !g.editing){
+  if(!g.sceneChanging && !g.menu._moving && g.menu._showSubMenuReady && !g.editing){
     let c = g.menu._subCursor
     if(g.keyListener.getKeyState(g.keyUp)){
       do {
@@ -1984,6 +2005,10 @@ function showSubMenuLoop() {
           g.menu._opSubSubMenus = g.levelList
           g.menu._opSubSubMenuEnable = g.levelListEnable
           g.menu._subSubCursor = g.levelList.indexOf(g.level)
+        }else if(name === 'Stage'){
+          g.menu._opSubSubMenus = g.stageList
+          g.menu._opSubSubMenuEnable = g.stageListEnable
+          g.menu._subSubCursor = g.stageList.indexOf(g.selectedStage)
         }else if(name === 'Character'){
           g.menu._opSubSubMenus = g.characterList
           g.menu._opSubSubMenuEnable = g.characterListEnable
@@ -2336,6 +2361,7 @@ function updateOptionValue() {
 
 function showIQLoop() {
   g.nowTime = new Date()
+
   if(!g.gameOverFadeOut){
     if(decisionKeyPushed()){
       g.gameOverFadeOut = true
@@ -2358,92 +2384,95 @@ function showIQLoop() {
 function showContinueLoop() {
   g.nowTime = new Date()
   
-  const touchedMenu = g.menu.getTouchedMenuNumber()
-  if(g.keyListener.getKeyNewState(g.keyMark) || touchedMenu >= 0){
-    const srcBGM = g.bgm_gameover
-    let cursorPos = g.menu._subCursor
-    if(touchedMenu >= 0){
-      cursorPos = touchedMenu
-    }
-
-    switch(cursorPos){
-      case 0: {
-        // Tweet
-        const url = g.shareURL
-        const text = 'I.Q ' + g.iqPoint
-        const href = 'http://twitter.com/share?url=' + escape(url)
-                + '&text=' + escape(text)
-                + '&hashtags=IQRevenge'
-        window.location.href = href
-        break
+  if(!g.sceneChanging){
+    const touchedMenu = g.menu.getTouchedMenuNumber()
+    if(g.keyListener.getKeyNewState(g.keyMark) || touchedMenu >= 0){
+      const srcBGM = g.bgm_gameover
+      let cursorPos = g.menu._subCursor
+      if(touchedMenu >= 0){
+        cursorPos = touchedMenu
       }
 
-      case 1: {
-        // Continue
+      switch(cursorPos){
+        case 0: {
+          // Tweet
+          const url = g.shareURL
+          const text = 'I.Q ' + g.iqPoint
+          const href = 'http://twitter.com/share?url=' + escape(url)
+                  + '&text=' + escape(text)
+                  + '&hashtags=IQRevenge'
+          window.location.href = href
+          break
+        }
 
-        setStageBGM(g.stage)
-        new IQSceneChanger(1.0, true, srcBGM, g.bgm_stagecall, null, () => {
-          stop()
-          resetValues(g.stage, false)
-          .then(start)
-        })
-        break
-      }
+        case 1: {
+          // Continue
 
-      case 2: {
-        // back to top
-
-        // FIXME: Do not use 'new' for side effects
-        new IQSceneChanger(2.0, true, srcBGM, g.bgm_menu, showMenuLoop, () => {
-          g.menu.setMenu('top')
-          g.camera.distance = 20.0
-          g.menu.addTilesToCanvas()
-          g.menu.initMenuParams()
-          g.canvasField.addObject(g.menu._opTileObj, true)
-
-          // set first menu
-          const cursor = 0
-          g.menu._srcCursor = cursor
-          g.menu._srcX = g.menu._opPosX[cursor]
-          g.menu._srcY = g.menu._opPosY[cursor]
-          g.menu._dstCursor = cursor
-          g.menu._dstX = g.menu._opPosX[cursor]
-          g.menu._dstY = g.menu._opPosY[cursor]
-          g.menu._startTime = new Date(g.nowTime.getTime())
-          g.menu._moving = true
-          g.menu._cursor = cursor
-
-          g.menu._opStayTiles.length = 0
-          g.menu._opUpTiles.length = 0
-          g.menu._opDownTiles.length = 0
-          const srcTiles = g.menu.getMenuTiles(g.menu._srcCursor)
-          srcTiles.forEach( (tile) => {
-            g.menu._opUpTiles.push(tile)
+          setStageBGM(g.stage)
+          new IQSceneChanger(1.0, true, srcBGM, g.bgm_stagecall, null, () => {
+            stop()
+            resetValues(g.stage, false)
+            .then(start)
           })
+          break
+        }
 
-          // set light
-          g.light.setPosition(-50, 0, -100)
-          g.light.setAmbient(0.6, 0.6, 0.6, 0.0)
-          g.light.setDiffuse(0.7, 0.7, 0.7, 0.0)
-          g.light.setSpecular(0.9, 0.9, 0.9, 0.0)
-          g.renderer.setLight(g.light)
-        })
-        break
-      }
+        case 2: {
+          // back to top
 
-      default: {
-        // nothing to do
+          // FIXME: Do not use 'new' for side effects
+          new IQSceneChanger(2.0, true, srcBGM, g.bgm_menu, showMenuLoop, () => {
+            g.menu.setMenu('top')
+            g.camera.distance = 20.0
+            g.menu.addTilesToCanvas()
+            g.menu.initMenuParams()
+            g.canvasField.addObject(g.menu._opTileObj, true)
+
+            // set first menu
+            const cursor = 0
+            g.menu._srcCursor = cursor
+            g.menu._srcX = g.menu._opPosX[cursor]
+            g.menu._srcY = g.menu._opPosY[cursor]
+            g.menu._dstCursor = cursor
+            g.menu._dstX = g.menu._opPosX[cursor]
+            g.menu._dstY = g.menu._opPosY[cursor]
+            g.menu._startTime = new Date(g.nowTime.getTime())
+            g.menu._moving = true
+            g.menu._cursor = cursor
+
+            g.menu._opStayTiles.length = 0
+            g.menu._opUpTiles.length = 0
+            g.menu._opDownTiles.length = 0
+            const srcTiles = g.menu.getMenuTiles(g.menu._srcCursor)
+            srcTiles.forEach( (tile) => {
+              g.menu._opUpTiles.push(tile)
+            })
+
+            // set light
+            g.light.setPosition(-50, 0, -100)
+            g.light.setAmbient(0.6, 0.6, 0.6, 0.0)
+            g.light.setDiffuse(0.7, 0.7, 0.7, 0.0)
+            g.light.setSpecular(0.9, 0.9, 0.9, 0.0)
+            g.renderer.setLight(g.light)
+          })
+          break
+        }
+
+        default: {
+          // nothing to do
+        }
       }
+    }
+
+    const max = 3
+    if(g.keyListener.getKeyNewState(g.keyUp)){
+      g.menu._subCursor = (g.menu._subCursor + max - 1) % max
+    }
+    if(g.keyListener.getKeyNewState(g.keyDown)){
+      g.menu._subCursor = (g.menu._subCursor + 1) % max
     }
   }
 
-  const max = 3
-  if(g.keyListener.getKeyNewState(g.keyUp)){
-    g.menu._subCursor = (g.menu._subCursor + max - 1) % max
-  }
-  if(g.keyListener.getKeyNewState(g.keyDown)){
-    g.menu._subCursor = (g.menu._subCursor + 1) % max
-  }
   g.keyListener.resetKeyNewState()
   resetTouchState()
 }
@@ -2707,7 +2736,12 @@ function setup() {
     g.playerObj.addMotionCallback(playSECallback_step, g.se_step_timing_1, 'running')
     g.playerObj.addMotionCallback(playSECallback_step, g.se_step_timing_2, 'running')
 
-    resetValues()
+    let stageNo = g.selectedStage
+    if(g.testPlay || g.rulePlay){
+      stageNo = null
+    }
+
+    resetValues(stageNo)
     .then(() => {
       start()
     })
@@ -4140,6 +4174,12 @@ function stageClear() {
   g.playerObj.setMotionWithBlending(g.standing, 10)
   g.playerObj.animationTime = 0
   g.playerObj._state = 'standing'
+
+  // update the max stage number
+  if(g.stage + 1 > g.selectableMaxStage){
+    g.selectableMaxStage = g.stage + 1
+    updateStageList()
+  }
 }
 
 // FIXME
@@ -4296,72 +4336,74 @@ function endingLoop() {
 function endingTweetLoop() {
   g.nowTime = new Date()
 
-  if(g.keyListener.getKeyNewState(g.keyMark)){
-    switch(g.menu._cursor){
-      case 0: {
-        // Tweet
-        const url = g.shareURL
-        const text = 'I.Q ' + g.iqPoint
-        const href = 'http://twitter.com/share?url=' + escape(url)
-                + '&text=' + escape(text)
-                + '&hashtags=IQRevenge'
-        window.location.href = href
-        break
-      }
+  if(!g.sceneChanging){
+    if(g.keyListener.getKeyNewState(g.keyMark)){
+      switch(g.menu._cursor){
+        case 0: {
+          // Tweet
+          const url = g.shareURL
+          const text = 'I.Q ' + g.iqPoint
+          const href = 'http://twitter.com/share?url=' + escape(url)
+                  + '&text=' + escape(text)
+                  + '&hashtags=IQRevenge'
+          window.location.href = href
+          break
+        }
 
-      case 1: {
-        // back to top
-        // FIXME
-        const srcBGM = null
-        new IQSceneChanger(2.0, true, srcBGM, g.bgm_menu, showMenuLoop, () => {
-          g.menu.setMenu('top')
-          g.camera.distance = 20.0
-          g.menu.addTilesToCanvas()
-          g.menu.initMenuParams()
-          g.canvasField.addObject(g.menu._opTileObj, true)
+        case 1: {
+          // back to top
+          // FIXME
+          const srcBGM = null
+          new IQSceneChanger(2.0, true, srcBGM, g.bgm_menu, showMenuLoop, () => {
+            g.menu.setMenu('top')
+            g.camera.distance = 20.0
+            g.menu.addTilesToCanvas()
+            g.menu.initMenuParams()
+            g.canvasField.addObject(g.menu._opTileObj, true)
 
-          // set first menu
-          const cursor = 0
-          g.menu._srcCursor = cursor
-          g.menu._srcX = g.menu._opPosX[cursor]
-          g.menu._srcY = g.menu._opPosY[cursor]
-          g.menu._dstCursor = cursor
-          g.menu._dstX = g.menu._opPosX[cursor]
-          g.menu._dstY = g.menu._opPosY[cursor]
-          g.menu._startTime = new Date(g.nowTime.getTime())
-          g.menu._moving = true
-          g.menu._cursor = cursor
+            // set first menu
+            const cursor = 0
+            g.menu._srcCursor = cursor
+            g.menu._srcX = g.menu._opPosX[cursor]
+            g.menu._srcY = g.menu._opPosY[cursor]
+            g.menu._dstCursor = cursor
+            g.menu._dstX = g.menu._opPosX[cursor]
+            g.menu._dstY = g.menu._opPosY[cursor]
+            g.menu._startTime = new Date(g.nowTime.getTime())
+            g.menu._moving = true
+            g.menu._cursor = cursor
 
-          g.menu._opStayTiles.length = 0
-          g.menu._opUpTiles.length = 0
-          g.menu._opDownTiles.length = 0
-          const srcTiles = g.menu.getMenuTiles(g.menu._srcCursor)
-          srcTiles.forEach( (tile) => {
-            g.menu._opUpTiles.push(tile)
+            g.menu._opStayTiles.length = 0
+            g.menu._opUpTiles.length = 0
+            g.menu._opDownTiles.length = 0
+            const srcTiles = g.menu.getMenuTiles(g.menu._srcCursor)
+            srcTiles.forEach( (tile) => {
+              g.menu._opUpTiles.push(tile)
+            })
+
+            // set light
+            g.light.setPosition(-50, 0, -100)
+            g.light.setAmbient(0.6, 0.6, 0.6, 0.0)
+            g.light.setDiffuse(0.7, 0.7, 0.7, 0.0)
+            g.light.setSpecular(0.9, 0.9, 0.9, 0.0)
+            g.renderer.setLight(g.light)
           })
+          break
+        }
 
-          // set light
-          g.light.setPosition(-50, 0, -100)
-          g.light.setAmbient(0.6, 0.6, 0.6, 0.0)
-          g.light.setDiffuse(0.7, 0.7, 0.7, 0.0)
-          g.light.setSpecular(0.9, 0.9, 0.9, 0.0)
-          g.renderer.setLight(g.light)
-        })
-        break
-      }
-
-      default: {
-        // nothing to do
+        default: {
+          // nothing to do
+        }
       }
     }
-  }
 
-  const max = 2
-  if(g.keyListener.getKeyNewState(g.keyUp)){
-    g.menu._cursor = (g.menu._cursor + max - 1) % max
-  }
-  if(g.keyListener.getKeyNewState(g.keyDown)){
-    g.menu._cursor = (g.menu._cursor + 1) % max
+    const max = 2
+    if(g.keyListener.getKeyNewState(g.keyUp)){
+      g.menu._cursor = (g.menu._cursor + max - 1) % max
+    }
+    if(g.keyListener.getKeyNewState(g.keyDown)){
+      g.menu._cursor = (g.menu._cursor + 1) % max
+    }
   }
 
   g.keyListener.resetKeyNewState()
@@ -4480,135 +4522,137 @@ function update(elapsedTime) {
     g.nowTime = new Date()
   }
 
-  if(g.recording){
-    g.keyListener.freeze()
-    g.recorder.addRecord()
-  }
+  if(!g.sceneChanging){
+    if(g.recording){
+      g.keyListener.freeze()
+      g.recorder.addRecord()
+    }
 
-  if(g.keyListener.getKeyNewState(g.keyPause) || g.controller.getTouchNewState(g.controller.pauseButton)){
+    if(g.keyListener.getKeyNewState(g.keyPause) || g.controller.getTouchNewState(g.controller.pauseButton)){
+      if(g.pausing){
+        // resume
+        resumeFromPause()
+      }else{
+        // pause
+        g.menu.setMenu('pause')
+        g.canvasField.addObject(g.menu)
+        g.pauseStartTime = new Date(g.nowTime.getTime())
+        if(g.current_bgm){
+          g.current_bgm.pause()
+        }
+        g.playerObj.setAnimating(false)
+        g.qCubeArray.forEach((cubeLine) => {
+          cubeLine.forEach((cube) => {
+            if(cube){
+              cube.pause()
+            }
+          })
+        })
+        g.aCubeArray.forEach((cubeLine) => {
+          cubeLine.forEach((cube) => {
+            if(cube){
+              cube.pause()
+            }
+          })
+        })
+        g.markerArray.forEach((marker) => {
+          marker.pause()
+        })
+        g.plateMarkerArray.forEach((markerLine) => {
+          markerLine.forEach((marker) => {
+            if(marker){
+              marker.pause()
+            }
+          })
+        })
+        g.effectArray.forEach((effect) => {
+          effect.pause()
+        })
+        g.labelObj.pause()
+
+        g.pausing = true
+      }
+    }
+
     if(g.pausing){
-      // resume
-      resumeFromPause()
+      // give up menu handling
+      if(!g.menu._moving){
+        if(g.keyListener.getKeyNewState(g.keyUp) || g.keyListener.getKeyNewState(g.keyDown)){
+          g.menu._moving = true
+          g.menu._srcMenuItem = g.menu._subCursor
+          g.menu._dstMenuItem = 1 - g.menu._subCursor
+          g.menu._subCursor = g.menu._dstMenuItem
+          g.menu._moveSubMenuTime = (new Date())
+        }
+      }
+
+      if(!g.menu._moving){
+        const touchedMenu = g.menu.getTouchedMenuNumber()
+        if(g.keyListener.getKeyNewState(g.keyMark) || touchedMenu >= 0){
+          let cursorPos = g.menu._subCursor
+          if(touchedMenu >= 0){
+            cursorPos = touchedMenu
+          }
+
+          switch(cursorPos){
+            case 0: {
+              // give up
+              giveup()
+              break
+            }
+            case 1: {
+              // resume
+              resumeFromPause()
+              break
+            }
+            default: {
+              // something is wrong
+            }
+          }
+        }
+      }
+      g.keyListener.resetKeyNewState()
+      resetTouchState()
+      return
+    }
+
+    if(g.keyListener.getKeyState(g.keyUp)){
+      force.z -= speed
+      moving = true
+    }else if(g.keyListener.getKeyState(g.keyDown)){
+      force.z += speed
+      moving = true
+    }
+    if(g.keyListener.getKeyState(g.keyLeft)){
+      force.x -= speed
+      moving = true
+    }else if(g.keyListener.getKeyState(g.keyRight)){
+      force.x += speed
+      moving = true
+    }
+
+    const moveVector = g.controller.getMoveVector()
+    if(moveVector){
+      force.z += moveVector.y * speed
+      force.x += moveVector.x * speed
+      moving = true
+    }
+
+
+    if(g.keyListener.getKeyNewState(g.keyMark) || g.controller.getTouchNewState(g.controller.markerButton)){
+      if(checkControllable()){
+        setMarker()
+      }
+    }
+    if(g.keyListener.getKeyNewState(g.keyAdvantage) || g.controller.getTouchNewState(g.controller.advantageButton)){
+      useAdvantage()
+    }
+    if(g.keyListener.getKeyState(g.keySpeedUp) || g.controller.getTouchState(g.controller.speedUpButton)){
+      g.speedUp = true
     }else{
-      // pause
-      g.menu.setMenu('pause')
-      g.canvasField.addObject(g.menu)
-      g.pauseStartTime = new Date(g.nowTime.getTime())
-      if(g.current_bgm){
-        g.current_bgm.pause()
-      }
-      g.playerObj.setAnimating(false)
-      g.qCubeArray.forEach((cubeLine) => {
-        cubeLine.forEach((cube) => {
-          if(cube){
-            cube.pause()
-          }
-        })
-      })
-      g.aCubeArray.forEach((cubeLine) => {
-        cubeLine.forEach((cube) => {
-          if(cube){
-            cube.pause()
-          }
-        })
-      })
-      g.markerArray.forEach((marker) => {
-        marker.pause()
-      })
-      g.plateMarkerArray.forEach((markerLine) => {
-        markerLine.forEach((marker) => {
-          if(marker){
-            marker.pause()
-          }
-        })
-      })
-      g.effectArray.forEach((effect) => {
-        effect.pause()
-      })
-      g.labelObj.pause()
-
-      g.pausing = true
+      g.speedUp = false
     }
-  }
-
-  if(g.pausing){
-    // give up menu handling
-    if(!g.menu._moving){
-      if(g.keyListener.getKeyNewState(g.keyUp) || g.keyListener.getKeyNewState(g.keyDown)){
-        g.menu._moving = true
-        g.menu._srcMenuItem = g.menu._subCursor
-        g.menu._dstMenuItem = 1 - g.menu._subCursor
-        g.menu._subCursor = g.menu._dstMenuItem
-        g.menu._moveSubMenuTime = (new Date())
-      }
-    }
-
-    if(!g.menu._moving){
-      const touchedMenu = g.menu.getTouchedMenuNumber()
-      if(g.keyListener.getKeyNewState(g.keyMark) || touchedMenu >= 0){
-        let cursorPos = g.menu._subCursor
-        if(touchedMenu >= 0){
-          cursorPos = touchedMenu
-        }
-
-        switch(cursorPos){
-          case 0: {
-            // give up
-            giveup()
-            break
-          }
-          case 1: {
-            // resume
-            resumeFromPause()
-            break
-          }
-          default: {
-            // something is wrong
-          }
-        }
-      }
-    }
-    g.keyListener.resetKeyNewState()
-    resetTouchState()
-    return
-  }
-
-  if(g.keyListener.getKeyState(g.keyUp)){
-    force.z -= speed
-    moving = true
-  }else if(g.keyListener.getKeyState(g.keyDown)){
-    force.z += speed
-    moving = true
-  }
-  if(g.keyListener.getKeyState(g.keyLeft)){
-    force.x -= speed
-    moving = true
-  }else if(g.keyListener.getKeyState(g.keyRight)){
-    force.x += speed
-    moving = true
-  }
-
-  const moveVector = g.controller.getMoveVector()
-  if(moveVector){
-    force.z += moveVector.y * speed
-    force.x += moveVector.x * speed
-    moving = true
-  }
-
-
-  if(g.keyListener.getKeyNewState(g.keyMark) || g.controller.getTouchNewState(g.controller.markerButton)){
-    if(checkControllable()){
-      setMarker()
-    }
-  }
-  if(g.keyListener.getKeyNewState(g.keyAdvantage) || g.controller.getTouchNewState(g.controller.advantageButton)){
-    useAdvantage()
-  }
-  if(g.keyListener.getKeyState(g.keySpeedUp) || g.controller.getTouchState(g.controller.speedUpButton)){
-    g.speedUp = true
-  }else{
-    g.speedUp = false
-  }
+  } // !g.sceneChanging
 
   createSubStageProcess()
   downProcess()
@@ -4650,6 +4694,7 @@ function init() {
   initCanvas()
   initModelAndMotion()
   initAudio()
+  getStageFromCookie()
   loadBestIQ()
   loadCookieOption()
 }

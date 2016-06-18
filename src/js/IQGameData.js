@@ -82,6 +82,43 @@ class _IQGameData {
     this.levelListEnable = [true, true, true, false]
 
     /**
+     * Which stage the player starts from.
+     * @type {int}
+     */
+    this.selectedStage = 1
+
+    this.selectableMaxStage = 1
+
+    /**
+     * stage name list
+     * @type {Array<string>}
+     */
+    this.stageList = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+    /**
+     * stage name list to show on the screen
+     * @type {Map<int, string>}
+     */
+    this.stageNameList = new Map([
+      [1, '1'],
+      [2, '2'],
+      [3, '3'],
+      [4, '4'],
+      [5, '5'],
+      [6, '6'],
+      [7, '7'],
+      [8, '8'],
+      [9, 'Final']
+    ])
+
+    /**
+     * List of booleans which mean the player can start from the stage.
+     * It associates to stageList
+     * @type {Array<boolean>}
+     */
+    this.stageListEnable = [true, false, false, false, false, false, false, false, false]
+
+    /**
      * 
      * @type {boolean}
      */
@@ -701,6 +738,7 @@ class _IQGameData {
     this.cookieManager = null
     this.cookieSaveDays = 35
     this.cookieScore = 'IQ'
+    this.cookieStage = 'IQStage'
     this.cookieOptionLevel = 'IQLv'
     this.cookieOptionCharacter = 'IQChar'
     this.cookieOptionSoundVolume = 'IQSndVol'

@@ -126,14 +126,14 @@ export default class IQMenu extends DH2DObject {
     // sub menu = OPTION
     this._optionSubMenus = [
       'Level',
+      'Stage',
       'Character',
       'Volume',
       'Language',
-      '', // do we need KeyConfig?
       '',
       'return'
     ]
-    this._optionSubMenuEnable = [true, true, true, true, false, false, true]
+    this._optionSubMenuEnable = [true, true, true, true, true, false, true]
 
     // sub menu = SHARE
     this._shareSubMenus = [
@@ -1289,9 +1289,10 @@ export default class IQMenu extends DH2DObject {
         this._opSubMenus = this._optionSubMenus
         this._opSubMenuEnable = this._optionSubMenuEnable
         params[0] = () => IQGameData.level
-        params[1] = () => IQGameData.character
-        params[2] = () => Math.floor(IQGameData.soundVolume * 100)
-        params[3] = () => IQGameData.languageNameList.get(IQGameData.language)
+        params[1] = () => IQGameData.stageNameList.get(IQGameData.selectedStage)
+        params[2] = () => IQGameData.character
+        params[3] = () => Math.floor(IQGameData.soundVolume * 100)
+        params[4] = () => IQGameData.languageNameList.get(IQGameData.language)
         paramWidth = 110
         break
       }
