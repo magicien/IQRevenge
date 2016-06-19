@@ -103,7 +103,7 @@ export default class IQEffectPlate extends DH3DObject {
     if(step >= num)
       step = num - 1
 
-    // FIXME
+    // FIXME: need to improve the performance
     this._dynamicTexture = IQEffectPlate.textures[step]
   }
 
@@ -236,3 +236,6 @@ IQEffectPlate.setup = function() {
   return promise
 }
 
+IQEffectPlate.create = (wide, z, x, delay) => {
+  return new IQEffectPlate(wide, z, x, delay)
+}

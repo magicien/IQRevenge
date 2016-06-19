@@ -191,7 +191,6 @@ export default class IQCanvas extends CanvasField {
 
       // draw without mirror
       this._objs.forEach( (obj) => {
-        // FIXME
         if(obj._renderer){
           const gl = obj._renderer._gl
           obj._renderer.enableStencil()
@@ -211,7 +210,6 @@ export default class IQCanvas extends CanvasField {
       const refObjs = this._refObjs
       this._objs.forEach((obj) => {
         if(obj._mirror){
-          // FIXME
           obj._renderer.enableStencil()
           obj.renderMirror(refObjs)
         }

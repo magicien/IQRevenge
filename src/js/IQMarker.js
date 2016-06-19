@@ -217,7 +217,6 @@ export default class IQMarker extends DH3DObject {
 
 IQMarker.initialized = false
 
-// FIXME
 IQMarker.file_r = 'x/red_marker.x'
 IQMarker.file_g = 'x/green_marker.x'
 IQMarker.file_b = 'x/blue_marker.x'

@@ -1,10 +1,15 @@
 'use strict'
 
+/*
 import {
   DH3DObject,
   ModelBank
 } from '../../modules/DH3DLibrary/src/js/main'
 import IQGameData from './IQGameData'
+*/
+import {
+  DH3DObject
+} from '../../modules/DH3DLibrary/src/js/main'
 
 /**
  * IQPlayer class
@@ -13,7 +18,7 @@ import IQGameData from './IQGameData'
 export default class IQPlayer extends DH3DObject {
 }
 
-// FIXME
+/*
 IQPlayer.file_x = ''
 IQPlayer.setup = () => {
   const promise = Promise.all([
@@ -37,4 +42,5 @@ IQPlayer.setup = () => {
 
   return promise
 }
+*/
 

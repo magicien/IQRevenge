@@ -570,7 +570,7 @@ class _IQGameData {
 
     // camera params
     this.cameraNear = 10
-    this.cameraFar = 1000
+    this.cameraFar = 1500
     this.cameraXAngle = 0
     this.cameraYAngle = 0
     this.cameraTargetX = 0

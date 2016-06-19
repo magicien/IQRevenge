@@ -430,8 +430,7 @@ export default class IQStage extends DH3DObject {
     }
     // add effect
     for(let x=0; x<IQGameData.stageWidth; x++){
-      // FIXME: Do not use 'new' for side effects
-      new IQEffectPlate(true, IQGameData.stageLength - 1, x)
+      IQEffectPlate.create(true, IQGameData.stageLength - 1, x)
     }
 
     // shrink stage

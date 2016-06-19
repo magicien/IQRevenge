@@ -121,3 +121,7 @@ export default class IQSceneChanger extends DH2DObject {
   }
 }
 
+IQSceneChanger.change = (changeTime, blackOut, beforeBGM, afterBGM, afterLoop, sceneChangeCallback, useRealTime) => {
+  return new IQSceneChanger(changeTime, blackOut, beforeBGM, afterBGM, afterLoop, sceneChangeCallback, useRealTime)
+}
+

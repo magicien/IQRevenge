@@ -289,6 +289,7 @@ export default class IQMenu extends DH2DObject {
     Promise.all([audioPromise, videoPromise]).then(() => {
       obj.movieLoadedCallback()
     }).catch((error) => {
+      console.log('Movie loading error: ' + error)
       // maybe the video codec is not supported... just skip the video
       IQGameData.openingMovieError = true
     })
@@ -850,7 +851,7 @@ export default class IQMenu extends DH2DObject {
           tile.setPosition(posX, posY, 0)
           tile._marked = false
 
-          // FIXME
+          // FIXME: need API
           const rootBone = tile._model.rootBone
           const tileBone = rootBone.childBoneArray[0]
           const childBones = tileBone.childBoneArray
@@ -1002,16 +1003,16 @@ export default class IQMenu extends DH2DObject {
     const menuItem = {
       x: item.x || 0,
       y: item.y || 0,
-      width: item.width !== undefined ? item.width : 100,
-      height: item.height !== undefined ? item.height : 30,
-      padding: item.padding !== undefined ? item.padding : 10,
-      textAlign: item.textAlign !== undefined ? item.textAlign : 'center',
-      textBaseline: item.textBaseline !== undefined ? item.textBaseline : 'middle',
-      font: item.font !== undefined ? item.font : '20px bold sans-serif',
-      fillStyle: item.fillStyle !== undefined ? item.fillStyle : IQGameData.whiteColor,
-      strokeStyle: item.strokeStyle !== undefined ? item.strokeStyle : IQGameData.whiteColor,
-      text: item.text !== undefined ? item.text : '',
-      enable: item.enable !== undefined ? item.enable : true,
+      width: typeof item.width !== 'undefined' ? item.width : 100,
+      height: typeof item.height !== 'undefined' ? item.height : 30,
+      padding: typeof item.padding !== 'undefined' ? item.padding : 10,
+      textAlign: typeof item.textAlign !== 'undefined' ? item.textAlign : 'center',
+      textBaseline: typeof item.textBaseline !== 'undefined' ? item.textBaseline : 'middle',
+      font: typeof item.font !== 'undefined' ? item.font : '20px bold sans-serif',
+      fillStyle: typeof item.fillStyle !== 'undefined' ? item.fillStyle : IQGameData.whiteColor,
+      strokeStyle: typeof item.strokeStyle !== 'undefined' ? item.strokeStyle : IQGameData.whiteColor,
+      text: typeof item.text !== 'undefined' ? item.text : '',
+      enable: typeof item.enable !== 'undefined' ? item.enable : true,
       onTouch: item.onTouch,
       onDecision: item.onDecision,
       onLeft: item.onLeft,
@@ -1262,7 +1263,7 @@ export default class IQMenu extends DH2DObject {
 
   getSubOptionName(number) {
     let c = this._subCursor
-    if(number !== undefined){
+    if(typeof number !== 'undefined'){
       c = number
     }
       
@@ -1283,7 +1284,7 @@ export default class IQMenu extends DH2DObject {
         params[0] = () => this._subScoreCharacter
         params[1] = () => this._subScoreLevel
         paramWidth = 110
-       break
+        break
       }
       case 'OPTION': {
         this._opSubMenus = this._optionSubMenus
@@ -1322,7 +1323,7 @@ export default class IQMenu extends DH2DObject {
 
     this.resetMenuItem()
     for(let i=0; i<this._opSubMenus.length; i++){
-      let itemY = this._subMenuSY + (i - 0.5) * this._subMenuDY
+      const itemY = this._subMenuSY + (i - 0.5) * this._subMenuDY
       let menuWidth = width
       if(params[i]){
         menuWidth += this._subMenuParamPadding + paramWidth
@@ -1403,21 +1404,21 @@ export default class IQMenu extends DH2DObject {
 
     if(this._menu === 'opening'){
       if(!this._opMovieReady){
-        let loadingStr = "Loading."
+        let loadingStr = 'Loading.'
         const dotMax = 3
         const dotNum = Math.floor((new Date()).getMilliseconds() / 300) % dotMax
         for(let i=0; i<dotNum; i++){
-          loadingStr += "."
+          loadingStr += '.'
         }
         for(let i=dotNum; i<dotMax; i++){
-          loadingStr += " "
+          loadingStr += ' '
         }
 
         // loading movie
         c.fillText(loadingStr, IQGameData.canvasWidth / 2, IQGameData.canvasHeight / 2)
       }else if(this._opMovieReady && !this._opMovieStarted){
         // waiting to play movie
-        c.fillText("Touch to start", IQGameData.canvasWidth / 2, IQGameData.canvasHeight / 2)
+        c.fillText('Touch to start', IQGameData.canvasWidth / 2, IQGameData.canvasHeight / 2)
       }else{
         // opening movie
         //if(IQGameData.device.isMobile){
@@ -1427,7 +1428,6 @@ export default class IQMenu extends DH2DObject {
         c.drawImage(this._opMovie, 0, 0)
       }
     }else if(this._menu === 'top'){
-      // FIXME: showMenuLoopからこっちに移動する？
       // setup context
 
       if(!this._showSubMenu){
@@ -1496,8 +1496,9 @@ export default class IQMenu extends DH2DObject {
 
         const sx = this._subMenuSX
         const sy = this._subMenuSY
-        const dy = this._subMenuDY
+        //const dy = this._subMenuDY
         if(menuDiffTime < IQGameData.showSubMenuTimeMax){
+          /*
           let s = 0
           const t = 2.0 * menuDiffTime / IQGameData.showSubMenuTimeMax
           if(t < 1){
@@ -1505,6 +1506,7 @@ export default class IQMenu extends DH2DObject {
           }else{
             s = -0.5 * (t * (t - 4) + 2)
           }
+          */
 
           if(opName === 'OPTION'){
             // nothing to do
@@ -1582,8 +1584,8 @@ export default class IQMenu extends DH2DObject {
             // nothing to do
           }else if(opName === 'CREATE'){
             // stage editor
-            let x = sx + 250
-            let y = 40
+            const x = sx + 250
+            const y = 40
             const w = 280
             const h = 310
             c.strokeStyle = IQGameData.whiteColor
@@ -1652,7 +1654,7 @@ export default class IQMenu extends DH2DObject {
       c.font         = '20px bold sans-serif'
       const fy = 150
       const dy = 35
-      let x = IQGameData.canvasWidth * 0.5
+      const x = IQGameData.canvasWidth * 0.5
       let y = fy
       this.drawText('Tweet',        x, y); y+= dy
       this.drawText('Back To Menu', x, y); y+= dy
@@ -1670,7 +1672,7 @@ export default class IQMenu extends DH2DObject {
 }
 
 IQMenu.initialized = false
-// FIXME
+
 IQMenu.file_cube = 'x/cube_n.x'
 IQMenu.file_bg = 'x/cube_tex_1n.bmp'
 IQMenu.file_cube_n = 'x/cube_tex_1n.bmp'

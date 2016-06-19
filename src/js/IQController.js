@@ -55,7 +55,7 @@ export default class IQController {
     this._btn2CenterX = this._btn1CenterX + this._innerPadding + this._outerButtonSize
     this._btn2CenterY = this._ctrCenterY
     this._btn2Color   = 'rgba(0, 255, 0, 0.7)'
-    this._btn2DisableColor = 'rgba(255, 255, 255, 0.3)'
+    this._btn2DisableColor = 'rgba(0, 255, 0, 0.2)'
 
     // speedup button
     this._btn3CenterX = this._btn2CenterX
@@ -523,13 +523,19 @@ export default class IQController {
     c.fill()
 
     // button 2: advantage marker
-    c.strokeStyle = this._btn2Color
+
+    // disable if there's no advantage marker
+    if(IQGameData.markerArray.some((marker) => marker.type === 'green')){
+      c.strokeStyle = this._btn2Color
+      c.fillStyle = this._btn2Color
+    }else{
+      c.strokeStyle = this._btn2DisableColor
+      c.fillStyle = this._btn2DisableColor
+    }
     c.beginPath()
     c.arc(this._btn2CenterX, this._btn2CenterY, this._btnOuterRadius, 0, this._2pi)
     c.stroke()
 
-    // TODO: disable if there's no advantage marker
-    c.fillStyle = this._btn2Color
     c.beginPath()
     c.arc(this._btn2CenterX, this._btn2CenterY, this._btnRadius, 0, this._2pi)
     c.fill()

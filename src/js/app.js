@@ -316,8 +316,7 @@ function playerMoveCallback() {
       g.stageStarting = false
       if(!g.rulePlay){
         // there's no BGM in 'RULES'
-        // FIXME: Do not use 'new' for side effects
-        new IQSceneChanger(0, false, g.bgm_stagecall, g.bgm_stage, null, null)
+        IQSceneChanger.change(0, false, g.bgm_stagecall, g.bgm_stage, null, null)
       }
 
       g.cameraXAngleGoal = -0.3
@@ -372,9 +371,9 @@ function playerMoveCallback() {
     // normal
     //g.cameraXAngleGoal = -0.9
     //g.cameraXAngleGoal = -0.3 - 0.05 * g.questionLength
-    g.cameraXAngleGoal = -0.3 - 0.06 * g.questionLength
+    g.cameraXAngleGoal = -0.3 - 0.06 * getQuestionLength()
     //g.cameraYAngleGoal = Math.PI + pos.x / g.maxX * g.cameraYAngleMax
-    g.cameraYAngleGoal = Math.PI + pos.x / g.maxX * (g.cameraYAngleMax + (g.questionLength - 2) * 0.05)
+    g.cameraYAngleGoal = Math.PI + pos.x / g.maxX * (g.cameraYAngleMax + (getQuestionLength() - 2) * 0.05)
     g.cameraTargetXGoal = pos.x
     g.cameraTargetYGoal = pos.y
     g.cameraTargetZGoal = pos.z
@@ -496,7 +495,10 @@ function playerMoveCallback() {
   const cosy = Math.cos(g.cameraYAngle)
 
   //const d = g.camera.distance
-  const d = g.camera.distance + (g.questionLength - 2) * 15.0
+  let d = g.camera.distance
+  if(!g.speedUp && !g.speedUpByMiss){
+    d += (getQuestionLength() - 2) * 15.0
+  }
 
   const ox = g.cameraTargetX + bindOffsetX
   const oy = g.cameraTargetY + bindOffsetY
@@ -505,6 +507,56 @@ function playerMoveCallback() {
   const cy = oy - d * sinx
   const cz = oz - d * cosx * cosy
   g.camera.lookat(cx, cy, cz, ox, oy, oz, 0, 1, 0)
+}
+
+function getQuestionLength() {
+  let length = g.questionLength
+
+  if(!g.activated){
+    return length
+  }
+
+  for(let z=0; z<g.questionLength; z++){
+    let noCube = true
+    const cubeLine = g.aCubeArray[z]
+
+    for(let x=0; x<g.stageWidth; x++){
+      if(cubeLine[x]){
+        noCube = false
+        break
+      }
+    }
+
+    if(noCube){
+      length--
+    }else{
+      break
+    }
+  }
+
+  for(let z=g.questionLength-1; z>=0; z--){
+    let noCube = true
+    const cubeLine = g.aCubeArray[z]
+
+    for(let x=0; x<g.stageWidth; x++){
+      if(cubeLine[x]){
+        noCube = false
+        break
+      }
+    }
+
+    if(noCube){
+      length--
+    }else{
+      break
+    }
+  }
+
+  if(length < 2){
+    length = 2
+  }
+
+  return length
 }
 
 function initGameData() {
@@ -568,8 +620,6 @@ function initCanvas() {
 
   // menu
   IQMenu.setup()
-
-  // FIXME: player object
 }
 
 function decisionKeyPushed() {
@@ -583,7 +633,7 @@ function waitMovieLoop() {
     g.canvasField.setFrameCallback(showOpeningLoop)
   }else if(g.openingMovieError){
     // maybe the video codec is not supported... just skip the video
-    new IQSceneChanger(2.0, true, null, g.bgm_menu, showMenuLoop, changeToMenu)
+    IQSceneChanger.change(2.0, true, null, g.bgm_menu, showMenuLoop, changeToMenu)
   }
 
   g.keyListener.resetKeyNewState()
@@ -599,12 +649,11 @@ function showOpeningLoop() {
 
   // FIXME: separate label and controller
   if(!g.sceneChanging && (g.keyListener.getAnyKeyState() || g.controller.getAnyTouchState())){
-    // FIXME: Do not use 'new' for side effects
-    new IQSceneChanger(2.0, true, g.menu._opMovie, g.bgm_menu, showMenuLoop, changeToMenu)
+    IQSceneChanger.change(2.0, true, g.menu._opMovie, g.bgm_menu, showMenuLoop, changeToMenu)
   }
   if(g.openingMovieError){
     // maybe the video codec is not supported... just skip the video
-    new IQSceneChanger(2.0, true, null, g.bgm_menu, showMenuLoop, changeToMenu)
+    IQSceneChanger.change(2.0, true, null, g.bgm_menu, showMenuLoop, changeToMenu)
   }
   g.keyListener.resetKeyNewState()
   resetTouchState()
@@ -616,7 +665,6 @@ function showMenu() {
     return
   }
 
-  // FIXME
   g.camera.bind(null)
   g.camera.perspective(45.0, g.canvasWidth / g.canvasHeight, g.cameraNear, g.cameraFar)
   g.canvasField.setCamera(g.camera)
@@ -630,9 +678,9 @@ function showMenu() {
 
   g.menu = new IQMenu('opening')
   g.canvasField.addObject(g.menu)
-  // FIXME
+
   if(g.device.isMobile || g.device.isTablet){
-  //if(g.device.isMobile){
+    // iPhone and iPad can't play the movie automatically... so it has to wait for a touch event
     g.canvasField.setFrameCallback(waitMovieLoop)
   }else{
     g.canvasField.setFrameCallback(showOpeningLoop)
@@ -1055,7 +1103,6 @@ function removeAllObjects() {
       g.canvasField.removeObject(obj)
     }
   })
-  // FIXME
   g.canvasField._alphaObjs.forEach( (obj) => {
     g.canvasField.removeObject(obj)
   })
@@ -1259,7 +1306,6 @@ function checkObjLoaded() {
   if(!IQMarkerPlate.initialized)
     return false
 
-  // FIXME: check audio load status
   return true
 }
 
@@ -1397,7 +1443,7 @@ function setSubMenu() {
       const returnMenu = g.menu._menuItem[6]
       returnMenu.onDecision = () => {
         updateOptionValue()
-        new IQSceneChanger(2.0, true, null, null, showMenuLoop, subMenuReturn)
+        IQSceneChanger.change(2.0, true, null, null, showMenuLoop, subMenuReturn)
       }
       returnMenu.onTouch = returnMenu.onDecision
 
@@ -1414,7 +1460,7 @@ function setSubMenu() {
       rule2Menu.onTouch = rule2Menu.onDecision
 
       const returnMenu = g.menu._menuItem[6]
-      returnMenu.onDecision = () => { new IQSceneChanger(2.0, true, null, null, showMenuLoop, subMenuReturn) }
+      returnMenu.onDecision = () => { IQSceneChanger.change(2.0, true, null, null, showMenuLoop, subMenuReturn) }
       returnMenu.onTouch = returnMenu.onDecision
 
       break
@@ -1435,7 +1481,7 @@ function setSubMenu() {
       levelMenu.onTouch = levelMenu.onRight
 
       const returnMenu = g.menu._menuItem[6]
-      returnMenu.onDecision = () => { new IQSceneChanger(2.0, true, null, null, showMenuLoop, subMenuReturn) }
+      returnMenu.onDecision = () => { IQSceneChanger.change(2.0, true, null, null, showMenuLoop, subMenuReturn) }
       returnMenu.onTouch = returnMenu.onDecision
 
       break
@@ -1483,7 +1529,7 @@ function setSubMenu() {
       // return
       const returnMenu = g.menu._menuItem[6]
       returnMenu.onDecision = () => {
-        new IQSceneChanger(2.0, true, null, null, showMenuLoop, subMenuReturn)
+        IQSceneChanger.change(2.0, true, null, null, showMenuLoop, subMenuReturn)
       }
       returnMenu.onTouch = returnMenu.onDecision
 
@@ -1508,7 +1554,7 @@ function setSubMenu() {
 
       const playMenu = g.menu._menuItem[3]
       playMenu.onDecision = () => {
-        new IQSceneChanger(2.0, true, g.bgm_menu, g.bgm_stagecall, null, () => {
+        IQSceneChanger.change(2.0, true, g.bgm_menu, g.bgm_stagecall, null, () => {
           g.testPlay = true
           stop()
           setup()
@@ -1516,11 +1562,12 @@ function setSubMenu() {
       }
       playMenu.onTouch = playMenu.onDecision
 
+      // TODO: implementation
       const saveMenu = g.menu._menuItem[4]
 
       const returnMenu = g.menu._menuItem[6]
       returnMenu.onDecision = () => {
-        new IQSceneChanger(2.0, true, null, null, showMenuLoop, subMenuReturn)
+        IQSceneChanger.change(2.0, true, null, null, showMenuLoop, subMenuReturn)
       }
       returnMenu.onTouch = returnMenu.onDecision
 
@@ -1534,7 +1581,7 @@ function setSubMenu() {
 }
 
 function startRules(ruleNo) {
-  new IQSceneChanger(2.0, true, g.bgm_menu, g.bgm_stagecall, null, () => {
+  IQSceneChanger.change(2.0, true, g.bgm_menu, g.bgm_stagecall, null, () => {
     g.demoPlay = true
     g.rulePlay = true
     g.ruleNumber = ruleNo
@@ -1715,8 +1762,7 @@ function showMenuLoop() {
 
       switch(g.menu.getOptionName()){
         case 'START': {
-          // FIXME: Do not use 'new' for side effects
-          new IQSceneChanger(3.0, true, g.bgm_menu, g.bgm_stagecall, null, () => {
+          IQSceneChanger.change(3.0, true, g.bgm_menu, g.bgm_stagecall, null, () => {
             stop()
             removeAllObjects()
             setup()
@@ -1735,8 +1781,7 @@ function showMenuLoop() {
           break
         }
         case 'EXIT': {
-          // FIXME: Do not use 'new' for side effects
-          new IQSceneChanger(5.0, true, g.bgm_menu, null, null, () => {
+          IQSceneChanger.change(5.0, true, g.bgm_menu, null, null, () => {
             window.close()
           })
           break
@@ -1969,8 +2014,7 @@ function showSubMenuLoop() {
   g.nowTime = new Date()
 
   const menuName = g.menu.getOptionName()
-  let subName = g.menu.getSubOptionName()
-  let startEditing = false
+  const subName = g.menu.getSubOptionName()
 
   if(!g.sceneChanging && !g.menu._moving && g.menu._showSubMenuReady && !g.editing){
     let c = g.menu._subCursor
@@ -2001,27 +2045,26 @@ function showSubMenuLoop() {
 
       // set subsubmenu
       if(menuName === 'OPTION'){
-        const name = g.menu.getSubOptionName()
-        if(name === 'Level'){
+        if(subName === 'Level'){
           g.menu._opSubSubMenus = g.levelList
           g.menu._opSubSubMenuEnable = g.levelListEnable
           g.menu._subSubCursor = g.levelList.indexOf(g.level)
-        }else if(name === 'Stage'){
+        }else if(subName === 'Stage'){
           g.menu._opSubSubMenus = g.stageList
           g.menu._opSubSubMenuEnable = g.stageListEnable
           g.menu._subSubCursor = g.stageList.indexOf(g.selectedStage)
-        }else if(name === 'Character'){
+        }else if(subName === 'Character'){
           g.menu._opSubSubMenus = g.characterList
           g.menu._opSubSubMenuEnable = g.characterListEnable
           g.menu._subSubCursor = g.characterList.indexOf(g.character)
 
           // show character
           g.menu.setupMenuPlayerObj()
-        }else if(name === 'Volume'){
+        }else if(subName === 'Volume'){
           g.menu._opSubSubMenus = g.soundVolumeList
           g.menu._opSubSubMenuEnable = g.soundVolumeListEnable
           g.menu._subSubCursor = g.soundVolumeList.indexOf(g.soundVolumeValue)
-        }else if(name === 'Language'){
+        }else if(subName === 'Language'){
           g.menu._opSubSubMenus = g.languageList
           g.menu._opSubSubMenuEnable = g.languageListEnable
           g.menu._subSubCursor = g.languageList.indexOf(g.language)
@@ -2035,12 +2078,11 @@ function showSubMenuLoop() {
           g.canvasField.removeObject(g.menuPlayerObj)
         }
       }else if(menuName === 'SCORE'){
-        const name = g.menu.getSubOptionName()
-        if(name === 'Character'){
+        if(subName === 'Character'){
           g.menu._opSubSubMenus = g.characterList
           g.menu._opSubSubMenuEnable = g.characterListEnable
           g.menu._subSubCursor = g.characterList.indexOf(g.charater)
-        }else if(name === 'Level'){
+        }else if(subName === 'Level'){
           g.menu._opSubSubMenus = g.levelList
           g.menu._opSubSubMenuEnable = g.levelListEnable
           g.menu._subSubCursor = g.levelList.indexOf(g.level)
@@ -2050,22 +2092,21 @@ function showSubMenuLoop() {
           g.menu._opSubSubMenuEnable = null
         }
       }else if(menuName === 'CREATE'){
-        const name = g.menu.getSubOptionName()
-        if(name === 'Size'){
+        if(subName === 'Size'){
           g.menu._opSubSubMenus = g.stageSizeList
           g.menu._opSubSubMenuEnable = g.stageSizeListEnable
           g.menu._subSubCursor = g.stageSizeList.indexOf(g.editStageSize)
-        }else if(name === 'Step'){
+        }else if(subName === 'Step'){
           g.menu._opSubSubMenus = g.stageStepList
           g.menu._opSubSubMenuEnable = g.stageStepListEnable
           g.menu._subSubCursor = g.stageStepList.indexOf(g.editStageStep)
-        }else if(name === 'Edit'){
+        }else if(subName === 'Edit'){
           g.menu._opSubSubMenus = null
           g.menu._opSubSubMenuEnable = null
-        }else if(name === 'Play'){
+        }else if(subName === 'Play'){
           g.menu._opSubSubMenus = null
           g.menu._opSubSubMenuEnable = null
-        }else if(name === 'Save'){
+        }else if(subName === 'Save'){
           g.menu._opSubSubMenus = null
           g.menu._opSubSubMenuEnable = null
         }else{
@@ -2410,7 +2451,7 @@ function showContinueLoop() {
           // Continue
 
           setStageBGM(g.stage)
-          new IQSceneChanger(1.0, true, srcBGM, g.bgm_stagecall, null, () => {
+          IQSceneChanger.change(1.0, true, srcBGM, g.bgm_stagecall, null, () => {
             stop()
             resetValues(g.stage, false)
             .then(start)
@@ -2421,8 +2462,7 @@ function showContinueLoop() {
         case 2: {
           // back to top
 
-          // FIXME: Do not use 'new' for side effects
-          new IQSceneChanger(2.0, true, srcBGM, g.bgm_menu, showMenuLoop, () => {
+          IQSceneChanger.change(2.0, true, srcBGM, g.bgm_menu, showMenuLoop, () => {
             g.menu.setMenu('top')
             g.camera.distance = 20.0
             g.menu.addTilesToCanvas()
@@ -2550,8 +2590,8 @@ function loadRulesAudio(audioData) {
       }else if(tokens[0] === 'pause'){
         // type (='pause'), time, duration
         if(tokens.length > 4){
-          data.spotX = parseInt(tokens[3])
-          data.spotY = parseInt(tokens[4])
+          data.spotX = parseInt(tokens[3], 10)
+          data.spotY = parseInt(tokens[4], 10)
         }
         data.callback = simPauseCallback
 
@@ -2576,14 +2616,14 @@ function loadRulesAudio(audioData) {
 function mergeRulesData() {
   let addTime = 0
   let controlIndex = 1
-  let audioLength = g.rulesDataArray.length
-  let newArray = []
+  const audioLength = g.rulesDataArray.length
+  const newArray = []
 
   for(let audioIndex = 0; audioIndex < audioLength; audioIndex++){
     const audioData = g.rulesDataArray[audioIndex]
     let controlData = g.rulesMoveData.getRecord(controlIndex)
     while(controlData && (controlData.gameTime + addTime) < audioData.time){
-      let prevData = g.rulesMoveData.getRecord(controlIndex - 1)
+      const prevData = g.rulesMoveData.getRecord(controlIndex - 1)
       controlData.type = 'control'
       controlData.time = controlData.gameTime + addTime
       controlData.callback = simControlCallback
@@ -2731,10 +2771,10 @@ function setup() {
       resolve()
     })
   }else if(g.rulePlay){
-    if(g.ruleNumber == 1){
+    if(g.ruleNumber === 1){
       // Basic Rules 1
       g.stageFiles = ['', g.ruleStageDataFile1]
-    }else if(g.ruleNumber == 2){
+    }else if(g.ruleNumber === 2){
       // Basic Rules 2
       g.stageFiles = ['', g.ruleStageDataFile2]
     }
@@ -2805,7 +2845,7 @@ function setup() {
  * @returns {void}
  */
 function quitTestPlay() {
-  new IQSceneChanger(3.0, true, g.bgm_stage, g.bgm_menu, showSubMenuLoop, () => {
+  IQSceneChanger.change(3.0, true, g.bgm_stage, g.bgm_menu, showSubMenuLoop, () => {
     g.pausing = false
 
     const createCursor = 4
@@ -2830,7 +2870,7 @@ function quitTestPlay() {
     g.renderer.setLight(g.light)
 
     // title objects: 'CREATE'
-    let len = g.menu.getOptionName().length
+    const len = g.menu.getOptionName().length
     for(let i=0; i<len; i++){
       g.canvasField.addObject(g.menu._foldingTiles[i])
     }
@@ -2851,7 +2891,7 @@ function quitRulePlay() {
   }
   g.ruleQuitting = true
     
-  new IQSceneChanger(3.0, true, g.bgm_stage, g.bgm_menu, showSubMenuLoop, () => {
+  IQSceneChanger.change(3.0, true, g.bgm_stage, g.bgm_menu, showSubMenuLoop, () => {
     g.rulePlay = false
     g.demoPlay = false
     g.ruleQuitting = false
@@ -2890,7 +2930,7 @@ function quitRulePlay() {
     g.renderer.setLight(g.light)
 
     // title objects: 'RULES'
-    let len = g.menu.getOptionName().length
+    const len = g.menu.getOptionName().length
     for(let i=0; i<len; i++){
       g.canvasField.addObject(g.menu._foldingTiles[i])
     }
@@ -3003,7 +3043,6 @@ function createSubStageProcess() {
       g.playerObj.animationTime = 0
       g.playerObj.setDirection(Math.PI)
 
-      // FIXME
       g.iqPoint -= 1
     }
   }
@@ -3141,7 +3180,6 @@ function createSubStage() {
   if(g.rulePlay){
     // nothing to do
   }else if(g.subStage === 1){
-    // FIXME
     // stage call
     switch(g.stage){
       case 1: {
@@ -3224,7 +3262,7 @@ function blockReady(obj) {
 }
 
 function loadStageFilesData(fileName) {
-  let dir = (new String(fileName)).replace(/\/[^\/]*$/, '/')
+  let dir = String(fileName).replace(/\/[^\/]*$/, '/')
   if(dir === fileName){
     dir = './'
   }
@@ -3506,7 +3544,7 @@ function blockRotate() {
     let cubePosZ = g.aCubeZ * g.cubeSize
     for(let z=0; z<g.aCubeArray.length; z++){
       const cubeLine = g.aCubeArray[z]
-      cubeLine.forEach( (obj) => {
+      cubeLine.forEach((obj) => {
         if(!obj)
           return
 
@@ -3663,7 +3701,7 @@ function setMarker() {
     else if(cubeZ >= g.stageLength)
       cubeZ = g.stageLength - 1
 
-    if(g.plateMarkerArray[cubeZ][cubeX] == null){
+    if(g.plateMarkerArray[cubeZ][cubeX] === null){
       const marker = new IQMarker('blue')
       const plate = new IQMarkerPlate('blue')
       marker.markerPlate = plate
@@ -3707,7 +3745,7 @@ function useAdvantage() {
 
       for(let z=zStart; z<=zEnd; z++){
         for(let x=xStart; x<=xEnd; x++){
-          if(g.plateMarkerArray[z][x] == null){
+          if(g.plateMarkerArray[z][x] === null){
             // FIXME: マーカ削除対策(blue -> red)
             const redMarker = new IQMarker('blue')
             const plate = new IQMarkerPlate('red')
@@ -3747,10 +3785,10 @@ function checkMarker() {
           aCount++
         }
         cube.eraseWithMarker(marker)
-        new IQEffectPlate(true, marker.cubeZ, marker.cubeX, g.deletedWaitTime)
-        new IQEffectPlate(true, marker.cubeZ + 1, marker.cubeX, g.deletedWaitTime)
-        new IQEffectPlate(false, marker.cubeZ, marker.cubeX, g.deletedWaitTime)
-        new IQEffectPlate(false, marker.cubeZ, marker.cubeX + 1, g.deletedWaitTime)
+        IQEffectPlate.create(true, marker.cubeZ, marker.cubeX, g.deletedWaitTime)
+        IQEffectPlate.create(true, marker.cubeZ + 1, marker.cubeX, g.deletedWaitTime)
+        IQEffectPlate.create(false, marker.cubeZ, marker.cubeX, g.deletedWaitTime)
+        IQEffectPlate.create(false, marker.cubeZ, marker.cubeX + 1, g.deletedWaitTime)
  
         if(cube.type === 'advantage'){
           marker.setType('green')
@@ -3840,7 +3878,6 @@ function deleteProcess() {
         if(cube.type === 'forbidden'){
           // miss
           g.stageObj.breakOneLine()
-          // FIXME
           playSound(g.se_break)
           g.missed = true
           forbiddenErased = true
@@ -3928,15 +3965,13 @@ function gameOver() {
   if(g.gameOver)
     return
 
-  // FIXME
   let music = g.bgm_gameover
   if(g.rulePlay || g.testPlay){
     music = null
   }
-  new IQSceneChanger(0, false, g.bgm_stage, music, null, null)
+  IQSceneChanger.change(0, false, g.bgm_stage, music, null, null)
 
   g.gameOver = true
-  //g.gameOverTime = new Date()
   g.gameOverTime = new Date(g.nowTime.getTime())
   g.playerObj.setMotionWithBlending(g.falling, 3)
   g.playerObj.animationTime = 0
@@ -4103,7 +4138,6 @@ function subSubStageClear() {
       playSound(g.se_excellent)
       playSound(g.se_bonus)
 
-      // FIXME
       g.iqPoint += 4
     }else if(g.step === g.baseStep){
       // Perfect!
@@ -4118,7 +4152,6 @@ function subSubStageClear() {
       playSound(g.se_perfect)
       playSound(g.se_bonus)
 
-      // FIXME
       g.iqPoint += 3
     }else{
       // Great!
@@ -4133,7 +4166,6 @@ function subSubStageClear() {
       playSound(g.se_great)
       playSound(g.se_bonus)
       
-      // FIXME
       g.iqPoint += 2
     }
 
@@ -4162,7 +4194,6 @@ function subSubStageClear() {
       quitTestPlay()
     }
 
-    // FIXME
     g.iqPoint += 1
   }
   if(g.speedUpByMiss){
@@ -4197,8 +4228,7 @@ function subStageClear() {
 }
 
 function stageClear() {
-  // FIXME
-  new IQSceneChanger(0, false, g.bgm_stage, g.bgm_fanfare, null, null)
+  IQSceneChanger.change(0, false, g.bgm_stage, g.bgm_fanfare, null, null)
 
   g.stageLines = []
   for(let i=0; i<g.stageLength; i++){
@@ -4229,11 +4259,11 @@ function stageClear() {
   // update the max stage number
   if(g.stage + 1 > g.selectableMaxStage){
     g.selectableMaxStage = g.stage + 1
+    setStageToCookie()
     updateStageList()
   }
 }
 
-// FIXME
 function setStageBGM(stage) {
   let ext = ''
   const fileName = [
@@ -4272,17 +4302,16 @@ function clearProcess() {
 
     g.bonusScore = g.stageLength * g.pointBonus
     if(g.stage === g.stageMax){
-      // FIXME: ending
+      // TODO: implement ending
       //reset()
 
-      // FIXME: calc IQ
       g.iqPoint = Math.floor(g.iqPoint)
       if(g.iqPoint < 0){
         g.iqPoint = 0
       }
       setIQtoCookie(g.iqPoint)
       
-      new IQSceneChanger(3.0, true, g.bgm_fanfare, null, endingLoop, () => {
+      IQSceneChanger.change(3.0, true, g.bgm_fanfare, null, endingLoop, () => {
         g.stageClear = false
         g.ending = true
         g.endingStartTime = new Date(g.nowTime.getTime())
@@ -4293,10 +4322,8 @@ function clearProcess() {
       g.stageClearSceneChange = true
     }else{
       // go to next stage
-
-      // FIXME
       setStageBGM(g.stage + 1)
-      new IQSceneChanger(1.0, true, g.bgm_fanfare, g.bgm_stagecall, null, () => {
+      IQSceneChanger.change(1.0, true, g.bgm_fanfare, g.bgm_stagecall, null, () => {
         stop()
         g.stage++
         resetValues(g.stage, true)
@@ -4372,7 +4399,7 @@ function endingLoop() {
   if(diffTime > maxTime){
     if(!g.sceneChanging && decisionKeyPushed()){
       const srcBGM = null
-      new IQSceneChanger(2.0, true, srcBGM, null, endingTweetLoop, () => {
+      IQSceneChanger.change(2.0, true, srcBGM, null, endingTweetLoop, () => {
         removeAllObjects()
         g.menu.setMenu('endtweet')
         g.canvasField.addObject(g.menu)
@@ -4403,9 +4430,8 @@ function endingTweetLoop() {
 
         case 1: {
           // back to top
-          // FIXME
           const srcBGM = null
-          new IQSceneChanger(2.0, true, srcBGM, g.bgm_menu, showMenuLoop, () => {
+          IQSceneChanger.change(2.0, true, srcBGM, g.bgm_menu, showMenuLoop, () => {
             g.menu.setMenu('top')
             g.camera.distance = 20.0
             g.menu.addTilesToCanvas()
@@ -4469,11 +4495,13 @@ function stop() {
   g.canvasField.pause()
 }
 
+/*
 function resetGame() {
   stop()
   resetValues()
   .then(start)
 }
+*/
 
 function resetTouchState() {
   g.controller.resetTouchNewState()
@@ -4533,7 +4561,7 @@ function giveup() {
   if(g.testPlay){
     quitTestPlay()
   }else{
-    new IQSceneChanger(2.0, true, null, g.bgm_menu, showMenuLoop, () => {
+    IQSceneChanger.change(2.0, true, null, g.bgm_menu, showMenuLoop, () => {
       g.pausing = false
 
       g.canvasField.moveEnable = true
@@ -4715,7 +4743,6 @@ function update(elapsedTime) {
   perfectProcess()
   breakLineProcess()
   gameOverProcess()
-  // FIXME
   checkClear()
   clearProcess()
 

@@ -34,7 +34,7 @@ export default class IQKeyListener extends KeyListener {
 
   _keyDownCallback(event = window.event) {
     let keyChar = this._keyHash.get(event.keyCode)
-    if(keyChar === undefined)
+    if(typeof keyChar === 'undefined')
       keyChar = String.fromCharCode(event.keyCode)
 
     if(!this._keyState[keyChar]){
@@ -57,7 +57,7 @@ export default class IQKeyListener extends KeyListener {
 
   _keyUpCallback(event = window.event) {
     let keyChar = this._keyHash.get(event.keyCode)
-    if(keyChar === undefined)
+    if(typeof keyChar === 'undefined')
       keyChar = String.fromCharCode(event.keyCode)
 
     this._keyState[keyChar] = false

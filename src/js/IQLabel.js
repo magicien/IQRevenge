@@ -122,7 +122,7 @@ export default class IQLabel extends DH2DObject {
         }
       }else if(diffTime < startTime + g.gameOverRotateTime * 3 + g.gameOverWaitTime){
         // show score
-        str = new String(g.score)
+        str = String(g.score)
         strlen = str.length
         dx = 30
         x = (g.canvasWidth - dx * (strlen - 1)) * 0.5
@@ -140,7 +140,7 @@ export default class IQLabel extends DH2DObject {
         }
       }else if(diffTime < startTime + g.gameOverRotateTime * 4 + g.gameOverWaitTime * 2){
         // wait
-        str = new String(g.score)
+        str = String(g.score)
         strlen = str.length
         dx = 30
         x = (g.canvasWidth - dx * (strlen - 1)) * 0.5
@@ -152,7 +152,7 @@ export default class IQLabel extends DH2DObject {
         }
       }else if(diffTime < startTime + g.gameOverRotateTime * 5 + g.gameOverWaitTime * 2){
         // rotate and fade out
-        str = new String(g.score)
+        str = String(g.score)
         strlen = str.length
         dx = 30
         x = (g.canvasWidth - dx * (strlen - 1)) * 0.5
@@ -229,7 +229,7 @@ export default class IQLabel extends DH2DObject {
 
         c.fillStyle = 'rgba(255, 255, 255, ' + a + ')'
         c.strokeStyle = 'rgba(0, 0, 0, ' + a + ')'
-        str = new String(g.iqPoint)
+        str = String(g.iqPoint)
         strlen = str.length
         x = g.canvasWidth * 0.5 + dx * 1.5
         for(let i=0; i<strlen; i++){
@@ -249,7 +249,7 @@ export default class IQLabel extends DH2DObject {
         c.fillText('.', x+dx,   y)
         c.fillText('Q', x+dx*2, y)
 
-        str = new String(g.iqPoint)
+        str = String(g.iqPoint)
         strlen = str.length
         x = g.canvasWidth * 0.5 + dx * 1.5
         for(let i=0; i<strlen; i++){
@@ -281,7 +281,7 @@ export default class IQLabel extends DH2DObject {
       c.fillText('.', x+dx,   y)
       c.fillText('Q', x+dx*2, y)
 
-      const str = new String(g.iqPoint)
+      const str = String(g.iqPoint)
       const strlen = str.length
       x = g.canvasWidth * 0.5 + dx * 1.5
       for(let i=0; i<strlen; i++){
@@ -313,7 +313,7 @@ export default class IQLabel extends DH2DObject {
       const time5 = time4 + g.endingIQTime1
       const time6 = time5 + g.endingIQTime2
 
-      const scoreStr = new String(g.score)
+      const scoreStr = String(g.score)
       const scoreStrLen = scoreStr.length
       let dx = 30
       let x = (g.canvasWidth - dx * (scoreStrLen - 1)) * 0.5
@@ -413,7 +413,7 @@ export default class IQLabel extends DH2DObject {
 
         c.fillStyle = 'rgba(255, 255, 255, ' + a + ')'
         c.strokeStyle = 'rgba(0, 0, 0, ' + a + ')'
-        const str = new String(g.iqPoint)
+        const str = String(g.iqPoint)
         const strlen = str.length
         x = g.canvasWidth * 0.5 + dx * 1.5
         for(let i=0; i<strlen; i++){
@@ -433,7 +433,7 @@ export default class IQLabel extends DH2DObject {
         c.fillText('.', x+dx,   y)
         c.fillText('Q', x+dx*2, y)
 
-        const str = new String(g.iqPoint)
+        const str = String(g.iqPoint)
         const strlen = str.length
         x = g.canvasWidth * 0.5 + dx * 1.5
         for(let i=0; i<strlen; i++){
