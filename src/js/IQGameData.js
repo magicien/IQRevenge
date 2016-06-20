@@ -28,6 +28,7 @@ class _IQGameData {
     this.deviceType = (this.device.isMobile || this.device.isTable) ? 'mb' : 'pc'
 
     /**
+     * flag for debugging
      * @type {boolean}
      */
     this.debug = false
@@ -177,12 +178,12 @@ class _IQGameData {
 
     /** 
      * List of character names
-     * @type {Array<string>}
+     * @type {Map<string, string>}
      */
     this.characterList = [
       'Miku',
-      'Cyan',
-      'Reimu'
+      'Rin',
+      'Len'
     ]
 
     /** 
@@ -190,6 +191,19 @@ class _IQGameData {
      * @type {Array<boolean>}
      */
     this.characterListEnable = [true, false, false]
+    if(this.debug){
+      this.characterListEnable = [true, true, true]
+    }
+
+    /**
+     * List of character files
+     * @type {Array<string>}
+     */
+    this.characterFileList = new Map([
+      ['Miku', 'pmd/miku/初音ミク.pmd'],
+      ['Rin', 'pmd/miku/鏡音リン.pmd'],
+      ['Len', 'pmd/miku/鏡音レン.pmd']
+    ])
 
     /** 
      * Character data
@@ -199,10 +213,10 @@ class _IQGameData {
       ['Miku', new Map([
         ['characterSpeed', 250]
       ])],
-      ['Cyan', new Map([
+      ['Rin', new Map([
         ['characterSpeed', 300]
       ])],
-      ['Reimu', new Map([
+      ['Len', new Map([
         ['characterSpeed', 250]
       ])]
     ])
@@ -242,6 +256,7 @@ class _IQGameData {
      */
     this.language = 'ja'
 
+    // check client's language setting
     const clientLang = (window.navigator.languages && window.navigator.languages[0])
                     || window.navigator.language
                     || window.navigator.userLanguage
@@ -423,9 +438,7 @@ class _IQGameData {
     this.menuButtonColor = 'rgba(0, 0, 0, 0.7)'
 
     // model
-    this.model_miku = null
-    this.model_cyan = null
-    this.model_reimu = null
+    this.models = new Map()
 
     // motion
     this.standing = null

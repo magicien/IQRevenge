@@ -698,6 +698,38 @@ function showMenu() {
   g.playerObj = new IQPlayer()
   g.playerObj.addMoveCallback(playerMoveCallback)
 
+  const promises = []
+
+  // load all characters
+  g.characterFileList.forEach((fileName, name) => {
+    const promise = ModelBank.getModelForRenderer(fileName, g.renderer)
+    .then((result) => {
+      g.models.set(name, result)
+    })
+    .catch((error) => {
+      console.error('Model load error: ' + fileName + ': ' + error)
+    })
+
+    promises.push(promise)
+  })
+
+  // load plate
+  const platePromise = ModelBank.getModelForRenderer('x/normal_plate.x', g.renderer)
+  .then((result) => {
+    g.normalPlate = result
+  })
+  .catch((error) => {
+    console.error('Plate model load error: ' + error)
+  })
+  promises.push(platePromise)
+
+  Promise.all(promises)
+  .catch((error) => {
+    console.error(`playerObj/normalPlate model for renderer loading error: ${error}`)
+  })
+  .then(start)
+
+  /*
   Promise.all([
     ModelBank.getModelForRenderer('pmd/miku/初音ミク.pmd', g.renderer),
     ModelBank.getModelForRenderer('x/normal_plate.x', g.renderer)
@@ -710,6 +742,7 @@ function showMenu() {
     console.error(`playerObj/normalPlate model for renderer loading error: ${error}`)
   })
   .then(start)
+  */
 }
 
 function initModelAndMotion() {
@@ -1454,8 +1487,14 @@ function setSubMenu() {
       stageMenu.onTouch = stageMenu.onRight
 
       const charaMenu = g.menu._menuItem[2]
-      charaMenu.onLeft  = () => { g.character = decrementParam(g.character, g.characterList, g.characterListEnable) }
-      charaMenu.onRight = () => { g.character = incrementParam(g.character, g.characterList, g.characterListEnable) }
+      charaMenu.onLeft  = () => {
+        g.character = decrementParam(g.character, g.characterList, g.characterListEnable)
+        g.menu.setupMenuPlayerObj()
+      }
+      charaMenu.onRight = () => {
+        g.character = incrementParam(g.character, g.characterList, g.characterListEnable)
+        g.menu.setupMenuPlayerObj()
+      }
       charaMenu.onTouch = charaMenu.onRight
 
       const volumeMenu = g.menu._menuItem[3]
@@ -3027,37 +3066,64 @@ function setup(extra = false) {
   loadDataPromise
   .then(() => {
     // character
-    if(g.character === 'Miku'){
-      g.playerObj.setModel(g.model_miku)
+    let character = g.character
+    if(g.rulePlay){
+      character = 'Miku'
+    }
+    g.playerObj.setModel(g.models.get(character))
+    g.characterSpeed = g.characterData.get(character).get('characterSpeed')
+
+    // FIXME: use Map
+    if(character === 'Miku'){
+      //g.playerObj.setModel(g.model_miku)
       g.se_step.src    = g.se_directory  + '/' + g.se_miku_step_file    + g.snd_ext
       g.se_lifted.src  = g.se_directory  + '/' + g.se_miku_lifted_file  + g.snd_ext
       g.se_stamped.src = g.se_directory  + '/' + g.se_miku_stamped_file + g.snd_ext
       g.se_scream.src  = g.se_directory  + '/' + g.se_miku_scream_file  + g.snd_ext
       g.se_step_timing_1 = g.se_miku_step_timing_1
       g.se_step_timing_2 = g.se_miku_step_timing_2
-      g.menu._opMenuEnable[6] = false
-      g.characterSpeed = g.characterData.get('Miku').get('characterSpeed')
-    }else if(g.character === 'Cyan'){
-      g.playerObj.setModel(g.model_cyan)
+      //g.menu._opMenuEnable[6] = false
+      //g.characterSpeed = g.characterData.get('Miku').get('characterSpeed')
+    }else if(character === 'Rin'){
+      // TODO: create sound
+      g.se_step.src    = g.se_directory  + '/' + g.se_miku_step_file    + g.snd_ext
+      g.se_lifted.src  = g.se_directory  + '/' + g.se_miku_lifted_file  + g.snd_ext
+      g.se_stamped.src = g.se_directory  + '/' + g.se_miku_stamped_file + g.snd_ext
+      g.se_scream.src  = g.se_directory  + '/' + g.se_miku_scream_file  + g.snd_ext
+      g.se_step_timing_1 = g.se_miku_step_timing_1
+      g.se_step_timing_2 = g.se_miku_step_timing_2
+    }else if(character === 'Len'){
+      // TODO: create sound
+      g.se_step.src    = g.se_directory  + '/' + g.se_miku_step_file    + g.snd_ext
+      g.se_lifted.src  = g.se_directory  + '/' + g.se_miku_lifted_file  + g.snd_ext
+      g.se_stamped.src = g.se_directory  + '/' + g.se_miku_stamped_file + g.snd_ext
+      g.se_scream.src  = g.se_directory  + '/' + g.se_miku_scream_file  + g.snd_ext
+      g.se_step_timing_1 = g.se_miku_step_timing_1
+      g.se_step_timing_2 = g.se_miku_step_timing_2
+    }
+    /*
+    else if(g.character === 'Cyan'){
+      //g.playerObj.setModel(g.model_cyan)
       g.se_step.src    = g.se_directory  + '/' + g.se_cyan_step_file    + g.snd_ext
       g.se_lifted.src  = g.se_directory  + '/' + g.se_cyan_lifted_file  + g.snd_ext
       g.se_stamped.src = g.se_directory  + '/' + g.se_cyan_stamped_file + g.snd_ext
       g.se_scream.src  = g.se_directory  + '/' + g.se_cyan_scream_file  + g.snd_ext
       g.se_step_timing_1 = g.se_cyan_step_timing_1
       g.se_step_timing_2 = g.se_cyan_step_timing_2
-      g.menu._opMenuEnable[6] = false
-      g.characterSpeed = g.characterData.get('Cyan').get('characterSpeed')
+      //g.menu._opMenuEnable[6] = false
+      //g.characterSpeed = g.characterData.get('Cyan').get('characterSpeed')
     }else if(g.character === 'Reimu'){
-      g.playerObj.setModel(g.model_reimu)
+      //g.playerObj.setModel(g.model_reimu)
       g.se_step.src    = g.se_directory  + '/' + g.se_reimu_step_file    + g.snd_ext
       g.se_lifted.src  = g.se_directory  + '/' + g.se_reimu_lifted_file  + g.snd_ext
       g.se_stamped.src = g.se_directory  + '/' + g.se_reimu_stamped_file + g.snd_ext
       g.se_scream.src  = g.se_directory  + '/' + g.se_reimu_scream_file  + g.snd_ext
       g.se_step_timing_1 = g.se_cyan_step_timing_1
       g.se_step_timing_2 = g.se_cyan_step_timing_2
-      g.menu._opMenuEnable[6] = true
-      g.characterSpeed = g.characterData.get('Reimu').get('characterSpeed')
+      //g.menu._opMenuEnable[6] = true
+      //g.characterSpeed = g.characterData.get('Reimu').get('characterSpeed')
     }
+    */
 
     // motion sound
     g.playerObj.clearMotionCallback()

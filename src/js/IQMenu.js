@@ -894,9 +894,7 @@ export default class IQMenu extends DH2DObject {
 
   setupMenuPlayerObj() {
     // player
-    if(IQGameData.character === 'Miku'){
-      IQGameData.menuPlayerObj.setModel(IQGameData.model_miku)
-    }
+    IQGameData.menuPlayerObj.setModel(IQGameData.models.get(IQGameData.character))
     IQGameData.menuPlayerObj.setMotion(IQGameData.running)
     //g.menuPlayerObj.setAnimationTime(0)
     //g.menuPlayerObj.setState('running')
