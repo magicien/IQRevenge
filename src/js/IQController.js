@@ -142,6 +142,13 @@ export default class IQController {
       document.addEventListener('touchmove',   (event) => { this.touchMoveCallback(event)   }, false)
       document.addEventListener('touchend',    (event) => { this.touchEndCallback(event)    }, false)
       document.addEventListener('touchcancel', (event) => { this.touchCancelCallback(event) }, false)
+      /*
+      const canvas = IQGameData.canvasField._2DCanvas
+      canvas.addEventListener('touchstart',  (event) => { this.touchStartCallback(event)  }, false)
+      canvas.addEventListener('touchmove',   (event) => { this.touchMoveCallback(event)   }, false)
+      canvas.addEventListener('touchend',    (event) => { this.touchEndCallback(event)    }, false)
+      canvas.addEventListener('touchcancel', (event) => { this.touchCancelCallback(event) }, false)
+      */
     } 
   }
 
@@ -182,31 +189,25 @@ export default class IQController {
     for(let i=0; i<length; i++){
       const touch = event.changedTouches[i]
       touch.timeStamp = event.timeStamp
-      touch.startX = touch.clientX
-      touch.startY = touch.clientY
+      //touch.startX = touch.clientX
+      //touch.startY = touch.clientY
+      touch.startX = touch.pageX
+      touch.startY = touch.pageY
       this._touchStartState.set(touch.identifier, touch)
       this._touchNowState.set(touch.identifier, touch)
 
-      console.log('touchstart: (' + touch.clientX + ',' + touch.clientY + ')')
-
       if(this.isInsideMarkerButton(touch)){
-        console.log('inside marker button!')
         this._buttonNewState[this.markerButton] = true
       }
       if(this.isInsideAdvantageButton(touch)){
-        console.log('inside advantage button!')
         this._buttonNewState[this.advantageButton] = true
       }
       if(this.isInsideSpeedUpButton(touch)){
-        console.log('inside speedup button!')
         this._buttonNewState[this.speedUpButton] = true
       }
       if(this.isInsidePauseButton(touch)){
-        console.log('inside pause button!')
         this._buttonNewState[this.pauseButton] = true
       }
-
-      console.log('touchstart: id: ' + touch.identifier)
     }
   }
 
@@ -264,8 +265,6 @@ export default class IQController {
       this._touchStartState.delete(touch.identifier)
       this._touchNowState.delete(touch.identifier)
     }
-
-    console.log('touchcancel: ' + event)
   }
 
   resetTouchNewState() {
@@ -301,8 +300,10 @@ export default class IQController {
       const touch = this._nowTouches[i]
       if(left <= touch.startX && touch.startX <= right
          && top <= touch.startY && touch.startY <= bottom
-         && left <= touch.clientX && touch.clientX <= right
-         && top <= touch.clientY && touch.clientY <= bottom){
+         && left <= touch.pageX && touch.pageX <= right
+         && top <= touch.pageY && touch.pageY <= bottom){
+         //&& left <= touch.clientX && touch.clientX <= right
+         //&& top <= touch.clientY && touch.clientY <= bottom){
         result.push(touch)
       }
     }
@@ -325,8 +326,10 @@ export default class IQController {
     this._touchEndState.forEach((touch) => {
       if(left <= touch.startX && touch.startX <= right
          && top <= touch.startY && touch.startY <= bottom
-         && left <= touch.clientX && touch.clientX <= right
-         && top <= touch.clientY && touch.clientY <= bottom){
+         && left <= touch.pageX && touch.pageX <= right
+         && top <= touch.pageY && touch.pageY <= bottom){
+         //&& left <= touch.clientX && touch.clientX <= right
+         //&& top <= touch.clientY && touch.clientY <= bottom){
         result.push(touch)
       }
     })
@@ -347,6 +350,10 @@ export default class IQController {
   }
 
   getTouchState(index) {
+    if(IQGameData.demoPlay){
+      return false
+    }
+
     const len = this._nowTouches.length
     let result = false
 
@@ -389,6 +396,10 @@ export default class IQController {
    * @return {Object} - normalized vector (x,y)
    */
   getMoveVector() {
+    if(IQGameData.demoPlay){
+      return null
+    }
+
     let firstTouch = null
     this._touchStartState.forEach((touch) => {
       if(this.isInsideMoveController(touch, true)){
@@ -403,8 +414,10 @@ export default class IQController {
     }
 
     const nowTouch = this._touchNowState.get(firstTouch.identifier)
-    const dx = nowTouch.clientX - firstTouch.startX
-    const dy = nowTouch.clientY - firstTouch.startY
+    //const dx = nowTouch.clientX - firstTouch.startX
+    //const dy = nowTouch.clientY - firstTouch.startY
+    const dx = nowTouch.pageX - firstTouch.startX
+    const dy = nowTouch.pageY - firstTouch.startY
     const r = Math.sqrt(dx * dx + dy * dy)
 
     console.log('MoveVector: ' + dx + ',' + dy + ',' + r)
@@ -425,12 +438,14 @@ export default class IQController {
    * check if a given touch is inside of a move controller
    * @access public
    * @param {Touch} touch - Touch object to check
-   * @param {boolean} checkStartValue - check startX/Y instead of clientX/Y
+   * @param {boolean} checkStartValue - check startX/Y instead of pageX/Y
    * @returns {boolean} - true if the touch is inside of a move controller
    */
   isInsideMoveController(touch, checkStartValue = false) {
-    let x = touch.clientX
-    let y = touch.clientY
+    //let x = touch.clientX
+    //let y = touch.clientY
+    let x = touch.pageX
+    let y = touch.pageY
 
     if(checkStartValue){
       x = touch.startX
@@ -444,8 +459,10 @@ export default class IQController {
   }
 
   isInsideMarkerButton(touch) {
-    const x = touch.clientX
-    const y = touch.clientY
+    //const x = touch.clientX
+    //const y = touch.clientY
+    const x = touch.pageX
+    const y = touch.pageY
 
     const dx = x - this._btn1CenterX
     const dy = y - this._btn1CenterY
@@ -454,8 +471,10 @@ export default class IQController {
   }
 
   isInsideAdvantageButton(touch) {
-    const x = touch.clientX
-    const y = touch.clientY
+    //const x = touch.clientX
+    //const y = touch.clientY
+    const x = touch.pageX
+    const y = touch.pageY
 
     const dx = x - this._btn2CenterX
     const dy = y - this._btn2CenterY
@@ -464,8 +483,10 @@ export default class IQController {
   }
 
   isInsideSpeedUpButton(touch) {
-    const x = touch.clientX
-    const y = touch.clientY
+    //const x = touch.clientX
+    //const y = touch.clientY
+    const x = touch.pageX
+    const y = touch.pageY
 
     const dx = x - this._btn3CenterX
     const dy = y - this._btn3CenterY
@@ -474,8 +495,10 @@ export default class IQController {
   }
 
   isInsidePauseButton(touch) {
-    const x = touch.clientX
-    const y = touch.clientY
+    //const x = touch.clientX
+    //const y = touch.clientY
+    const x = touch.pageX
+    const y = touch.pageY
 
     const dx = x - this._btn4CenterX
     const dy = y - this._btn4CenterY

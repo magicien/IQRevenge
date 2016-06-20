@@ -28,6 +28,14 @@ class _IQGameData {
     this.deviceType = (this.device.isMobile || this.device.isTable) ? 'mb' : 'pc'
 
     /**
+     * @type {boolean}
+     */
+    this.debug = false
+    if(window.location.search.indexOf('debug') >= 0){
+      this.debug = true
+    }
+
+    /**
      * controller (only) for mobile
      * @type {IQController}
      */
@@ -234,6 +242,17 @@ class _IQGameData {
      */
     this.language = 'ja'
 
+    const clientLang = (window.navigator.languages && window.navigator.languages[0])
+                    || window.navigator.language
+                    || window.navigator.userLanguage
+                    || window.navigator.browserLanguage
+
+    if(clientLang.substr(0, 2) === 'ja'){
+      this.language = 'ja'
+    }else{
+      this.language = 'en'
+    }
+
     /**
      * List of languages which the player can choose
      * @type {Array<string>}
@@ -331,6 +350,31 @@ class _IQGameData {
       }
     }
 
+    // stage debug
+    this.debugStageNo = 1
+    this.debugSubStageNo = 1
+    this.debugSubSubStageNo = 1
+    this.debugStageStep = 1
+
+    this.debugStageList = [1, 2, 3, 4, 5, 6, 7, 8, 'Final', 'EXTRA']
+    this.debugStageListEnable = [true, true, true, true, true, true, true, true, true, true]
+    this.debugFileList = [
+      './question/stage1.txt',
+      './question/stage2.txt',
+      './question/stage3.txt',
+      './question/stage4.txt',
+      './question/stage5.txt',
+      './question/stage6.txt',
+      './question/stage7.txt',
+      './question/stage8.txt',
+      './question/stage9.txt',
+      './question/stageX.txt'
+    ]
+    this.debugSubStageList = []
+    this.debugSubStageListEnable = []
+    this.debugSubSubStageList = []
+    this.debugSubSubStageListEnable = []
+
     // recording
     this.recording = false
     this.recorder = null
@@ -339,7 +383,6 @@ class _IQGameData {
     this.demoPlay = false
     this.demoStartTime = null
     this.demoGameTime = 0
-    this.demoIndex = 0
     this.demoRecord = null
 
     // loading
@@ -585,6 +628,10 @@ class _IQGameData {
     this.cameraTargetXGoal = 0
     this.cameraTargetYGoal = 0
     this.cameraTargetZGoal = 0
+
+    // speed of camera
+    this.cameraTargetMoveRatio = 0.3
+    this.cameraAngleMoveRatio = 0.2
 
     // game params
     this.stage = 0

@@ -68,7 +68,7 @@
     "radix"                : 1,
     "vars-on-top"          : 1,
     "wrap-iife"            : 1,
-    "yoda": [1, "never", {"exceptRange": true}],
+    "yoda": [0, "never", {"exceptRange": true}],
 
     // Strict Mode
     "strict": 0,

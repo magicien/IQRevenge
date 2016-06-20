@@ -367,6 +367,12 @@ function playerMoveCallback() {
     g.cameraTargetXGoal = 0
     g.cameraTargetYGoal = 0
     g.cameraTargetZGoal = g.stageLength * g.cubeSize
+  }else if(!g.activated){
+    g.cameraXAngleGoal = -0.3
+    g.cameraYAngleGoal = Math.PI
+    g.cameraTargetXGoal = pos.x
+    g.cameraTargetYGoal = pos.y
+    g.cameraTargetZGoal = pos.z
   }else{
     // normal
     //g.cameraXAngleGoal = -0.9
@@ -382,7 +388,7 @@ function playerMoveCallback() {
   // XAngle
   const minMoveXAngle = 0.03
   const diffXAngle = (g.cameraXAngleGoal - g.cameraXAngle)
-  const moveXAngle = diffXAngle * 0.4
+  const moveXAngle = diffXAngle * g.cameraAngleMoveRatio
   if(-minMoveXAngle < moveXAngle && moveXAngle < 0){
     if(minMoveXAngle > -diffXAngle){
       g.cameraXAngle = g.cameraXAngleGoal
@@ -404,7 +410,7 @@ function playerMoveCallback() {
   // YAngle
   const minMoveYAngle = 0.03
   const diffYAngle = (g.cameraYAngleGoal - g.cameraYAngle)
-  const moveYAngle = diffYAngle * 0.4
+  const moveYAngle = diffYAngle * g.cameraAngleMoveRatio
   if(-minMoveYAngle < moveYAngle && moveYAngle < 0){
     if(minMoveYAngle > -diffYAngle){
       g.cameraYAngle = g.cameraYAngleGoal
@@ -426,7 +432,7 @@ function playerMoveCallback() {
   // TargetX
   const minMoveTargetX = 1.0
   const diffTargetX = (g.cameraTargetXGoal - g.cameraTargetX)
-  const moveTargetX = diffTargetX * 0.8
+  const moveTargetX = diffTargetX * g.cameraTargetMoveRatio
   if(-minMoveTargetX < moveTargetX && moveTargetX < 0){
     if(minMoveTargetX > -diffTargetX){
       g.cameraTargetX = g.cameraTargetXGoal
@@ -448,7 +454,7 @@ function playerMoveCallback() {
   // TargetY
   const minMoveTargetY = 1.0
   const diffTargetY = (g.cameraTargetYGoal - g.cameraTargetY)
-  const moveTargetY = diffTargetY * 0.8
+  const moveTargetY = diffTargetY * g.cameraTargetMoveRatio
   if(-minMoveTargetY < moveTargetY && moveTargetY < 0){
     if(minMoveTargetY > -diffTargetY){
       g.cameraTargetY = g.cameraTargetYGoal
@@ -470,7 +476,7 @@ function playerMoveCallback() {
   // TargetZ
   const minMoveTargetZ = 1.0
   const diffTargetZ = (g.cameraTargetZGoal - g.cameraTargetZ)
-  const moveTargetZ = diffTargetZ * 0.8
+  const moveTargetZ = diffTargetZ * g.cameraTargetMoveRatio
   if(-minMoveTargetZ < moveTargetZ && moveTargetZ < 0){
     if(minMoveTargetZ > -diffTargetZ){
       g.cameraTargetZ = g.cameraTargetZGoal
@@ -494,7 +500,6 @@ function playerMoveCallback() {
   const siny = Math.sin(g.cameraYAngle)
   const cosy = Math.cos(g.cameraYAngle)
 
-  //const d = g.camera.distance
   let d = g.camera.distance
   if(!g.speedUp && !g.speedUpByMiss){
     d += (getQuestionLength() - 2) * 15.0
@@ -513,7 +518,8 @@ function getQuestionLength() {
   let length = g.questionLength
 
   if(!g.activated){
-    return length
+    return 2
+    //return length
   }
 
   for(let z=0; z<g.questionLength; z++){
@@ -1116,8 +1122,6 @@ function resetValues(stage, remainScores) {
     g.stage = stage
   }else{
     g.stage = 1
-    // DEBUG
-    //g.stage = 3
   }
   const stageFile = g.stageFiles[g.stage]
 
@@ -1258,13 +1262,43 @@ function resetValues(stage, remainScores) {
     g.playerObj.oldPositionX = g.playerObj._position.x
     g.playerObj.oldPositionZ = g.playerObj._position.z
 
-    g.canvasField.setFrameCallback(update)
+    //g.canvasField.setFrameCallback(update)
+    g.canvasField.setFrameCallback(setTimerAndStart)
   })
 
   return promise
 }
 
-function playSound(audio, recycle = false){
+function setTimerAndStart(elapsedTime) {
+  g.nowTime = new Date()
+  const startTime = g.nowTime.getTime()
+
+  // reset cube timer
+  g.qCubeArray.forEach((cubeLine) => {
+    cubeLine.forEach((cube) => {
+      cube.startTime = new Date(startTime)
+    })
+  })
+
+  g.stageCreateStartTime = new Date(startTime)
+
+  if(g.subStage == 1){
+    if(g.recording){
+      g.recorder.startTime = new Date(startTime)
+    }
+    if(g.demoPlay){
+      g.canvasField.startSimulation(g.nowTime, g.rulesDataArray, simFrameCallback)
+      g.demoStartTime = new Date(startTime)
+    }
+    if(g.rulePlay){
+      g.rulesStartTime = new Date(startTime)
+    }
+  }
+
+  g.canvasField.setFrameCallback(update)
+}
+
+function playSound(audio, recycle = false) {
   if(!audio){
     return
   }
@@ -1447,6 +1481,12 @@ function setSubMenu() {
       }
       returnMenu.onTouch = returnMenu.onDecision
 
+      // show character if device is a mobile or a tablet => this timing is too early
+      /*
+      if(g.device.isMobile || g.device.isTablet){
+        g.menu.setupMenuPlayerObj()
+      }
+      */
       break
     }
 
@@ -1537,45 +1577,191 @@ function setSubMenu() {
     }
 
     case 'CREATE': {
-      const sizeMenu = g.menu._menuItem[0]
-      sizeMenu.onLeft  = () => { g.editStageSize = decrementParam(g.editStageSize, g.stageSizeList, g.stageSizeListEnable) }
-      sizeMenu.onRight = () => { g.editStageSize = incrementParam(g.editStageSize, g.stageSizeList, g.stageSizeListEnable) }
-      sizeMenu.onTouch = sizeMenu.onRight
+      if(g.debug){
+        // initialize
+        g.debugStageNo = 1
+        g.debugSubStageNo = 1
+        g.debugSubSubStageNo = 1
+        loadDebugStageData()
+        .then(updateDebugStageData)
 
-      const stepMenu = g.menu._menuItem[1]
-      stepMenu.onLeft  = () => { g.editStageStep = decrementParam(g.editStageStep, g.stageStepList, g.stageStepListEnable) }
-      stepMenu.onRight = () => { g.editStageStep = incrementParam(g.editStageStep, g.stageStepList, g.stageStepListEnable) }
-      stepMenu.onTouch = stepMenu.onRight
+        // stage debug
+        const stageMenu = g.menu._menuItem[0]
+        stageMenu.onLeft  = () => {
+          g.debugStageNo = decrementParam(g.debugStageNo, g.debugStageList, g.debugStageListEnable)
+          g.debugSubStageNo = 1
+          g.debugSubSubStageNo = 1
+          loadDebugStageData()
+          .then(updateDebugStageData)
+        }
+        stageMenu.onRight = () => {
+          g.debugStageNo = incrementParam(g.debugStageNo, g.debugStageList, g.debugStageListEnable)
+          g.debugSubStageNo = 1
+          g.debugSubSubStageNo = 1
+          loadDebugStageData()
+          .then(updateDebugStageData)
+        }
+        stageMenu.onTouch = stageMenu.onRight
 
-      const editMenu = g.menu._menuItem[2]
-      editMenu.onDecision = () => {
-        g.editStart = true
+        const subStageMenu = g.menu._menuItem[1]
+        subStageMenu.onLeft  = () => {
+          g.debugSubStageNo = decrementParam(g.debugSubStageNo, g.debugSubStageList, g.debugSubStageListEnable)
+          g.debugSubSubStageNo = 1
+          updateDebugStageData()
+        }
+        subStageMenu.onRight = () => {
+          g.debugSubStageNo = incrementParam(g.debugSubStageNo, g.debugSubStageList, g.debugSubStageListEnable)
+          g.debugSubSubStageNo = 1
+          updateDebugStageData()
+        }
+        subStageMenu.onTouch = stageMenu.onRight
+
+        const subSubStageMenu = g.menu._menuItem[2]
+        subSubStageMenu.onLeft  = () => {
+          g.debugSubSubStageNo = decrementParam(g.debugSubSubStageNo, g.debugSubSubStageList, g.debugSubSubStageListEnable)
+          updateDebugStageData()
+        }
+        subSubStageMenu.onRight = () => {
+          g.debugSubSubStageNo = incrementParam(g.debugSubSubStageNo, g.debugSubSubStageList, g.debugSubSubStageListEnable)
+          updateDebugStageData()
+        }
+        subSubStageMenu.onTouch = subSubStageMenu.onRight
+
+        const stepMenu = g.menu._menuItem[3]
+        stepMenu.onLeft  = () => { g.editStageStep = decrementParam(g.editStageStep, g.stageStepList, g.stageStepListEnable) }
+        stepMenu.onRight = () => { g.editStageStep = incrementParam(g.editStageStep, g.stageStepList, g.stageStepListEnable) }
+        stepMenu.onTouch = stepMenu.onRight
+
+        const editMenu = g.menu._menuItem[4]
+        editMenu.onDecision = () => {
+          g.editStart = true
+        }
+
+        const playMenu = g.menu._menuItem[5]
+        playMenu.onDecision = () => {
+          IQSceneChanger.change(2.0, true, g.bgm_menu, g.bgm_stagecall, null, () => {
+            g.testPlay = true
+            stop()
+            setup()
+          })
+        }
+        playMenu.onTouch = playMenu.onDecision
+
+        const returnMenu = g.menu._menuItem[6]
+        returnMenu.onDecision = () => {
+          IQSceneChanger.change(2.0, true, null, null, showMenuLoop, subMenuReturn)
+        }
+        returnMenu.onTouch = returnMenu.onDecision
+      }else{
+        // normal editor
+        const sizeMenu = g.menu._menuItem[0]
+        sizeMenu.onLeft  = () => { g.editStageSize = decrementParam(g.editStageSize, g.stageSizeList, g.stageSizeListEnable) }
+        sizeMenu.onRight = () => { g.editStageSize = incrementParam(g.editStageSize, g.stageSizeList, g.stageSizeListEnable) }
+        sizeMenu.onTouch = sizeMenu.onRight
+
+        const stepMenu = g.menu._menuItem[1]
+        stepMenu.onLeft  = () => { g.editStageStep = decrementParam(g.editStageStep, g.stageStepList, g.stageStepListEnable) }
+        stepMenu.onRight = () => { g.editStageStep = incrementParam(g.editStageStep, g.stageStepList, g.stageStepListEnable) }
+        stepMenu.onTouch = stepMenu.onRight
+
+        const editMenu = g.menu._menuItem[2]
+        editMenu.onDecision = () => {
+          g.editStart = true
+        }
+
+        const playMenu = g.menu._menuItem[3]
+        playMenu.onDecision = () => {
+          IQSceneChanger.change(2.0, true, g.bgm_menu, g.bgm_stagecall, null, () => {
+            g.testPlay = true
+            stop()
+            setup()
+          })
+        }
+        playMenu.onTouch = playMenu.onDecision
+
+        // TODO: implementation
+        const saveMenu = g.menu._menuItem[4]
+
+        const returnMenu = g.menu._menuItem[6]
+        returnMenu.onDecision = () => {
+          IQSceneChanger.change(2.0, true, null, null, showMenuLoop, subMenuReturn)
+        }
+        returnMenu.onTouch = returnMenu.onDecision
       }
-
-      const playMenu = g.menu._menuItem[3]
-      playMenu.onDecision = () => {
-        IQSceneChanger.change(2.0, true, g.bgm_menu, g.bgm_stagecall, null, () => {
-          g.testPlay = true
-          stop()
-          setup()
-        })
-      }
-      playMenu.onTouch = playMenu.onDecision
-
-      // TODO: implementation
-      const saveMenu = g.menu._menuItem[4]
-
-      const returnMenu = g.menu._menuItem[6]
-      returnMenu.onDecision = () => {
-        IQSceneChanger.change(2.0, true, null, null, showMenuLoop, subMenuReturn)
-      }
-      returnMenu.onTouch = returnMenu.onDecision
 
       break
     }
 
     default: {
       // nothing to do
+    }
+  }
+}
+
+function loadDebugStageData() {
+  const debugFileIndex = g.debugStageList.indexOf(g.debugStageNo)
+  if(debugFileIndex < 0){
+    console.error('debug stage no error: ' + g.debutStageNo + ', ' + debugFileIndex)
+  }
+  const debugFileName = g.debugFileList[debugFileIndex]
+
+  return loadQuestionFile(debugFileName)
+}
+
+function updateDebugStageData() {
+  // sub stage list
+  g.debugSubStageList.length = 0
+  g.debugSubStageListEnable.length = 0
+  for(let i=0; i<g.subStageMax; i++){
+    g.debugSubStageList[i] = i + 1
+    g.debugSubStageListEnable[i] = true
+  }
+
+  /*
+  let subStageIndex = g.debugSubStageList.indexOf(g.debugSubStageNo) + 1
+  if(subStageIndex < 1){
+    subStageIndex = 1
+  }
+  const subStage = g.stageData[subStageIndex]
+  */
+  const subStage = g.stageData[g.debugSubStageNo]
+
+  // sub sub stage list
+  g.debugSubSubStageList.length = 0
+  g.debugSubSubStageListEnable.length = 0
+
+  for(let i=0; i<subStage.numQuestions; i++){
+    g.debugSubSubStageList[i] = i + 1
+    g.debugSubSubStageListEnable[i] = true
+  }
+
+  let subSubStageIndex = g.debugSubSubStageList.indexOf(g.debugSubSubStageNo)
+  if(subSubStageIndex < 0){
+    subSubStageIndex = 0
+  }
+  const question = subStage.questionArray[subSubStageIndex]
+
+  // size and steps
+  g.editStageSize = g.stageWidth + 'x' + subStage.questionLength
+  g.editStageStep = question.baseStep
+
+  // stage data
+  for(let x=0; x<g.stageWidth; x++){
+    for(let y=0; y<subStage.questionLength; y++){
+      switch(question.data[y][x]){
+        case 'advantage': {
+          g.editStageData[x][y] = 'a'
+          break
+        }
+        case 'forbidden': {
+          g.editStageData[x][y] = 'f'
+          break
+        }
+        case 'normal':
+        default: {
+          g.editStageData[x][y] = 'n'
+        }
+      }
     }
   }
 }
@@ -1597,9 +1783,11 @@ function startRules(ruleNo) {
     })
     .then(() => {
       // for debug
-      g.rulesAudioArray.forEach((audio) => {
-        console.log(audio.src + ': ' + audio.duration)
-      })
+      if(g.debug){
+        g.rulesAudioArray.forEach((audio) => {
+          console.log(audio.src + ': ' + audio.duration)
+        })
+      }
     })
   })
 }
@@ -1941,6 +2129,13 @@ function showMenuLoop() {
       g.menu._showSubMenuTime = new Date(g.nowTime.getTime())
       g.menu.subCursorInit()
 
+      // show character if device is a mobile or a tablet
+      if(g.menu.getOptionName() === 'OPTION'){
+        if(g.device.isMobile || g.device.isTablet){
+          g.menu.setupMenuPlayerObj()
+        }
+      }
+
       g.canvasField.setFrameCallback(showSubMenuLoop)
     }
 
@@ -1988,22 +2183,28 @@ function showMenuLoop() {
     playSound(g.se_decision)
   }
 
-  // debug: record player's move
-  if(g.keyListener.getKeyNewState('R')){
-    g.recording = !g.recording
-    console.log('g.recording = ' + g.recording)
-    if(!g.recording){
-      g.canvasField.setMspf(0)
+  if(g.debug){
+    // record player's move
+    if(g.keyListener.getKeyNewState('R')){
+      g.recording = !g.recording
+      console.log('g.recording = ' + g.recording)
+      if(!g.recording){
+        g.canvasField.setMspf(0)
+      }
     }
-  }
-  if(g.keyListener.getKeyNewState('T')){
-    if(g.recorder){
-      console.log(g.recorder.toString())
+
+    // output recorded move
+    if(g.keyListener.getKeyNewState('T')){
+      if(g.recorder){
+        console.log(g.recorder.toString())
+      }
     }
-  }
-  if(g.keyListener.getKeyNewState('U')){
-    g.selectableMaxStage = 9
-    updateStageList()
+
+    // make it enable to start from the final stage
+    if(g.keyListener.getKeyNewState('U')){
+      g.selectableMaxStage = 9
+      updateStageList()
+    }
   }
 
   g.keyListener.resetKeyNewState()
@@ -2017,6 +2218,7 @@ function showSubMenuLoop() {
   const subName = g.menu.getSubOptionName()
 
   if(!g.sceneChanging && !g.menu._moving && g.menu._showSubMenuReady && !g.editing){
+    // TODO: move to setSubMenu function
     let c = g.menu._subCursor
     if(g.keyListener.getKeyState(g.keyUp)){
       do {
@@ -2042,8 +2244,21 @@ function showSubMenuLoop() {
       g.menu._dstMenuItem = c
       g.menu._moveSubMenuTime = new Date(g.nowTime.getTime())
       g.menu._subCursor = c
+   
+      const newSubName = g.menu.getSubOptionName(c)
 
       // set subsubmenu
+      if(menuName === 'OPTION'){
+        if(!g.device.isMobile && !g.device.isTablet){
+          if(newSubName === 'Character'){
+            g.menu.setupMenuPlayerObj()
+          }else{
+            g.canvasField.removeObject(g.menuPlayerObj)
+          }
+        }
+      }
+
+      /*
       if(menuName === 'OPTION'){
         if(subName === 'Level'){
           g.menu._opSubSubMenus = g.levelList
@@ -2115,6 +2330,7 @@ function showSubMenuLoop() {
           g.menu._opSubSubMenuEnable = null
         }
       }
+      */
     }
 
     // push decision button handling
@@ -2319,6 +2535,8 @@ function moveCubeToTopLeft() {
 }
 
 function subMenuReturn() {
+  g.canvasField.removeObject(g.menuPlayerObj)
+
   g.camera.distance = 20.0
   // FIXME
   g.canvasField.addObject(g.menu._opTileObj, true)
@@ -2548,6 +2766,11 @@ function loadRulesAudio(audioData) {
     ext = '.ogg'
   }else{
     // audio is not supported...
+    ext = null
+  }
+
+  // iPhone and iPad can't play audio automaticaly, so don't use audio files
+  if(g.device.isMobile || g.device.isTablet){
     ext = null
   }
 
@@ -3169,7 +3392,6 @@ function createSubStage() {
     }
     if(g.demoPlay){
       g.canvasField.startSimulation(g.nowTime, g.rulesDataArray, simFrameCallback)
-      g.demoIndex = 0
       g.demoStartTime = new Date(g.nowTime.getTime())
       if(g.rulePlay){
         g.rulesStartTime = new Date(g.nowTime.getTime())
@@ -3391,15 +3613,18 @@ function loadQuestionFile(fileName) {
           for(let x=0; x<g.stageWidth; x++){
             const dataChar = tokens[1].charAt(index)
             switch(dataChar){
-              case 'a':
+              case 'a': {
                 dataLine.push('advantage')
                 break
-              case 'f':
+              }
+              case 'f': {
                 dataLine.push('forbidden')
                 break
+              }
               case 'n':
-              default:
+              default: {
                 dataLine.push('normal')
+              }
             }
             index++
           }
@@ -3838,6 +4063,7 @@ function getCubeAt(z, x) {
 function fallProcess() {
   const endTime = 1000
   const arr = g.fallCubeArray
+
   arr.forEach( (cube) => {
     const diffTime = g.getElapsedTime(cube.fallStartTime)
     if(diffTime > endTime){
@@ -3852,8 +4078,10 @@ function fallProcess() {
         }
       }
     }else{
-      const val = diffTime * 0.001
-      const posY = g.cubeSize * (0.5 - 10 * val * val)
+      //const val = diffTime * 0.001
+      //const posY = g.cubeSize * (0.5 - 10 * val * val)
+      const val = diffTime * 0.001 + 0.68
+      const posY = g.cubeSize * (5.1 - 10 * val * val)
       cube.setPosition(cube._position.x, posY, cube._position.z)
     }
   })

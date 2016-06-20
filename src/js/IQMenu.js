@@ -167,6 +167,24 @@ export default class IQMenu extends DH2DObject {
       this._createSubMenuEnable[2] = false
     }
 
+    // stage debug
+    this._stageDebugSubMenus = [
+      'Stage',
+      'Sub',
+      'No',
+      'Step',
+      'Edit',
+      'Play',
+      'return'
+    ]
+    this._stageDebugSubMenuEnable = [true, true, true, true, true, true, true]
+
+    if(IQGameData.device.isMobile || IQGameData.device.isTablet){
+      // disable Edit menu for mobile/tablet
+      this._stageDebugSubMenus[4] = ''
+      this._stageDebugSubMenuEnable[4] = false
+    }
+
     // rules
     this._rulesSubMenus = [
       'Basic Rules 1',
@@ -1198,6 +1216,41 @@ export default class IQMenu extends DH2DObject {
       y = item.y
       width = item.width
       height = item.height
+
+      // draw arrows if it accepts left/right keys
+      const arrowPadding = 3
+      const arrowWidth = 10
+      canvas.fillStyle = IQGameData.redColor
+      if(item.onLeft){
+        // left arrow
+        const ax1 = x - arrowPadding - arrowWidth
+        const ay1 = y + height / 2
+        const ax2 = ax1 + arrowWidth
+        const ay2 = y
+        const ax3 = ax2
+        const ay3 = y + height
+
+        canvas.beginPath()
+        canvas.moveTo(ax1, ay1)
+        canvas.lineTo(ax2, ay2)
+        canvas.lineTo(ax3, ay3)
+        canvas.fill()
+      }
+      if(item.onRight){
+        // right arrow
+        const ax1 = x + width + arrowPadding + arrowWidth
+        const ay1 = y + height / 2
+        const ax2 = ax1 - arrowWidth
+        const ay2 = y
+        const ax3 = ax2
+        const ay3 = y + height
+
+        canvas.beginPath()
+        canvas.moveTo(ax1, ay1)
+        canvas.lineTo(ax2, ay2)
+        canvas.lineTo(ax3, ay3)
+        canvas.fill()
+      }
     }
 
     canvas.strokeStyle = IQGameData.redColor
@@ -1309,11 +1362,21 @@ export default class IQMenu extends DH2DObject {
         break
       }
       case 'CREATE': {
-        this._opSubMenus = this._createSubMenus
-        this._opSubMenuEnable = this._createSubMenuEnable
-        params[0] = () => IQGameData.editStageSize
-        params[1] = () => IQGameData.editStageStep
-        paramWidth = 75
+        if(IQGameData.debug){
+          this._opSubMenus = this._stageDebugSubMenus
+          this._opSubMenuEnable = this._stageDebugSubMenuEnable
+          params[0] = () => IQGameData.debugStageNo
+          params[1] = () => IQGameData.debugSubStageNo
+          params[2] = () => IQGameData.debugSubSubStageNo
+          params[3] = () => IQGameData.editStageStep
+          paramWidth = 75
+        }else{
+          this._opSubMenus = this._createSubMenus
+          this._opSubMenuEnable = this._createSubMenuEnable
+          params[0] = () => IQGameData.editStageSize
+          params[1] = () => IQGameData.editStageStep
+          paramWidth = 75
+        }
         break
       }
       default: {
@@ -1385,9 +1448,15 @@ export default class IQMenu extends DH2DObject {
       this._subScoreCharacter = IQGameData.character
       this._subScoreLevel = IQGameData.level
     }else if(name === 'CREATE'){
-      this._opSubSubMenus = IQGameData.stageSizeList
-      this._opSubSubMenuEnable = IQGameData.stageSizeListEnable
-      this._subSubCursor = IQGameData.stageSizeList.indexOf(IQGameData.editStageSize)
+      if(IQGameData.debug){
+        this._opSubSubMenus = IQGameData.debugStageList
+        this._opSubSubMenus = IQGameData.debugStageListEnable
+        this._subSubCursor = 0
+      }else{
+        this._opSubSubMenus = IQGameData.stageSizeList
+        this._opSubSubMenuEnable = IQGameData.stageSizeListEnable
+        this._subSubCursor = IQGameData.stageSizeList.indexOf(IQGameData.editStageSize)
+      }
     }else if(name === 'RULES'){
       // nothing to do
     }
@@ -1421,7 +1490,6 @@ export default class IQMenu extends DH2DObject {
         c.fillText('Touch to start', IQGameData.canvasWidth / 2, IQGameData.canvasHeight / 2)
       }else{
         // opening movie
-        //if(IQGameData.device.isMobile){
         if(IQGameData.device.isMobile || IQGameData.device.isTablet){
           this._opMovie.currentTime = this._opMovieAudio.currentTime
         }
