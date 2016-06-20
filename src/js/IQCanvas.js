@@ -85,7 +85,6 @@ export default class IQCanvas extends CanvasField {
             simData.callback(simData, diffTime)
           }
           if(simData.type === 'control'){
-            console.log('sim[' + this.simListIndex + ']: skip. diffTime: ' + diffTime)
             this.currentSimData = simData
             this.drawPicture(simData.elapsedTime, !this.moveEnable, true) // skipRender
           }

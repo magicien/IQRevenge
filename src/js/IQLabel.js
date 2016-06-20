@@ -449,11 +449,18 @@ export default class IQLabel extends DH2DObject {
 
 
     // stage number
+    let stageNumber = g.stage
+    if(IQGameData.playExtra){
+      stageNumber = 'X'
+    }else{
+      stageNumber = IQGameData.stageNameList.get(stageNumber).substr(0, 1)
+    }
+
     c.font         = '24px ' + g.fontFamily
     c.fillStyle    = g.whiteColor
     c.strokeStyle  = g.whiteColor
-    c.fillText(g.stage, 50, 27)
-    c.strokeText(g.stage, 50, 27)
+    c.fillText(stageNumber, 50, 27)
+    c.strokeText(stageNumber, 50, 27)
 
     c.strokeRect(35, 25, 30, 30)
 
@@ -463,14 +470,21 @@ export default class IQLabel extends DH2DObject {
     let squareWidth = 20
     let squareHeight = 10
     let padding = 3
-    c.fillStyle = g.blueColor
     let x = squareLeft
-    for(let i=0; i<g.subStageMax; i++){
-      if(i < g.subStage){
-        c.fillRect(x, squareTop, squareWidth, squareHeight)
+    c.fillStyle = g.blueColor
+    if(IQGameData.playExtra){
+      squareWidth = squareWidth * 3 + padding * 2
+      const fillWidth = squareWidth * g.subStage / g.subStageMax
+      c.fillRect(squareLeft, squareTop, fillWidth, squareHeight)
+      c.strokeRect(squareLeft, squareTop, squareWidth, squareHeight)
+    }else{
+      for(let i=0; i<g.subStageMax; i++){
+        if(i < g.subStage){
+          c.fillRect(x, squareTop, squareWidth, squareHeight)
+        }
+        c.strokeRect(x, squareTop, squareWidth, squareHeight)
+        x += padding + squareWidth
       }
-      c.strokeRect(x, squareTop, squareWidth, squareHeight)
-      x += padding + squareWidth
     }
 
     // score

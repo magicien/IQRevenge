@@ -356,7 +356,7 @@ class _IQGameData {
     this.debugSubSubStageNo = 1
     this.debugStageStep = 1
 
-    this.debugStageList = [1, 2, 3, 4, 5, 6, 7, 8, 'Final', 'EXTRA']
+    this.debugStageList = [1, 2, 3, 4, 5, 6, 7, 8, 'Final', 'Extra']
     this.debugStageListEnable = [true, true, true, true, true, true, true, true, true, true]
     this.debugFileList = [
       './question/stage1.txt',
@@ -669,6 +669,10 @@ class _IQGameData {
     this.numQuestions = 0
     this.questionArray = null
     this.questionUsed = null
+
+    // extra stage data
+    this.playExtra = false
+    this.extraStageDataFile = './question/extra_stage_data.txt'
 
     // rule
     this.rulePlay = false

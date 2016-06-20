@@ -1331,6 +1331,10 @@ export default class IQMenu extends DH2DObject {
     let paramWidth = 0
 
     switch(opMenuName){
+      case 'START': {
+        // do nothing
+        break
+      }
       case 'SCORE': {
         this._opSubMenus = this._scoreSubMenus
         this._opSubMenuEnable = this._scoreSubMenuEnable

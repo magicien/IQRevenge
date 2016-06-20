@@ -587,9 +587,6 @@ function initGameData() {
   g.cookieShelfLife = g.cookieSaveDays
 
   const agent = g.device
-
-  console.log(`mobile: ${agent.isMobile}`)
-  console.log(`tablet: ${agent.isTablet}`)
 }
 
 function initCanvas() {
@@ -1094,7 +1091,16 @@ function getStageFromCookie() {
 
 function updateStageList() {
   let i = 0
-  for(; i<g.selectableMaxStage; i++){
+  let maxStage = g.selectableMaxStage
+
+  if(maxStage > g.stageList.length){
+    maxStage = g.stageList.length
+
+    // enable 'EXTRA'
+    g.menu._opMenuEnable[6] = true
+  }
+
+  for(; i<maxStage; i++){
     g.stageListEnable[i] = true
   }
   for(; i<g.stageListEnable.length; i++){
@@ -1282,7 +1288,7 @@ function setTimerAndStart(elapsedTime) {
 
   g.stageCreateStartTime = new Date(startTime)
 
-  if(g.subStage == 1){
+  if(g.subStage === 1){
     if(g.recording){
       g.recorder.startTime = new Date(startTime)
     }
@@ -1966,6 +1972,11 @@ function showMenuLoop() {
           break
         }
         case 'EXTRA': {
+          IQSceneChanger.change(3.0, true, g.bgm_menu, g.bgm_stagecall, null, () => {
+            stop()
+            removeAllObjects()
+            setup(true)
+          })
           break
         }
         case 'EXIT': {
@@ -2202,7 +2213,7 @@ function showMenuLoop() {
 
     // make it enable to start from the final stage
     if(g.keyListener.getKeyNewState('U')){
-      g.selectableMaxStage = 9
+      g.selectableMaxStage = 10
       updateStageList()
     }
   }
@@ -2974,12 +2985,13 @@ function simEndCallback(data) {
   quitRulePlay()
 }
 
-function setup() {
+function setup(extra = false) {
   if(!checkObjLoaded()){
     setTimeout(setup, 500)
     return
   }
 
+  g.playExtra = extra
 
   let loadDataPromise = null
 
@@ -3006,6 +3018,8 @@ function setup() {
       // just resolve
       resolve()
     })
+  }else if(g.playExtra){
+    loadDataPromise = loadStageFilesData(g.extraStageDataFile)
   }else{
     loadDataPromise = loadStageFilesData(g.stageDataFile)
   }
@@ -3400,6 +3414,8 @@ function createSubStage() {
   }
 
   if(g.rulePlay){
+    // nothing to do
+  }else if(g.playExtra){
     // nothing to do
   }else if(g.subStage === 1){
     // stage call
