@@ -297,153 +297,111 @@ export default class IQLabel extends DH2DObject {
 
     // game complete
     if(g.ending){
-      c.save()
-      
-      c.textAlign    = 'center'
-      c.textBaseline = 'middle'
-      c.font         = '48px bold ' + g.fontFamily
-      c.fillStyle    = g.whiteColor
-      c.strokeStyle  = g.blackColor
+      const diffTime = g.getElapsedTime(g.endingPhaseStartTime)
+      switch(g.endingPhase){
+        case g.ENDING_PHASE_MIKU_STORY: 
+        case g.ENDING_PHASE_RIN_STORY: 
+        case g.ENDING_PHASE_LEN_STORY: {
+          c.textAlign    = 'left'
+          c.textBaseline = 'middle'
+          c.font         = '16px bold ' + g.fontFamily
+          c.fillStyle    = g.whiteColor
+          const sx = 60
+          const sy = 60
+          const dy = 24
+          let tx = sx
+          let ty = sy
 
-      const diffTime = g.getElapsedTime(g.endingStartTime)
-      const time1 = g.endingWaitTime
-      const time2 = time1 + g.endingScoreRotateTime
-      const time3 = time2 + g.endingScoreWaitTime
-      const time4 = time3 + g.endingScoreRotateTime
-      const time5 = time4 + g.endingIQTime1
-      const time6 = time5 + g.endingIQTime2
+          if(diffTime <= g.endingStoryTitleTime){
+            const numChars = Math.floor(diffTime / g.endingStoryTextSpeed)
+            const text = g.endingStoryTitle.substr(0, numChars)
+            c.fillText(text, tx, ty)
+          }else{
+            c.fillText(g.endingStoryTitle, tx, ty)
+            ty += dy * 2
 
-      const scoreStr = String(g.score)
-      const scoreStrLen = scoreStr.length
-      let dx = 30
-      let x = (g.canvasWidth - dx * (scoreStrLen - 1)) * 0.5
+            const charDiffTime = diffTime - g.endingStoryTitleTime
+            const numChars = Math.floor(charDiffTime / g.endingStoryTextSpeed)
+            let startLine = 0
+            let endLine = 0
+            while(endLine < g.endingStoryChars.length){
+              if(numChars < g.endingStoryChars[endLine]){
+                break
+              }
+              endLine++
+            }
+            if(endLine > g.endingStoryLinesPerPage){
+              startLine = endLine - g.endingStoryLinesPerPage
+            }
 
-      if(diffTime < time1){
-        // nothing to do
-        c.fillStyle = g.blackColor
-        c.fillRect(0, 0, g.canvasWidth, g.canvasHeight)
-      }else if(diffTime < time2){
-        // rotate score
-        const t = diffTime - time1
-        const a = t / g.endingScoreRotateTime
-        for(let i=0; i<scoreStrLen; i++){
-          const drawChar = scoreStr.charAt(i)
-          c.save()
-          c.transform(a, 0, 0, 1, x, y)
-          c.fillText(drawChar, 0, 0)
-          c.strokeText(drawChar, 0, 0)
-          c.restore()
-          x += dx
+            let alpha = 1.0
+            if(g.endingStoryLinesPerPage <= endLine && endLine < g.endingStoryChars.length){
+              const endTime = g.endingStoryChars[endLine]
+              const endDiff = endTime - numChars
+              if(endDiff < g.endingStoryLineMoveTime){
+                // slide text
+                alpha = endDiff / g.endingStoryLineMoveTime
+                ty -= dy * (1.0 - alpha)
+              }
+            }
+
+            if(endLine > 0){
+              // fade out
+              c.fillStyle = `rgba(255, 255, 255, ${alpha})`
+              c.fillText(g.endingStoryText[startLine], tx, ty)
+              ty += dy
+            }
+
+            c.fillStyle = g.whiteColor
+            for(let l=startLine+1; l<endLine; l++){
+              c.fillText(g.endingStoryText[l], tx, ty)
+              ty += dy
+            }
+            if(endLine < g.endingStoryText.length){
+              let strlen = numChars
+              if(endLine > 0){
+                strlen -= g.endingStoryChars[endLine-1]
+              }
+
+              const text = g.endingStoryText[endLine].substr(0, strlen)
+              c.fillText(text, tx, ty)
+            }
+          }
+          
+          break
         }
-      }else if(diffTime < time3){
-        // show score
-        for(let i=0; i<scoreStrLen; i++){
-          const drawChar = scoreStr.charAt(i)
-          c.fillText(drawChar, x, y)
-          c.strokeText(drawChar, x, y)
-          x += dx
+
+        case g.ENDING_PHASE_STAFFROLL: {
+          c.textAlign    = 'center'
+          c.textBaseline = 'middle'
+          c.font         = '24px bold ' + g.fontFamily
+          c.fillStyle    = g.whiteColor
+          const dy = 30
+          const sx = g.canvasWidth / 2
+          const sy = g.canvasHeight + dy * 7
+          let tx = sx
+          let ty = sy - diffTime * g.endingStaffRollSpeed
+
+          for(let i=0; i<g.endingStaffRollText.length; i++){
+            if(ty > sy){
+              break
+            }
+            if(ty > -dy){
+              c.fillText(g.endingStaffRollText[i], tx, ty)
+            }
+            ty += dy
+          }
+
+          // for debug
+          c.fillText(diffTime, 300, 30)
+          
+          break
         }
-      }else if(diffTime < time4){
-        // rotate score
-        const t = diffTime - time3
-        const a = 1.0 - t / g.endingScoreRotateTime
 
-        c.fillStyle = g.whiteColor
-        for(let i=0; i<scoreStrLen; i++){
-          const drawChar = scoreStr.charAt(i)
-          c.save()
-          c.transform(a, 0, 0, 1, x, y)
-          c.fillText(drawChar, 0, 0)
-          c.strokeText(drawChar, 0, 0)
-          c.restore()
-          x += dx
-        }
-      }else if(diffTime < time5){
-        // show I.Q string
-        const t = diffTime - time4
-        const a = 1.0 - t / g.endingIQTime1
-
-        c.fillStyle = g.blackColor
-        c.fillRect(0, 0, g.canvasWidth, g.canvasHeight)
-        c.fillStyle = g.whiteColor
-
-        dx = 30
-        x = g.canvasWidth * 0.5 - dx * 3.5
-        c.fillText('I', x,      y)
-        c.fillText('.', x+dx,   y)
-        c.fillText('Q', x+dx*2, y)
-
-        c.fillStyle = g.blackColor
-        // I
-        const w = 10
-        const h = 20
-        c.fillRect(x - w, y - h, 2 * w, 2 * h * a)
-
-        // Q
-        const r = 30
-        c.beginPath()
-        c.moveTo(x+dx*2, y)
-        c.lineTo(x+dx*2+r, y)
-        c.arc(x+dx*2, y, r,       0, Math.PI * a, false)
-        c.closePath()
-        c.fill()
-
-        c.beginPath()
-        c.moveTo(x+dx*2, y)
-        c.lineTo(x+dx*2-r, y)
-        c.arc(x+dx*2, y, r, Math.PI, Math.PI * (1.0 + a), false)
-        c.closePath()
-        c.fill()
-      }else if(diffTime < time6){
-        // show I.Q point
-        const t = diffTime - time5
-        let a = (t / g.endingIQTime2 - 0.5) * 2
-        if(a < 0)
-          a = 0
-
-        c.fillStyle = g.blackColor
-        c.fillRect(0, 0, g.canvasWidth, g.canvasHeight)
-
-        c.fillStyle = g.whiteColor
-        dx = 30
-        x = g.canvasWidth * 0.5 - dx * 3.5
-        c.fillText('I', x,      y)
-        c.fillText('.', x+dx,   y)
-        c.fillText('Q', x+dx*2, y)
-
-        c.fillStyle = 'rgba(255, 255, 255, ' + a + ')'
-        c.strokeStyle = 'rgba(0, 0, 0, ' + a + ')'
-        const str = String(g.iqPoint)
-        const strlen = str.length
-        x = g.canvasWidth * 0.5 + dx * 1.5
-        for(let i=0; i<strlen; i++){
-          const drawChar = str.charAt(i)
-          c.fillText(drawChar, x, y)
-          x += dx
-        }
-      }else{
-        // wait until player pushes any key
-        c.fillStyle = g.blackColor
-        c.fillRect(0, 0, g.canvasWidth, g.canvasHeight)
-
-        c.fillStyle = g.whiteColor
-        dx = 30
-        x = g.canvasWidth * 0.5 - dx * 3.5
-        c.fillText('I', x,      y)
-        c.fillText('.', x+dx,   y)
-        c.fillText('Q', x+dx*2, y)
-
-        const str = String(g.iqPoint)
-        const strlen = str.length
-        x = g.canvasWidth * 0.5 + dx * 1.5
-        for(let i=0; i<strlen; i++){
-          const drawChar = str.charAt(i)
-          c.fillText(drawChar, x, y)
-          x += dx
+        default: {
+          // nothing to do
         }
       }
-
-      c.restore()
       return
     } // if(g.ending)
 

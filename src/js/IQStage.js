@@ -388,16 +388,16 @@ export default class IQStage extends DH3DObject {
     m.loaded = true
   }
 
-  breakOneLine(breakByPenaltyMax) {
+  breakOneLine(breakByPenaltyMax = false, forEnding = false) {
     if(IQGameData.gameOver){
-      return
+      return null
     }
 
     if(IQGameData.breaking){
       if(!breakByPenaltyMax){
         IQGameData.penaltyQueue++
       }
-      return
+      return null
     }
 
     if(breakByPenaltyMax){
@@ -405,6 +405,7 @@ export default class IQStage extends DH3DObject {
     }
 
     // create one line
+    let finalCube = null
     const posZ = (IQGameData.stageLength - 1) * IQGameData.cubeSize
     let posY = -IQGameData.cubeSize * 0.5
     const delay = 200
@@ -418,33 +419,66 @@ export default class IQStage extends DH3DObject {
         cube.baseY = posY
         cube.baseZ = posZ
         IQGameData.canvasField.addObject(cube)
-        IQGameData.breakCubeArray.push(cube)
-
-        posX += IQGameData.cubeSize
 
         if(y === 0){
           cube.isTopCube = true
         }
+
+        if(forEnding && x === 3 && y === 0){
+          finalCube = cube
+        }else{
+          IQGameData.breakCubeArray.push(cube)
+        }
+        
+        posX += IQGameData.cubeSize
       }
       posY -= IQGameData.cubeSize
     }
+
     // add effect
-    for(let x=0; x<IQGameData.stageWidth; x++){
-      IQEffectPlate.create(true, IQGameData.stageLength - 1, x)
+    if(forEnding){
+      IQEffectPlate.create(false, 0, 3)
+      IQEffectPlate.create(false, 0, 4)
+    }else{
+      for(let x=0; x<IQGameData.stageWidth; x++){
+        IQEffectPlate.create(true, IQGameData.stageLength - 1, x)
+      }
     }
 
-    // shrink stage
+    this.shrinkStage()
+
+    IQGameData.breakTopCubeX = IQGameData.stageWidth
+    console.log('IQStage.breakOneLine: ' + this.length + ', ' + IQGameData.stageLength)
+
+    //IQGameData.breakStartTime = new Date()
+    IQGameData.breakStartTime = new Date(IQGameData.nowTime.getTime())
+    IQGameData.breaking = true
+
+    return finalCube
+  }
+
+  shrinkStage(shrinkLength = 1) {
     let group = this._model.renderGroupArray[0]
     let skins = this._model.skinArray
     let indices = group.indices
-    for(let i=0; i<this.numFrontSkins; i++){
-      skins[i].position.z -= 1.0
+    let len = shrinkLength
+
+    console.log('shrinkStage: this.length: ' + this.length + ', shrinkLength: ' + shrinkLength)
+    if(this.length - len < 0){
+      len = this.length
     }
-    for(let i=0; i<this.numLineSkins; i++){
-      skins.pop()
-    }
-    for(let i=0; i<this.numLineIndices; i++){
-      indices.pop()
+    console.log('len: ' + len)
+
+    for(let l=0; l<len; l++){
+      for(let i=0; i<this.numFrontSkins; i++){
+        skins[i].position.z -= 1.0
+      }
+      for(let i=0; i<this.numLineSkins; i++){
+        skins.pop()
+      }
+      for(let i=0; i<this.numLineIndices; i++){
+        indices.pop()
+      }
     }
     // FIXME
     group._indexDataCache = null
@@ -464,11 +498,13 @@ export default class IQStage extends DH3DObject {
     group = this._floor._model.renderGroupArray[0]
     skins = this._floor._model.skinArray
     indices = group.indices
-    for(let i=0; i<this.numFloorSkins; i++){
-      skins.pop()
-    }
-    for(let i=0; i<this.numFloorIndices; i++){
-      indices.pop()
+    for(let l=0; l<len; l++){
+      for(let i=0; i<this.numFloorSkins; i++){
+        skins.pop()
+      }
+      for(let i=0; i<this.numFloorIndices; i++){
+        indices.pop()
+      }
     }
     // FIXME
     group._indexDataCache = null
@@ -482,13 +518,9 @@ export default class IQStage extends DH3DObject {
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, group.getIndexData(this._floor._model), gl.DYNAMIC_DRAW)
 
 
-    this.length--
-    IQGameData.stageLength--
-    IQGameData.breakTopCubeX = IQGameData.stageWidth
-
-    //IQGameData.breakStartTime = new Date()
-    IQGameData.breakStartTime = new Date(IQGameData.nowTime.getTime())
-    IQGameData.breaking = true
+    this.length -= len
+    // FIXME: don't use stageLength
+    IQGameData.stageLength = this.length
   }
 
   addOneLine() {

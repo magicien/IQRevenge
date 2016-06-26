@@ -69,6 +69,7 @@ Files below are licensed by each creator.
     - Creator: [秋山裕和（フリー音楽素材 H/MIX GALLERY）](http://www.hmix.net/)
         - src/resources/snd/stage1.mp3,ogg,wav
         - src/resources/snd/stage4.mp3,ogg,wav
+        - src/resources/snd/ending.mp3,ogg,wav
 
     - Creator: [ju-nya（ju-nya's sets on SoundCloud）](http://soundcloud.com/ju-nya/sets) [（ニコニ・コモンズ）](http://commons.nicovideo.jp/user/204000)
         - src/resources/snd/gameover.mp3,ogg,wav

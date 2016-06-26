@@ -458,7 +458,9 @@ class _IQGameData {
     this.bgm_stagecall = null
     this.bgm_fanfare = null
     this.bgm_gameover = null
-    this.bgm_edit = null
+    //this.bgm_edit = null
+    this.bgm_ending = null
+    this.bgm_staffroll = null
 
     this.current_bgm = null
 
@@ -477,8 +479,10 @@ class _IQGameData {
     this.bgm_stage7_file = 'stage7'
     this.bgm_stage8_file = 'stage8'
     this.bgm_stage9_file = 'stage9'
-    this.bgm_stageE_file = 'stage3'
+    this.bgm_stageX_file = 'stage1'
     this.bgm_edit_file = 'edit'
+    this.bgm_ending_file = 'ending'
+    this.bgm_staffroll_file = 'staffroll'
 
     // sound
     this.se_select = null
@@ -584,6 +588,8 @@ class _IQGameData {
     this.perfectTime = null
     this.clearTime = null
     this.endingStartTime = null
+    this.endingPhaseStartTime = null
+    this.endingBreakStartTime = null
 
     this.stageCreateDelay = 300
     this.stageCreateBlockMoveTime = 1000
@@ -641,6 +647,7 @@ class _IQGameData {
     this.cameraTargetXGoal = 0
     this.cameraTargetYGoal = 0
     this.cameraTargetZGoal = 0
+    this.cameraDistanceDuringGame = 250.0
 
     // speed of camera
     this.cameraTargetMoveRatio = 0.3
@@ -675,6 +682,8 @@ class _IQGameData {
     this.clearScore = 0
     this.bonusScore = 0
     this.oldBlockNo = 0
+
+    this.playerName = 'player'
 
     // question data
     this.stageDataFile = './question/stage_data.txt'
@@ -815,6 +824,66 @@ class _IQGameData {
     this.cookieOptionKeyAdvantage = 'IQKAdv'
     this.cookieOptionKeySpeedUp = 'IQKSpeed'
 
+    // ending
+    this.endingPhase = 0
+    this.ENDING_PHASE_ADDSTAGE = 0
+    this.ENDING_PHASE_ESCAPE = 1
+    this.ENDING_PHASE_WAIT = 2
+    this.ENDING_PHASE_DOWN_1 = 3
+    this.ENDING_PHASE_DOWN_2 = 4
+    this.ENDING_PHASE_MIKU_STORY = 11
+    this.ENDING_PHASE_RIN_STORY = 12
+    this.ENDING_PHASE_LEN_STORY = 13
+    this.ENDING_PHASE_STAFFROLL = 100
+    // add stage
+    this.endingMinStageLength = 20
+    this.endingStageAddTime = 1000
+    // break stage
+    this.endingStageBreakTime = 2000
+    this.endingSecondStageLength = 4
+    this.endingCube = null
+    this.endingCameraXAngle = -0.15
+    //this.endingCameraYAngle = Math.PI * 0.2
+    this.endingCameraYAngle = Math.PI * 1.3
+    this.endingCameraDistance = 150.0
+    this.endingCameraOffsetY = -25.0
+    this.endingCameraX = 0
+    this.endingCameraY = 0
+    this.endingCameraZ = 0
+    // go down
+    this.endingGoDownSpeed = 0.08
+    this.endingGoDownTime1 = 7000
+    this.endingGoDownTime2 = 7000
+    this.endingGoDownInitY = this.endingGoDownSpeed * this.endingGoDownTime2 * 0.5
+    // story
+    this.endingStoryCharaX = 100
+    this.endingStoryCharaY = 30
+    this.endingStoryRotatingSpeed = -0.00023
+    this.endingStoryTitleTime = 4000
+    this.endingStoryTime = 100000
+    this.endingStoryTextSpeed = 55.0
+    this.endingStoryLinePauseTime = 5
+    this.endingStoryLineMoveTime = 5
+    this.endingStoryLinesPerPage = 9
+    this.endingStoryEndWaitTime = 3000
+    this.endingStoryTitle = ''
+    this.endingStoryText = []
+    this.endingStoryChars = []
+    this.endingStoryVoice = null
+    this.endingStoryVoicePlayed = false
+
+    this.endingStoryTextMiku = 'data/story_miku.txt'
+    this.endingStoryVoiceMiku = 'story_miku'
+    this.endingStoryTextRin = 'data/story_rin.txt'
+    this.endingStoryVoiceRin = 'story_rin'
+    this.endingStoryTextLen = 'data/story_len.txt'
+    this.endingStoryVoiceLen = 'story_len'
+
+    // staff roll
+    this.endingStaffRollTime = 163000
+    this.endingStaffRollSpeed = 0.03
+    this.endingStaffRollFile = 'data/staff_roll.txt'
+    this.endingStaffRollText = []
   }
 
   /**

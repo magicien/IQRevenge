@@ -250,6 +250,9 @@ function playerMoveCallback() {
   let bindOffsetY = 15.0
   const bindOffsetZ = 0
   const pos = g.playerObj._position
+
+  g.camera.distance = g.cameraDistanceDuringGame
+
   if(g.gameOver){
     // game over
     const diffTime = g.getElapsedTime(g.gameOverTime)
@@ -296,7 +299,6 @@ function playerMoveCallback() {
       const cy = pos.y
       const cz = pos.z
       g.camera.lookat(ox, oy, oz, cx, cy, cz, 0, 1, 0)
-
       return
     }
     g.cameraXAngle = g.cameraXAngleGoal
@@ -367,6 +369,76 @@ function playerMoveCallback() {
     g.cameraTargetXGoal = 0
     g.cameraTargetYGoal = 0
     g.cameraTargetZGoal = g.stageLength * g.cubeSize
+  }else if(g.ending){
+    switch(g.endingPhase){
+      case g.ENDING_PHASE_ADDSTAGE: {
+        // same as clear
+        g.cameraXAngleGoal = -0.3
+        g.cameraYAngleGoal = Math.PI * 1.10
+        g.cameraTargetXGoal = 0
+        g.cameraTargetYGoal = 0
+        g.cameraTargetZGoal = g.stageLength * g.cubeSize
+        break
+      }
+
+      case g.ENDING_PHASE_ESCAPE: 
+      case g.ENDING_PHASE_WAIT: {
+        // look closer
+        g.cameraXAngleGoal = g.endingCameraXAngle
+        g.cameraYAngleGoal = g.endingCameraYAngle
+        g.cameraTargetXGoal = pos.x
+        g.cameraTargetYGoal = pos.y
+        g.cameraTargetZGoal = pos.z
+        g.camera.distance = g.endingCameraDistance
+        bindOffsetY = g.endingCameraOffsetY
+        /*
+        g.cameraXAngleGoal = -0.3
+        g.cameraYAngleGoal = Math.PI * 1.10
+        g.cameraTargetXGoal = 0
+        g.cameraTargetYGoal = 0
+        g.cameraTargetZGoal = g.stageLength * g.cubeSize
+        */
+        break
+      }
+
+      case g.ENDING_PHASE_DOWN_1: {
+        // fix camera position
+        const playerPos = g.playerObj._position
+        g.camera.lookat(
+          g.endingCameraX, g.endingCameraY, g.endingCameraZ,
+          playerPos.x, playerPos.y + g.endingCameraOffsetY, playerPos.z,
+          0, 1, 0
+        )
+        return
+      }
+
+      case g.ENDING_PHASE_DOWN_2: {
+        // look from far
+        const distance = 600
+        const orgX = g.endingCameraX
+        const orgZ = g.endingCameraZ
+        const r = 1.0 / Math.sqrt(orgX * orgX + orgZ * orgZ)
+        const cx = orgX * r * distance
+        const cz = orgZ * r * distance
+        g.camera.lookat(cx, 0, cz, 0, 0, 0, 0, 1, 0)
+        return
+      }
+
+      case g.ENDING_PHASE_MIKU_STORY: {
+        const distance = 20
+        g.camera.lookat(0, 0, distance, 0, 0, 0, 0, 1, 0)
+        break
+      }
+
+      case g.ENDING_PHASE_STAFFROLL: {
+        // there's no 3D object, nothing to do
+        break
+      }
+
+      default: {
+        console.error('Camera setting: unknown ending phase: ' + g.endingPhase)
+      }
+    }
   }else if(!g.activated){
     g.cameraXAngleGoal = -0.3
     g.cameraYAngleGoal = Math.PI
@@ -375,10 +447,7 @@ function playerMoveCallback() {
     g.cameraTargetZGoal = pos.z
   }else{
     // normal
-    //g.cameraXAngleGoal = -0.9
-    //g.cameraXAngleGoal = -0.3 - 0.05 * g.questionLength
     g.cameraXAngleGoal = -0.3 - 0.06 * getQuestionLength()
-    //g.cameraYAngleGoal = Math.PI + pos.x / g.maxX * g.cameraYAngleMax
     g.cameraYAngleGoal = Math.PI + pos.x / g.maxX * (g.cameraYAngleMax + (getQuestionLength() - 2) * 0.05)
     g.cameraTargetXGoal = pos.x
     g.cameraTargetYGoal = pos.y
@@ -512,6 +581,13 @@ function playerMoveCallback() {
   const cy = oy - d * sinx
   const cz = oz - d * cosx * cosy
   g.camera.lookat(cx, cy, cz, ox, oy, oz, 0, 1, 0)
+
+  if(g.ending){
+    // save camera position
+    g.endingCameraX = cx
+    g.endingCameraY = cy
+    g.endingCameraZ = cz
+  }
 }
 
 function getQuestionLength() {
@@ -828,7 +904,7 @@ function initAudio() {
   const ext = g.snd_ext
 
   // BGM
-  g.bgm_stage.src = g.bgm_directory + '/' + g.bgm_stage1_file + ext
+  //g.bgm_stage.src = g.bgm_directory + '/' + g.bgm_stage1_file + ext
   g.bgm_menu.src = g.bgm_directory + '/' + g.bgm_menu_file + ext
   g.bgm_stagecall.src = g.bgm_directory + '/' + g.bgm_stagecall_file + ext
   g.bgm_fanfare.src = g.bgm_directory + '/' + g.bgm_fanfare_file + ext
@@ -1213,6 +1289,9 @@ function resetValues(stage, remainScores) {
   g.stageWidth = 4
   g.stageLength = 20
 
+  // music
+  setStageBGM(g.stage)
+
   // reset game objects
 
   // canvas
@@ -1384,6 +1463,7 @@ function checkObjLoaded() {
 
 function changeToMenu() {
   stop()
+  g.menu.moviePlayStop()
   g.menu.setMenu('top')
   g.camera.distance = 20.0
   g.canvasField.addObject(g.menu._opTileObj, true)
@@ -2847,7 +2927,7 @@ function loadRulesAudio(audioData) {
             audio.addEventListener('canplaythrough', () => { resolve() }, false)
             audio.addEventListener('error', (error) => { reject(error) }, false)
           }).catch((error) => {
-            console.log('Audio file load error: ' + audio.src + ': ' + error)
+            console.error('Audio file load error: ' + audio.src + ': ' + error)
           })
           audioPromises.push(promise)
 
@@ -4322,7 +4402,7 @@ function breakLineProcess() {
       cube.setRotateAxis(g.xaxis, rot)
       cube.setPosition(posX, posY, posZ)
 
-      if(cube.isTopCube){
+      if(cube.isTopCube && !g.ending){
         // check game over
         const cx = Math.floor((cube._position.x - g.minX) / g.cubeSize)
         const cz = Math.floor((cube._position.z - g.minZ) / g.cubeSize)
@@ -4480,22 +4560,7 @@ function subSubStageClear() {
     }
 
     // create one line
-    const posZ = g.stageLength * g.cubeSize + g.perfectAddLineZ
-    let posY = -g.cubeSize * 0.5
-    for(let y=0; y<g.stageHeight; y++){
-      let posX = (-g.stageWidth * 0.5 + 0.5) * g.cubeSize
-      for(let x=0; x<g.stageWidth; x++){
-        const cube = new IQCube('normal')
-        cube.setRotateAxis(g.xaxis, 0.0)
-        cube.setPosition(posX, posY, posZ)
-        g.canvasField.addObject(cube)
-        g.addCubeArray.push(cube)
-
-        posX += g.cubeSize
-      }
-      posY -= g.cubeSize
-    }
-
+    addOneLineToStage()
   }else{
     // not perfect
 
@@ -4523,6 +4588,24 @@ function subSubStageClear() {
         playSound(g.se_again)
       }
     }
+  }
+}
+
+function addOneLineToStage() {
+  const posZ = g.stageLength * g.cubeSize + g.perfectAddLineZ
+  let posY = -g.cubeSize * 0.5
+  for(let y=0; y<g.stageHeight; y++){
+    let posX = (-g.stageWidth * 0.5 + 0.5) * g.cubeSize
+    for(let x=0; x<g.stageWidth; x++){
+      const cube = new IQCube('normal')
+      cube.setRotateAxis(g.xaxis, 0.0)
+      cube.setPosition(posX, posY, posZ)
+      g.canvasField.addObject(cube)
+      g.addCubeArray.push(cube)
+
+      posX += g.cubeSize
+    }
+    posY -= g.cubeSize
   }
 }
 
@@ -4612,21 +4695,20 @@ function clearProcess() {
 
     g.bonusScore = g.stageLength * g.pointBonus
     if(g.stage === g.stageMax){
-      // TODO: implement ending
-      //reset()
-
+      // go to ending
       g.iqPoint = Math.floor(g.iqPoint)
       if(g.iqPoint < 0){
         g.iqPoint = 0
       }
       setIQtoCookie(g.iqPoint)
+      loadEndingStory()
       
-      IQSceneChanger.change(3.0, true, g.bgm_fanfare, null, endingLoop, () => {
+      IQSceneChanger.change(1.0, false, g.bgm_fanfare, null, endingLoop, () => {
         g.stageClear = false
         g.ending = true
         g.endingStartTime = new Date(g.nowTime.getTime())
-        removeAllObjects()
-        g.canvasField.addObject(g.labelObj)
+        g.endingPhaseStartTime = new Date(g.nowTime.getTime())
+        g.endingPhase = g.ENDING_PHASE_ADDSTAGE
       })
 
       g.stageClearSceneChange = true
@@ -4645,6 +4727,7 @@ function clearProcess() {
     // FIXME: wait time
     return
   }else if(diffTime >= moveMaxTime){
+    // finish count
     let nowZ = -g.cubeSize
     g.bonusScore = g.stageLength * g.pointBonus
     g.stageLines.forEach( (obj) => {
@@ -4656,6 +4739,7 @@ function clearProcess() {
       g.oldBlockNo = 0
     }
   }else if(diffTime >= clearWaitTime){
+    // count lines
     diffTime -= clearWaitTime
 
     const blockTime = diffTime / g.clearLineMoveTime
@@ -4701,11 +4785,367 @@ function checkControllable() {
   return true
 }
 
-function endingLoop() {
-  g.nowTime = new Date()
+function loadEndingStory() {
+  let textFile = null
+  let audioFile = null
+  let movieFile = null
 
-  const maxTime = g.endingTotalTime
-  const diffTime = g.getElapsedTime(g.endingStartTime)
+  switch(g.character){
+    case 'Miku': {
+      textFile = g.endingStoryTextMiku
+      audioFile = g.endingStoryVoiceMiku
+      break
+    }
+
+    case 'Rin': {
+      textFile = g.endingStoryTextRin
+      audioFile = g.endingStoryVoiceRin
+      break
+    }
+
+    case 'Len': {
+      textFile = g.endingStoryTextLen
+      audioFile = g.endingStoryVoiceLen
+      break
+    }
+
+    default: {
+      console.error('loadEndingStory: unknown character: ' + g.character)
+    }
+  }
+
+  if(textFile !== null){
+    AjaxRequest.get(textFile, {
+      async: false
+    })
+    .then((result) => {
+      const texts = result.split('\n')
+      g.endingStoryTitle = texts[0]
+
+      // delete title and blank line
+      texts.shift()
+      texts.shift()
+      while(texts[texts.length-1].length === 0){
+        // delete empty line
+        texts.pop()
+      }
+      g.endingStoryText = texts
+
+      g.endingStoryChars = []
+      let totalLen = 0
+      const totalPauseTime = g.endingStoryLinePauseTime + g.endingStoryLineMoveTime
+      g.endingStoryText.forEach((text) => {
+        totalLen += text.length + totalPauseTime
+        g.endingStoryChars.push(totalLen)
+      })
+      g.endingStoryTime = g.endingStoryTitleTime 
+                        + totalLen * g.endingStoryTextSpeed
+                        + g.endingStoryEndWaitTime
+    })
+    .catch((error) => {
+      console.error('ending text loading error: ' + textFile + ': ' + error)
+    })
+  }
+
+  g.endingStoryVoicePlayed = false
+  if(g.snd_ext !== null){
+    // voice
+    if(audioFile !== null){
+      g.endingStoryVoice = new Audio()
+      g.endingStoryVoice.addEventListener('error', (error) => {
+        console.error('ending voice loading error: ' + g.endingStoryVoice.src + ': ' + error)
+      }, false)
+      g.endingStoryVoice.src = g.se_directory + '/' + audioFile + g.snd_ext
+      g.endingStoryVoice.volume = g.soundVolume
+    }
+
+    // ending bgm
+    g.bgm_ending = new Audio()
+    g.bgm_ending.addEventListener('error', (error) => {
+      console.error('ending bgm loading error: ' + g.bgm_ending.src + ': ' + error)
+    }, false)
+    g.bgm_ending.src = g.bgm_directory + '/' + g.bgm_ending_file + g.snd_ext
+    g.bgm_ending.volume = g.soundVolume
+
+    // staff roll bgm
+    g.bgm_staffroll = new Audio()
+    g.bgm_staffroll.addEventListener('error', (error) => {
+      console.error('staffroll bgm loading error: ' + g.bgm_staffroll.src + ': ' + error)
+    }, false)
+    g.bgm_staffroll.src = g.bgm_directory + '/' + g.bgm_staffroll_file + g.snd_ext
+    g.bgm_staffroll.volume = g.soundVolume
+  }
+
+  // staff roll
+  AjaxRequest.get(g.endingStaffRollFile, {
+    async: false
+  })
+  .then((result) => {
+    g.endingStaffRollText = result.split('\n')
+  })
+  .catch((error) => {
+    console.error('staff roll loading error: ' + error)
+  })
+}
+
+function endingLoop(elapsedTime) {
+  g.nowTime = new Date()
+  g.elapsedTime = elapsedTime * 1000.0
+
+  const force = g.playerObj._force
+  force.x = force.y = force.z = 0
+
+  //const maxTime = g.endingTotalTime
+  //const sumDiffTime = g.getElapsedTime(g.endingStartTime)
+  const diffTime = g.getElapsedTime(g.endingPhaseStartTime)
+
+  //console.log('endingLoop: phase: ' + g.endingPhase + ', diffTime: ' + diffTime)
+
+  switch(g.endingPhase){
+    case g.ENDING_PHASE_ADDSTAGE: {
+      // add lines to the stage
+      if(diffTime > g.endingStageAddTime){
+        if(g.addCubeArray.length > 0){
+          g.addCubeArray.forEach((cube) => {
+            g.canvasField.removeObject(cube)
+          })
+          g.addCubeArray.length = 0
+          g.stageObj.addOneLine()
+        }
+        
+        if(g.stageLength >= g.endingMinStageLength){
+          // setup stage
+          g.canvasField.addObject(g.stageObj)
+          //g.canvasField.addObject(g.stageObj._floor)
+          g.canvasField.addObject(g.stageObj._floor, false, true)
+          g.stageLines.forEach((line) => {
+            g.canvasField.removeObject(line)
+          })
+          g.playerObj._position.z += g.cubeSize
+
+          // start running
+          g.playerObj.setMotionWithBlending(g.running, 10)
+          g.playerObj.animationTime = 0
+          g.playerObj._state = 'running'
+
+          // go to the next phase
+          g.endingPhase = g.ENDING_PHASE_ESCAPE
+          g.endingPhaseStartTime = new Date(g.nowTime.getTime())
+        }else{
+          addOneLineToStage()
+          console.log('addOneLineToStage: stageLength: ' + g.stageLength)
+          g.endingPhaseStartTime.setMilliseconds(g.endingPhaseStartTime.getMilliseconds() + g.endingStageAddTime)
+        }
+      }else{
+        // move cube line
+        const r = 1.0 - diffTime / g.endingStageAddTime
+        const posZ = g.stageLength * g.cubeSize + r * g.perfectAddLineZ
+        g.addCubeArray.forEach((cube) => {
+          cube._position.z = posZ
+        })
+      }
+      break
+    }
+
+    case g.ENDING_PHASE_ESCAPE: {
+      if(diffTime > g.endingStageBreakTime && g.playerObj._position.z < g.maxZ - g.cubeSize){
+        // break stage
+        if(!g.breaking){
+          g.stageObj.breakOneLine()
+          playSound(g.se_break)
+          //g.endingPhaseStartTime.setMilliseconds(g.endingPhaseStartTime.getMilliseconds() + g.endingStageBreakTime)
+          g.endingPhaseStartTime = new Date(g.nowTime.getTime())
+        }
+      }
+
+      // escape to the edge of the stage
+      const goalX = g.minX + g.cubeSize * 3.5 // center of the 4th cube
+      const goalZ = g.moveMinZ
+      const dx = goalX - g.playerObj._position.x
+      const dz = goalZ - g.playerObj._position.z
+      const buff = g.cubeSize * g.cubeSize / 2
+
+      if(dx * dx + dz * dz < buff){
+        // stop running
+        g.playerObj.setMotionWithBlending(g.standing, 10)
+        g.playerObj.animationTime = 0
+        g.playerObj._state = 'standing'
+
+        // look back
+        g.playerObj._position.x = goalX
+        g.playerObj._position.z = goalZ + g.cubeSize * 0.8
+        //g.playerObj._direction = -Math.PI * 0.5
+        g.playerObj._direction = 0
+
+        // go to the next phase
+        g.endingPhase = g.ENDING_PHASE_WAIT
+        g.endingPhaseStartTime = new Date(g.nowTime.getTime())
+      }else{
+        // go to the goal
+        const r = 1.0 / Math.sqrt(dx * dx + dz * dz)
+        const sx = dx * r
+        const sz = dz * r
+
+        g.playerObj._force.x = sx * g.characterSpeed
+        g.playerObj._force.z = sz * g.characterSpeed
+      }
+
+      break
+    }
+
+    case g.ENDING_PHASE_WAIT: {
+      // wait the stage broken
+      if(diffTime > g.endingStageBreakTime && !g.breaking){
+        if(g.stageLength > g.endingSecondStageLength){
+          // break stage
+          console.log('PHASE_WAIT: 1')
+          g.stageObj.shrinkStage(g.stageLength - g.endingSecondStageLength)
+          //g.stageLength = g.endingSecondStageLength
+          //g.stageObj.length = g.endingSecondStageLength
+          g.stageObj.breakOneLine()
+          playSound(g.se_break)
+          /*
+          for(let i=g.stageLength; i>g.endingSecondStageLength; i--){
+            g.stageObj.breakOneLine()
+            g.breaking = false
+          }
+          */
+          console.log('stageLength: ' + g.stageLength)
+          //g.endingPhaseStartTime.setMilliseconds(g.endingPhaseStartTime.getMilliseconds() + g.endingStageBreakTime)
+          g.endingPhaseStartTime = new Date(g.nowTime.getTime())
+        }else if(g.stageLength > 1){
+          // break stage
+          console.log('PHASE_WAIT: 2')
+          g.stageObj.breakOneLine()
+          playSound(g.se_break)
+          console.log('stageLength: ' + g.stageLength)
+          //g.endingPhaseStartTime.setMilliseconds(g.endingPhaseStartTime.getMilliseconds() + g.endingStageBreakTime)
+          g.endingPhaseStartTime = new Date(g.nowTime.getTime())
+        }else if(g.stageLength === 1){
+          // break stage without the cube which the player is standing
+          console.log('PHASE_WAIT: 3')
+          g.endingCube = g.stageObj.breakOneLine(false, true)
+          playSound(g.se_break)
+          g.canvasField.removeObject(g.stageObj)
+          console.log('stageLength: ' + g.stageLength)
+
+          // get the last cube
+          //g.endingCube = g.breakCubeArray[3]
+          //g.breakCubeArray = g.breakCubeArray.filter((cube) => cube !== g.endingCube)
+          //g.endingPhaseStartTime.setMilliseconds(g.endingPhaseStartTime.getMilliseconds() + g.endingStageBreakTime)
+          g.endingPhaseStartTime = new Date(g.nowTime.getTime())
+        }else if(g.stageLength === 0){
+          // go to the next phase
+          console.log('PHASE_WAIT: 4')
+          g.endingPhase = g.ENDING_PHASE_DOWN_1
+          g.endingPhaseStartTime = new Date(g.nowTime.getTime())
+        }else{
+          // something is wrong
+          console.log('PHASE_WAIT: 5')
+          console.log('g.stageLength: ' + g.stageLength)
+        }
+      }
+        
+      break
+    }
+
+    case g.ENDING_PHASE_DOWN_1: {
+      // go down
+      g.playerObj._position.y = -diffTime * g.endingGoDownSpeed
+      g.endingCube._position.y = g.playerObj._position.y - g.cubeSize * 0.5
+      if(diffTime > g.endingGoDownTime1){
+        g.endingPhase = g.ENDING_PHASE_DOWN_2
+        g.endingPhaseStartTime = new Date(g.nowTime.getTime())
+      }
+      break
+    }
+
+    case g.ENDING_PHASE_DOWN_2: {
+      // go down
+      g.playerObj._position.y = g.endingGoDownInitY - diffTime * g.endingGoDownSpeed
+      g.endingCube._position.y = g.playerObj._position.y - g.cubeSize * 0.5
+      if(!g.sceneChanging && diffTime > g.endingGoDownTime2){
+        // go to the next phase
+        // TODO: choose music
+        IQSceneChanger.change(2.0, true, null, g.bgm_ending, endingLoop, () => {
+          removeAllObjects()
+          
+          if(g.character === 'Miku'){
+            g.endingPhase = g.ENDING_PHASE_MIKU_STORY
+            g.canvasField.addObject(g.playerObj)
+          }else if(g.character === 'Rin'){
+            g.endingPhase = g.ENDING_PHASE_RIN_STORY
+            g.canvasField.addObject(g.plyaerObj)
+          }else if(g.character === 'Len'){
+            g.endingPhase = g.ENDING_PHASE_LEN_STORY
+            g.canvasField.addObject(g.plyaerObj)
+          }
+          g.canvasField.addObject(g.labelObj)
+          g.endingPhaseStartTime = new Date(g.nowTime.getTime())
+        })
+      }
+      break
+    }
+
+    case g.ENDING_PHASE_MIKU_STORY:
+    case g.ENDING_PHASE_RIN_STORY:
+    case g.ENDING_PHASE_LEN_STORY: {
+      // rotate
+      g.playerObj._position.x = g.endingStoryCharaX
+      g.playerObj._position.y = g.endingStoryCharaY
+      g.playerObj._position.z = 0
+      g.playerObj._direction = Math.PI * (diffTime * g.endingStoryRotatingSpeed)
+
+      if(!g.endingStoryVoicePlayed && diffTime > g.endingStoryTitleTime){
+        g.endingStoryVoicePlayed = true
+        g.endingStoryVoice.play()
+      }
+
+      // go to the next phase
+      if(!g.sceneChanging && diffTime > g.endingStoryTime){
+        IQSceneChanger.change(15.0, true, g.bgm_ending, g.bgm_staffroll, endingLoop, () => {
+          removeAllObjects()
+          setStaffRollText()
+          g.canvasField.addObject(g.labelObj)
+          g.endingPhase = g.ENDING_PHASE_STAFFROLL
+          g.endingPhaseStartTime = new Date(g.nowTime.getTime())
+        })
+      }
+      break
+    }
+
+    case g.ENDING_PHASE_STAFFROLL: {
+      if(diffTime > g.endingStaffRollTime){
+        if(!g.sceneChanging){
+          IQSceneChanger.change(3.0, true, g.bgm_staffroll, g.bgm_menu, showMenuLoop, () => {
+            removeAllObjects()
+            g.canvasField.addObject(g.menu)
+            g.menu.setMenu('top')
+            g.camera.distance = 20.0
+            g.menu.addTilesToCanvas()
+            g.menu.initMenuParams()
+            g.canvasField.addObject(g.menu._opTileObj, true)
+
+            // set light
+            g.light.setPosition(-50, 0, -100)
+            g.light.setAmbient(0.6, 0.6, 0.6, 0.0)
+            g.light.setDiffuse(0.7, 0.7, 0.7, 0.0)
+            g.light.setSpecular(0.9, 0.9, 0.9, 0.0)
+            g.renderer.setLight(g.light)
+
+            subMenuReturn()
+          })
+        }
+      }
+      break
+    }
+
+    default: {
+      console.error('endingLoop: unknown ending phase: ' + g.endingPhase)
+    }
+  }
+  
+  /*
   if(diffTime > maxTime){
     if(!g.sceneChanging && decisionKeyPushed()){
       const srcBGM = null
@@ -4716,9 +5156,25 @@ function endingLoop() {
       })
     }
   }
+  */
+
+  breakLineProcess()
 
   g.keyListener.resetKeyNewState()
   resetTouchState()
+}
+
+function setStaffRollText() {
+  for(let i=0; i<g.endingStaffRollText.length; i++){
+    const text = g.endingStaffRollText[i]
+    if(text === '<PLAYER>'){
+      g.endingStaffRollText[i] = g.playerName
+    }else if(text === '<I.Q>'){
+      g.endingStaffRollText[i] = g.iqPoint
+    }else if(text === '<SCORE>'){
+      g.endingStaffRollText[i] = g.score
+    }
+  }
 }
 
 function endingTweetLoop() {
@@ -5041,6 +5497,16 @@ function update(elapsedTime) {
       g.speedUp = true
     }else{
       g.speedUp = false
+    }
+
+    if(g.stageClear && decisionKeyPushed()){
+      const diffTime = g.getElapsedTime(g.clearTime)
+      const clearWaitTime = g.clearRotateTime * 2 + g.clearLabelTime
+      const moveMaxTime = clearWaitTime + g.clearLineMoveTime * g.stageLength
+
+      if(clearWaitTime < diffTime && diffTime < moveMaxTime){
+        g.clearTime.setMilliseconds(g.nowTime.getMilliseconds() - moveMaxTime)
+      }
     }
   } // !g.sceneChanging
 

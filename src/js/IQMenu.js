@@ -367,6 +367,15 @@ export default class IQMenu extends DH2DObject {
     this._opMovieStarted = true
   }
 
+  moviePlayStop() {
+    if(this._opMovie){
+      this._opMovie.pause()
+    }
+    if(this._opMovieAudio){
+      this._opMovieAudio.pause()
+    }
+  }
+
   initMenuTile() {
     // init opTiles
     let arr = []
@@ -378,7 +387,7 @@ export default class IQMenu extends DH2DObject {
     }
     this._opTiles = arr
 
-    // craete opTileTexture
+    // create opTileTexture
     const canvas = document.createElement('canvas')
     const tileSize = this._tileSize
     const tileW = 16
