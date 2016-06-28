@@ -29,11 +29,9 @@ MAGICIEN
 
 
 
-
 - MOVIE -
 
 MAGICIEN
-
 
 
 
@@ -50,14 +48,12 @@ FROM @animasasa
 
 
 
-
 - MOTION -
 
 TSUNAMAYO
 http://www.nicovideo.jp/user/5656217
 
 MARUPACHI
-
 
 
 
@@ -71,7 +67,6 @@ http://www.hmix.net/
 
 JU-NYA
 http://soundcloud.com/ju-nya/sets
-
 
 
 
@@ -91,7 +86,6 @@ http://www.01earth.net/sound
 
 
 
-
 - VOICE -
 
 ALEX
@@ -100,6 +94,8 @@ FROM say COMMAND
 OTOYA
 FROM say COMMAND
 
+ZARVOX
+FROM say COMMAND
 
 
 
@@ -107,7 +103,6 @@ FROM say COMMAND
 
 RAY LARABIE
 http://new.myfonts.com/foundry/Larabie/
-
 
 
 

@@ -125,16 +125,16 @@ export default class IQMenu extends DH2DObject {
 
     // sub menu = OPTION
     this._optionSubMenus = [
+      'PlayerName',
       'Level',
       'Stage',
       'Character',
       'Volume',
       'Language',
-      '',
       'return'
     ]
-    this._optionSubMenuEnable = [true, true, true, true, true, false, true]
-
+    this._optionSubMenuEnable = [true, true, true, true, true, true, true]
+    
     // sub menu = SHARE
     this._shareSubMenus = [
       'Twitter',
@@ -153,7 +153,7 @@ export default class IQMenu extends DH2DObject {
       'Step',
       'Edit',
       'Play',
-      'Save',
+      'Share',
       '',
       'return'
     ]
@@ -914,7 +914,7 @@ export default class IQMenu extends DH2DObject {
     IQGameData.menuPlayerObj.setRenderer(IQGameData.renderer)
     IQGameData.menuPlayerObj.setRotateAxis(IQGameData.xaxis, Math.PI)
     IQGameData.menuPlayerObj.setAutoDirection(false)
-    IQGameData.menuPlayerObj.setPosition(170, 200, -80)
+    IQGameData.menuPlayerObj.setPosition(175, 208, -80)
     IQGameData.canvasField.addObject(IQGameData.menuPlayerObj)
   }
 
@@ -1071,6 +1071,20 @@ export default class IQMenu extends DH2DObject {
       // nothing to draw
       return
     }
+
+    if(IQGameData.optionNameEdit){
+      // draw only 'PlayerName'
+      const pnItem = this._menuItem[0]
+      c.textAlign = pnItem.textAlign
+      c.textBaseline = pnItem.textBaseline
+      c.font = pnItem.font
+      c.fillStyle = pnItem.fillStyle
+      c.strokeStyle = pnItem.strokeStyle
+
+      this.drawText(pnItem.text, pnItem.tx, pnItem.ty)
+      return
+    }
+
     if(this._menu === 'top'){
       if(!this._showSubMenu){
         // don't draw menu
@@ -1187,6 +1201,9 @@ export default class IQMenu extends DH2DObject {
     }
     if(IQGameData.editing){
       this.drawEditCursor(canvas)
+      return
+    }
+    if(IQGameData.optionNameEdit){
       return
     }
 
@@ -1333,6 +1350,7 @@ export default class IQMenu extends DH2DObject {
   setSubMenu() {
     const opMenuName = this.getOptionName()
     const params = []
+    const paramWidths = []
     const callbacks = []
     let width = this._subMenuDX
     let paramWidth = 0
@@ -1347,18 +1365,29 @@ export default class IQMenu extends DH2DObject {
         this._opSubMenuEnable = this._scoreSubMenuEnable
         params[0] = () => this._subScoreCharacter
         params[1] = () => this._subScoreLevel
+
         paramWidth = 110
+        paramWidths[0] = paramWidth
+        paramWidths[1] = paramWidth
         break
       }
       case 'OPTION': {
         this._opSubMenus = this._optionSubMenus
         this._opSubMenuEnable = this._optionSubMenuEnable
-        params[0] = () => IQGameData.level
-        params[1] = () => IQGameData.stageNameList.get(IQGameData.selectedStage)
-        params[2] = () => IQGameData.character
-        params[3] = () => Math.floor(IQGameData.soundVolume * 100)
-        params[4] = () => IQGameData.languageNameList.get(IQGameData.language)
+        params[0] = () => IQGameData.playerName
+        params[1] = () => IQGameData.level
+        params[2] = () => IQGameData.stageNameList.get(IQGameData.selectedStage)
+        params[3] = () => IQGameData.character
+        params[4] = () => Math.floor(IQGameData.soundVolume * 100)
+        params[5] = () => IQGameData.languageNameList.get(IQGameData.language)
+
         paramWidth = 110
+        paramWidths[0] = 240
+        paramWidths[1] = paramWidth
+        paramWidths[2] = paramWidth
+        paramWidths[3] = paramWidth
+        paramWidths[4] = paramWidth
+        paramWidths[5] = paramWidth
         break
       }
       case 'RULES': {
@@ -1380,13 +1409,20 @@ export default class IQMenu extends DH2DObject {
           params[1] = () => IQGameData.debugSubStageNo
           params[2] = () => IQGameData.debugSubSubStageNo
           params[3] = () => IQGameData.editStageStep
+
           paramWidth = 75
+          paramWidths[0] = paramWidth
+          paramWidths[1] = paramWidth
+          paramWidths[2] = paramWidth
         }else{
           this._opSubMenus = this._createSubMenus
           this._opSubMenuEnable = this._createSubMenuEnable
           params[0] = () => IQGameData.editStageSize
           params[1] = () => IQGameData.editStageStep
+
           paramWidth = 75
+          paramWidths[0] = paramWidth
+          paramWidths[1] = paramWidth
         }
         break
       }
@@ -1400,12 +1436,12 @@ export default class IQMenu extends DH2DObject {
       const itemY = this._subMenuSY + (i - 0.5) * this._subMenuDY
       let menuWidth = width
       if(params[i]){
-        menuWidth += this._subMenuParamPadding + paramWidth
+        menuWidth += this._subMenuParamPadding + paramWidths[i]
 
         this.setMenuItem(10 + i, {
           x: this._subMenuParamX - 10,
           y: itemY,
-          width: paramWidth,
+          width: paramWidths[i],
           height: this._subMenuDY,
           textAlign: 'left',
           font: '24px bold ' + IQGameData.fontFamily,
@@ -1510,7 +1546,6 @@ export default class IQMenu extends DH2DObject {
       // setup context
 
       if(!this._showSubMenu){
-        //if(IQGameData.device.isMobile || IQGameData.dvice.isTablet){
         if(!this._folding && !this._moveTopLeft && !this._expanding){
           // main menu
           const gradWidth = 40
@@ -1743,6 +1778,7 @@ export default class IQMenu extends DH2DObject {
     this.drawCursor(c)
   }
 
+  
   drawText(str, x, y) {
     const c = IQGameData.canvasField.get2DContext()
     c.fillText(str, x, y)

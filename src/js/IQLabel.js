@@ -306,10 +306,10 @@ export default class IQLabel extends DH2DObject {
           c.textBaseline = 'middle'
           c.font         = '16px bold ' + g.fontFamily
           c.fillStyle    = g.whiteColor
-          const sx = 60
+          const sx = 90
           const sy = 60
           const dy = 24
-          let tx = sx
+          const tx = sx
           let ty = sy
 
           if(diffTime <= g.endingStoryTitleTime){
@@ -379,7 +379,7 @@ export default class IQLabel extends DH2DObject {
           const dy = 30
           const sx = g.canvasWidth / 2
           const sy = g.canvasHeight + dy * 7
-          let tx = sx
+          const tx = sx
           let ty = sy - diffTime * g.endingStaffRollSpeed
 
           for(let i=0; i<g.endingStaffRollText.length; i++){

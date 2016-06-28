@@ -23,6 +23,7 @@ import IQLabel from './IQLabel'
 import IQMarker from './IQMarker'
 import IQMarkerPlate from './IQMarkerPlate'
 import IQMenu from './IQMenu'
+import IQNameEditor from './IQNameEditor'
 import IQPlayer from './IQPlayer'
 import IQQuestion from './IQQuestion'
 import IQRecorder from './IQRecorder'
@@ -261,8 +262,12 @@ function playerMoveCallback() {
     g.cameraTargetYGoal = pos.y
     g.cameraTargetZGoal = pos.z
 
-    if(g.testPlay && diffTime > g.gameOverTime1 + g.gameOverTime2){
-      quitTestPlay()
+    if(diffTime > g.gameOverTime1 + g.gameOverTime2){
+      if(g.testPlay){
+        quitTestPlay()
+      }else if(g.playSharedStage){
+        quitSharedStage()
+      }
     }
 
     if(diffTime < g.gameOverTime1){
@@ -352,7 +357,7 @@ function playerMoveCallback() {
 
       g.cameraXAngleGoal = -0.2
       g.cameraYAngleGoal = Math.PI * 1.4
-      g.cameraTargetXGoal = 0
+      g.cameraTargetXGoal = g.stageWidth * g.cubeSize * 0.25
       g.cameraTargetYGoal = 0
       g.cameraTargetZGoal = (diffTime / moveMaxTime) * (g.stageLength - 1) * g.cubeSize
     }else{
@@ -371,18 +376,19 @@ function playerMoveCallback() {
     g.cameraTargetZGoal = g.stageLength * g.cubeSize
   }else if(g.ending){
     switch(g.endingPhase){
-      case g.ENDING_PHASE_ADDSTAGE: {
+      case g.ENDING_PHASE_ADDSTAGE:
+      case g.ENDING_PHASE_WAIT_1: {
         // same as clear
         g.cameraXAngleGoal = -0.3
         g.cameraYAngleGoal = Math.PI * 1.10
         g.cameraTargetXGoal = 0
         g.cameraTargetYGoal = 0
-        g.cameraTargetZGoal = g.stageLength * g.cubeSize
+        g.cameraTargetZGoal = (g.stageLength + 1) * g.cubeSize
         break
       }
 
       case g.ENDING_PHASE_ESCAPE: 
-      case g.ENDING_PHASE_WAIT: {
+      case g.ENDING_PHASE_WAIT_2: {
         // look closer
         g.cameraXAngleGoal = g.endingCameraXAngle
         g.cameraYAngleGoal = g.endingCameraYAngle
@@ -424,7 +430,14 @@ function playerMoveCallback() {
         return
       }
 
-      case g.ENDING_PHASE_MIKU_STORY: {
+      case g.ENDING_PHASE_NAME: {
+        // nothing to do
+        return
+      }
+
+      case g.ENDING_PHASE_MIKU_STORY:
+      case g.ENDING_PHASE_RIN_STORY:
+      case g.ENDING_PHASE_LEN_STORY: {
         const distance = 20
         g.camera.lookat(0, 0, distance, 0, 0, 0, 0, 1, 0)
         break
@@ -661,8 +674,6 @@ function initGameData() {
 
   g.cookieManager = new CookieManager()
   g.cookieShelfLife = g.cookieSaveDays
-
-  const agent = g.device
 }
 
 function initCanvas() {
@@ -712,7 +723,11 @@ function waitMovieLoop() {
     g.canvasField.setFrameCallback(showOpeningLoop)
   }else if(g.openingMovieError){
     // maybe the video codec is not supported... just skip the video
-    IQSceneChanger.change(2.0, true, null, g.bgm_menu, showMenuLoop, changeToMenu)
+    if(g.playSharedStage){
+      IQSceneChanger.change(2.0, true, null, g.bgm_stagecall, null, startSharedStage)
+    }else{
+      IQSceneChanger.change(2.0, true, null, g.bgm_menu, showMenuLoop, changeToMenu)
+    }
   }
 
   g.keyListener.resetKeyNewState()
@@ -728,11 +743,19 @@ function showOpeningLoop() {
 
   // FIXME: separate label and controller
   if(!g.sceneChanging && (g.keyListener.getAnyKeyState() || g.controller.getAnyTouchState())){
-    IQSceneChanger.change(2.0, true, g.menu._opMovie, g.bgm_menu, showMenuLoop, changeToMenu)
+    if(g.playSharedStage){
+      IQSceneChanger.change(2.0, true, null, g.bgm_stagecall, null, startSharedStage)
+    }else{
+      IQSceneChanger.change(2.0, true, g.menu._opMovie, g.bgm_menu, showMenuLoop, changeToMenu)
+    }
   }
   if(g.openingMovieError){
-    // maybe the video codec is not supported... just skip the video
-    IQSceneChanger.change(2.0, true, null, g.bgm_menu, showMenuLoop, changeToMenu)
+    // maybe the video codec is not supported... just skip the video 
+    if(g.playSharedStage){
+      IQSceneChanger.change(2.0, true, null, g.bgm_stagecall, null, startSharedStage)
+    }else{
+      IQSceneChanger.change(2.0, true, null, g.bgm_menu, showMenuLoop, changeToMenu)
+    }
   }
   g.keyListener.resetKeyNewState()
   resetTouchState()
@@ -757,6 +780,7 @@ function showMenu() {
 
   g.menu = new IQMenu('opening')
   g.canvasField.addObject(g.menu)
+  updateStageList()
 
   if(g.device.isMobile || g.device.isTablet){
     // iPhone and iPad can't play the movie automatically... so it has to wait for a touch event
@@ -1125,10 +1149,55 @@ function sendScore() {
   }
 }
 
+function checkNewCharacter() {
+  switch(g.character){
+    case 'Miku': {
+      if(!g.characterListEnable[1] && g.getNewCharacterIQThreshold[1] <= g.iqPoint){
+        // get Rin
+        g.characterListEnable[1] = true
+        g.getNewCharacter = 'Rin'
+      }
+      break
+    }
+
+    case 'Rin': {
+      if(!g.characterListEnable[2] && g.getNewCharacterIQThreshold[2] <= g.iqPoint){
+        // get Len
+        g.characterListEnable[2] = true
+        g.getNewCharacter = 'Len'
+      }
+      break
+    }
+
+    case 'Len': {
+      // nothing to do
+      break
+    }
+    
+    default: {
+      console.error('checkNewCharacter: unknown character: ' + g.character)
+    }
+  }
+
+  if(!g.extraPlayable && g.getExtraStageIQThreshold <= g.iqPoint){
+    g.getExtraStage = true
+  }
+
+  // save data to cookie
+  setStageToCookie()
+  setPlayableCharacterToCookie()
+}
+
 function loadCookieOption() {
   const IQLv = g.cookieManager.getCookie(g.cookieOptionLevel)
   if(!IQLv)
     return false
+
+  // player name setting
+  g.playerName = g.cookieManager.getCookie(g.cookieOptionPlayer)
+  if(g.playerName === null){
+    g.playerName = ''
+  }
 
   // level setting
   g.level       = IQLv
@@ -1164,6 +1233,7 @@ function loadCookieOption() {
 }
 
 function saveCookieOption() {
+  g.cookieManager.setCookie(g.cookieOptionPlayer,      g.playerName)
   g.cookieManager.setCookie(g.cookieOptionLevel,       g.level)
   g.cookieManager.setCookie(g.cookieOptionCharacter,   g.character)
   g.cookieManager.setCookie(g.cookieOptionSoundVolume, g.soundVolume)
@@ -1182,6 +1252,8 @@ function saveCookieOption() {
 
 function setStageToCookie() {
   g.cookieManager.setCookie(g.cookieStage, g.selectableMaxStage)
+
+  setPlayableCharacterToCookie()
 }
 
 function getStageFromCookie() {
@@ -1195,7 +1267,42 @@ function getStageFromCookie() {
     g.selectedStage = 1
   }
 
-  updateStageList()
+  if(g.debug){
+    // for debug
+    g.selectableMaxStage = 10
+    g.selectedStage = 9
+  }
+  //updateStageList() ... do it later
+
+  getPlayableCharacterFromCookie()
+}
+
+function setPlayableCharacterToCookie() {
+  let data = ''
+  g.characterListEnable.forEach((playable) => {
+    if(playable){
+      data += 'T'
+    }else{
+      data += 'F'
+    }
+  })
+  g.cookieManager.setCookie(g.cookieOptionPlayableCharacter, data)
+}
+
+function getPlayableCharacterFromCookie() {
+  const data = g.cookieManager.getCookie(g.cookieOptionPlayableCharacter)
+  if(data === null){
+    // there's no data, so nothing to change
+    return
+  }
+
+  for(let i=0; i<data.length; i++){
+    if(data[i] === 'T'){
+      g.characterListEnable[i] = true
+    }else{
+      g.characterListEnable[i] = false
+    }
+  }
 }
 
 function updateStageList() {
@@ -1206,6 +1313,7 @@ function updateStageList() {
     maxStage = g.stageList.length
 
     // enable 'EXTRA'
+    g.extraPlayable = true
     g.menu._opMenuEnable[6] = true
   }
 
@@ -1272,6 +1380,9 @@ function resetValues(stage, remainScores) {
   g.missed = false
   g.speedUp = false
   g.speedUpByMiss = false
+
+  g.getNewCharacter = null
+  g.getExtraStage = false
 
   g.subStage = 1
   g.subSubStage = 1
@@ -1498,6 +1609,99 @@ function changeToMenu() {
   start()
 }
 
+function startSharedStage() {
+  stop()
+  g.menu.moviePlayStop()
+  removeAllObjects()
+  setup()
+}
+
+function createSharedStageURL() {
+  let character = 'Miku'
+
+  let stageName = 'SHARED STAGE'
+  if(g.playerName.length > 0){
+    if(g.playerName[g.playerName.length-1] === 'S'){
+      stageName = `${g.playerName}' STAGE`
+    }else{
+      stageName = `${g.playerName}'S STAGE`
+    }
+  }
+
+  const sizeIndex = g.stageSizeList.indexOf(g.editStageSize)
+  const stageSize = g.stageSizeValues[sizeIndex]
+  let stageWidth = stageSize[0]
+  let stageLength = 30 // FIXME: make it dynamic
+  let baseStep = g.editStageStep
+  let questionLength = stageSize[1]
+
+  let question = ''
+  for(let y=0; y<stageSize[1]; y++){
+    for(let x=0; x<stageSize[0]; x++){
+      question += g.editStageData[x][y]
+    }
+  }
+
+  const queryMap = new Map()
+  queryMap.set(g.sharedStageParamCharacter, character)
+  queryMap.set(g.sharedStageParamStageName, stageName)
+  queryMap.set(g.sharedStageParamStageWidth, stageWidth)
+  queryMap.set(g.sharedStageParamStageLength, stageLength)
+  queryMap.set(g.sharedStageParamQuestionLength, questionLength)
+  queryMap.set(g.sharedStageParamQuestion, question)
+  queryMap.set(g.sharedStageParamBaseStep, baseStep)
+
+  const params = []
+  queryMap.forEach((value, key) => {
+    params.push(encodeURIComponent(key) + "=" + encodeURIComponent(value))
+  })
+  const sharedURL = g.shareURL + '?' + g.sharedStageParamFlag + '&' + params.join('&')
+
+  return sharedURL
+}
+
+function createSharedStage() {
+  let character = 'Miku'
+  let stageName = 'SHARED STAGE'
+  let stageWidth = 4
+  let stageLength = 30
+  let questionLength = 2
+  let question = 'ffffffff'
+  let baseStep = 1
+
+  if(g.query.has(g.sharedStageParamCharacter)){
+    character = g.query.get(g.sharedStageParamCharacter)
+  }
+  if(g.query.has(g.sharedStageParamStageName)){
+    stageName = g.query.get(g.sharedStageParamStageName)
+  }
+  if(g.query.has(g.sharedStageParamStageWidth)){
+    stageWidth = g.query.get(g.sharedStageParamStageWidth)
+  }
+  if(g.query.has(g.sharedStageParamStageLength)){
+    stageLength = g.query.get(g.sharedStageParamStageLength)
+  }
+  if(g.query.has(g.sharedStageParamQuestionLength)){
+    questionLength = g.query.get(g.sharedStageParamQuestionLength)
+  }
+  if(g.query.has(g.sharedStageParamQuestion)){
+    question = g.query.get(g.sharedStageParamQuestion)
+  }
+  if(g.query.has(g.sharedStageParamBaseStep)){
+    baseStep = g.query.get(g.sharedStageParamBaseStep)
+  }
+
+  let stageData = stageName + '\n' // stage name
+  stageData += stageWidth + ',' + stageLength + '\n' // stage size
+  stageData += '1\n' // number of sub stages
+  stageData += '1\n' // number of sub sub stages
+  stageData += questionLength + '\n' // question length
+  stageData += '1\n' // number of questions
+  stageData += baseStep + ',' + question + '\n'
+
+  return stageData
+}
+
 function incrementParam(param, paramList, enableList, stopAtEdge = false) {
   let enabled = enableList
   if(!enableList){
@@ -1556,17 +1760,34 @@ function setSubMenu() {
   switch(opMenuName){
     case 'OPTION': {
       // FIXME: get menu item by menu name
-      const levelMenu = g.menu._menuItem[0]
+      const playerNameMenu = g.menu._menuItem[0]
+      const playerNameParam = g.menu._menuItem[10]
+      playerNameMenu.onDecision = () => {
+        const nameBoxX = playerNameParam.x
+        const nameBoxY = playerNameParam.y
+        const keyboardY = 200
+        g.keyListener.resetKeyNewState()
+        g.nameEditor = new IQNameEditor(nameBoxX, nameBoxY, null, keyboardY)
+        g.nameEditor.setEndEditCallback(() => {
+          IQGameData.canvasField.removeObject(g.nameEditor)
+          IQGameData.optionNameEdit = false
+        })
+        g.canvasField.addObject(g.nameEditor)
+        g.optionNameEdit = true
+      }
+      playerNameMenu.onTouch = playerNameMenu.onDecision
+
+      const levelMenu = g.menu._menuItem[1]
       levelMenu.onLeft  = () => { g.level = decrementParam(g.level, g.levelList, g.levelListEnable) }
       levelMenu.onRight = () => { g.level = incrementParam(g.level, g.levelList, g.levelListEnable) }
       levelMenu.onTouch = levelMenu.onRight
 
-      const stageMenu = g.menu._menuItem[1]
+      const stageMenu = g.menu._menuItem[2]
       stageMenu.onLeft  = () => { g.selectedStage = decrementParam(g.selectedStage, g.stageList, g.stageListEnable) }
       stageMenu.onRight = () => { g.selectedStage = incrementParam(g.selectedStage, g.stageList, g.stageListEnable) }
       stageMenu.onTouch = stageMenu.onRight
 
-      const charaMenu = g.menu._menuItem[2]
+      const charaMenu = g.menu._menuItem[3]
       charaMenu.onLeft  = () => {
         g.character = decrementParam(g.character, g.characterList, g.characterListEnable)
         g.menu.setupMenuPlayerObj()
@@ -1577,7 +1798,7 @@ function setSubMenu() {
       }
       charaMenu.onTouch = charaMenu.onRight
 
-      const volumeMenu = g.menu._menuItem[3]
+      const volumeMenu = g.menu._menuItem[4]
       volumeMenu.onLeft = () => {
         g.soundVolumeValue = decrementParam(g.soundVolumeValue, g.soundVolumeList, g.soundVolumeListEnable, true)
         g.soundVolume = g.soundVolumeValue * 0.01
@@ -1594,7 +1815,7 @@ function setSubMenu() {
         setSoundVolume()
       }
 
-      const langMenu = g.menu._menuItem[4]
+      const langMenu = g.menu._menuItem[5]
       langMenu.onLeft  = () => { g.language = decrementParam(g.language, g.languageList, g.languageListEnable) }
       langMenu.onRight = () => { g.language = incrementParam(g.language, g.languageList, g.languageListEnable) }
       langMenu.onTouch = langMenu.onRight
@@ -1804,8 +2025,11 @@ function setSubMenu() {
         }
         playMenu.onTouch = playMenu.onDecision
 
-        // TODO: implementation
-        const saveMenu = g.menu._menuItem[4]
+        const shareMenu = g.menu._menuItem[4]
+        shareMenu.onDecision = () => {
+          const sharedURL = createSharedStageURL()
+          alert('URL for this stage:\n' + sharedURL)
+        }
 
         const returnMenu = g.menu._menuItem[6]
         returnMenu.onDecision = () => {
@@ -2347,7 +2571,9 @@ function showSubMenuLoop() {
   const menuName = g.menu.getOptionName()
   const subName = g.menu.getSubOptionName()
 
-  if(!g.sceneChanging && !g.menu._moving && g.menu._showSubMenuReady && !g.editing){
+  if(!g.sceneChanging && !g.menu._moving
+     && g.menu._showSubMenuReady && !g.editing
+     && !g.optionNameEdit){
     // TODO: move to setSubMenu function
     let c = g.menu._subCursor
     if(g.keyListener.getKeyState(g.keyUp)){
@@ -2527,7 +2753,7 @@ function showSubMenuLoop() {
     g.editStart = false
   }
 
-  if(g.device.isMobile || g.device.isTablet){
+  if(menuName === 'CREATE' && (g.device.isMobile || g.device.isTablet)){
     // edit for mobile
     const sizeIndex = g.stageSizeList.indexOf(g.editStageSize)
     const stageSize = g.stageSizeValues[sizeIndex]
@@ -2564,7 +2790,10 @@ function showSubMenuLoop() {
         g.editStageData[startX][startY] = newBlockType
       }
     })
+  }
 
+  if(g.optionNameEdit){
+    g.nameEditor.handleInput()
   }
 
   if(g.menu._moving){
@@ -3137,6 +3366,15 @@ function setup(extra = false) {
       // just resolve
       resolve()
     })
+  }else if(g.playSharedStage){
+    g.stageMax = 1
+    g.stage = 1
+    g.stageFiles = ['SharedStage'] // just set dummy string
+
+    loadDataPromise = new Promise((resolve) => {
+      // just resolve
+      resolve()
+    })
   }else if(g.playExtra){
     loadDataPromise = loadStageFilesData(g.extraStageDataFile)
   }else{
@@ -3149,6 +3387,10 @@ function setup(extra = false) {
     let character = g.character
     if(g.rulePlay){
       character = 'Miku'
+    }else if(g.playSharedStage){
+      if(g.query.has(g.sharedStageParamCharacter)){
+        character = g.query.get(g.sharedStageParamCharacter)
+      }
     }
     g.playerObj.setModel(g.models.get(character))
     g.characterSpeed = g.characterData.get(character).get('characterSpeed')
@@ -3211,8 +3453,10 @@ function setup(extra = false) {
     g.playerObj.addMotionCallback(playSECallback_step, g.se_step_timing_2, 'running')
 
     let stageNo = g.selectedStage
-    if(g.testPlay || g.rulePlay){
+    if(g.testPlay || g.rulePlay || g.playSharedStage){
       stageNo = null
+    }else if(g.playExtra){
+      stageNo = 1
     }
 
     resetValues(stageNo)
@@ -3228,7 +3472,13 @@ function setup(extra = false) {
  * @returns {void}
  */
 function quitTestPlay() {
+  if(g.quittingTestPlay){
+    return
+  }
+  g.quittingTestPlay = true
+
   IQSceneChanger.change(3.0, true, g.bgm_stage, g.bgm_menu, showSubMenuLoop, () => {
+    g.quittingTestPlay = false
     g.pausing = false
 
     const createCursor = 4
@@ -3260,6 +3510,72 @@ function quitTestPlay() {
 
     g.testPlay = false
     g.canvasField.moveEnable = true
+  }, true)
+}
+
+/**
+ * go to the main menu from playing a shared stage
+ * @access public
+ * @returns {void}
+ */
+function quitSharedStage() {
+  if(g.quittingSharedStage){
+    return
+  }
+  g.quittingSharedStage = true
+
+  IQSceneChanger.change(3.0, true, g.bgm_stage, g.bgm_menu, showMenuLoop, () => {
+    stop()
+    g.quittingSharedStage = false
+    g.pausing = false
+
+    const startCursor = 0 // 'START'
+    removeAllObjects()
+    g.canvasField.addObject(g.menu)
+    g.camera.lookat(
+      g.menu._opPosX[startCursor], g.menu._opPosY[startCursor], -135,
+      g.menu._opPosX[startCursor], g.menu._opPosY[startCursor], 0,
+    0, -1, 0)
+
+    g.menu.setMenu('top')
+    g.menu._cursor = startCursor
+
+    g.camera.distance = 20.0
+    g.menu.addTilesToCanvas()
+    g.menu.initMenuParams()
+    g.canvasField.addObject(g.menu._opTileObj, true)
+
+    // set first menu
+    const cursor = 0
+    g.menu._srcCursor = cursor
+    g.menu._srcX = g.menu._opPosX[cursor]
+    g.menu._srcY = g.menu._opPosY[cursor]
+    g.menu._dstCursor = cursor
+    g.menu._dstX = g.menu._opPosX[cursor]
+    g.menu._dstY = g.menu._opPosY[cursor]
+    g.menu._startTime = new Date(g.nowTime.getTime())
+    g.menu._moving = true
+    g.menu._cursor = cursor
+
+    g.menu._opStayTiles.length = 0
+    g.menu._opUpTiles.length = 0
+    g.menu._opDownTiles.length = 0
+    const srcTiles = g.menu.getMenuTiles(g.menu._srcCursor)
+    srcTiles.forEach( (tile) => {
+      g.menu._opUpTiles.push(tile)
+    })
+
+    // set light
+    g.light.setPosition(-50, 0, -100)
+    g.light.setAmbient(0.6, 0.6, 0.6, 0.0)
+    g.light.setDiffuse(0.7, 0.7, 0.7, 0.0)
+    g.light.setSpecular(0.9, 0.9, 0.9, 0.0)
+    g.renderer.setLight(g.light)
+
+    g.playSharedStage = false
+    g.canvasField.moveEnable = true
+
+    start()
   }, true)
 }
 
@@ -3681,7 +3997,7 @@ function loadQuestionFile(fileName) {
     // build test play data
     const sizeIndex = g.stageSizeList.indexOf(g.editStageSize)
     const stageSize = g.stageSizeValues[sizeIndex]
-    const stageLength = 30
+    const stageLength = 30 // FIXME: make it dynamic
     const baseStep = g.editStageStep
     promise = new Promise((resolve) => {
       let testData = 'Test Play\n' // stage name
@@ -3703,6 +4019,14 @@ function loadQuestionFile(fileName) {
       resolve(testData)
 
       return testData
+    })
+  }else if(g.playSharedStage){
+    promise = new Promise((resolve) => {
+      const sharedData = createSharedStage()
+
+      resolve(sharedData)
+
+      return sharedData
     })
   }else{
     promise = AjaxRequest.get(fileName, {
@@ -4303,6 +4627,9 @@ function perfectProcess() {
     if(g.testPlay){
       // go back to edit
       quitTestPlay()
+    }else if(g.playSharedStage){
+      // go to main menu
+      quitSharedStage()
     }else if(g.subSubStage === g.subSubStageMax){
       subStageClear()
     }else{
@@ -4356,7 +4683,7 @@ function gameOver() {
     return
 
   let music = g.bgm_gameover
-  if(g.rulePlay || g.testPlay){
+  if(g.rulePlay || g.testPlay || g.playSharedStage){
     music = null
   }
   IQSceneChanger.change(0, false, g.bgm_stage, music, null, null)
@@ -4379,6 +4706,7 @@ function setIQPoint() {
     g.iqPoint = 0
   }
   sendScore()
+  checkNewCharacter()
 }
 
 function breakLineProcess() {
@@ -4567,6 +4895,9 @@ function subSubStageClear() {
     if(g.testPlay){
       // go back to edit
       quitTestPlay()
+    }else if(g.playSharedStage){
+      // go to main menu
+      quitSharedStage()
     }
 
     g.iqPoint += 1
@@ -4612,6 +4943,8 @@ function addOneLineToStage() {
 function subStageClear() {
   if(g.rulePlay){
     // do not create sub stage
+  }else if(g.playSharedStage){
+    // do nothing
   }else if(g.subStage === g.subStageMax){
     stageClear()
   }else{
@@ -4709,6 +5042,14 @@ function clearProcess() {
         g.endingStartTime = new Date(g.nowTime.getTime())
         g.endingPhaseStartTime = new Date(g.nowTime.getTime())
         g.endingPhase = g.ENDING_PHASE_ADDSTAGE
+
+        // setup stage
+        g.canvasField.addObject(g.stageObj)
+        g.canvasField.addObject(g.stageObj._floor, false, true)
+        g.stageLines.forEach((line) => {
+          g.canvasField.removeObject(line)
+        })
+        g.playerObj._position.z += g.cubeSize
       })
 
       g.stageClearSceneChange = true
@@ -4788,7 +5129,7 @@ function checkControllable() {
 function loadEndingStory() {
   let textFile = null
   let audioFile = null
-  let movieFile = null
+  //let movieFile = null
 
   switch(g.character){
     case 'Miku': {
@@ -4895,11 +5236,7 @@ function endingLoop(elapsedTime) {
   const force = g.playerObj._force
   force.x = force.y = force.z = 0
 
-  //const maxTime = g.endingTotalTime
-  //const sumDiffTime = g.getElapsedTime(g.endingStartTime)
   const diffTime = g.getElapsedTime(g.endingPhaseStartTime)
-
-  //console.log('endingLoop: phase: ' + g.endingPhase + ', diffTime: ' + diffTime)
 
   switch(g.endingPhase){
     case g.ENDING_PHASE_ADDSTAGE: {
@@ -4915,21 +5252,16 @@ function endingLoop(elapsedTime) {
         
         if(g.stageLength >= g.endingMinStageLength){
           // setup stage
-          g.canvasField.addObject(g.stageObj)
+          //g.canvasField.addObject(g.stageObj)
           //g.canvasField.addObject(g.stageObj._floor)
-          g.canvasField.addObject(g.stageObj._floor, false, true)
-          g.stageLines.forEach((line) => {
-            g.canvasField.removeObject(line)
-          })
-          g.playerObj._position.z += g.cubeSize
-
-          // start running
-          g.playerObj.setMotionWithBlending(g.running, 10)
-          g.playerObj.animationTime = 0
-          g.playerObj._state = 'running'
+          //g.canvasField.addObject(g.stageObj._floor, false, true)
+          //g.stageLines.forEach((line) => {
+          //  g.canvasField.removeObject(line)
+          //})
+          //g.playerObj._position.z += g.cubeSize
 
           // go to the next phase
-          g.endingPhase = g.ENDING_PHASE_ESCAPE
+          g.endingPhase = g.ENDING_PHASE_WAIT_1
           g.endingPhaseStartTime = new Date(g.nowTime.getTime())
         }else{
           addOneLineToStage()
@@ -4947,13 +5279,28 @@ function endingLoop(elapsedTime) {
       break
     }
 
+    case g.ENDING_PHASE_WAIT_1: {
+      // wait few seconds
+      if(diffTime > g.endingStageBreakTime){
+        // start running
+        g.stageObj.breakOneLine()
+        playSound(g.se_break)
+        g.endingPhaseStartTime = new Date(g.nowTime.getTime())
+
+        g.playerObj.setMotionWithBlending(g.running, 10)
+        g.playerObj.animationTime = 0
+        g.playerObj._state = 'running'
+        g.endingPhase = g.ENDING_PHASE_ESCAPE
+      }
+      break
+    }
+
     case g.ENDING_PHASE_ESCAPE: {
       if(diffTime > g.endingStageBreakTime && g.playerObj._position.z < g.maxZ - g.cubeSize){
         // break stage
         if(!g.breaking){
           g.stageObj.breakOneLine()
           playSound(g.se_break)
-          //g.endingPhaseStartTime.setMilliseconds(g.endingPhaseStartTime.getMilliseconds() + g.endingStageBreakTime)
           g.endingPhaseStartTime = new Date(g.nowTime.getTime())
         }
       }
@@ -4978,7 +5325,7 @@ function endingLoop(elapsedTime) {
         g.playerObj._direction = 0
 
         // go to the next phase
-        g.endingPhase = g.ENDING_PHASE_WAIT
+        g.endingPhase = g.ENDING_PHASE_WAIT_2
         g.endingPhaseStartTime = new Date(g.nowTime.getTime())
       }else{
         // go to the goal
@@ -4993,7 +5340,7 @@ function endingLoop(elapsedTime) {
       break
     }
 
-    case g.ENDING_PHASE_WAIT: {
+    case g.ENDING_PHASE_WAIT_2: {
       // wait the stage broken
       if(diffTime > g.endingStageBreakTime && !g.breaking){
         if(g.stageLength > g.endingSecondStageLength){
@@ -5065,24 +5412,32 @@ function endingLoop(elapsedTime) {
       g.playerObj._position.y = g.endingGoDownInitY - diffTime * g.endingGoDownSpeed
       g.endingCube._position.y = g.playerObj._position.y - g.cubeSize * 0.5
       if(!g.sceneChanging && diffTime > g.endingGoDownTime2){
-        // go to the next phase
-        // TODO: choose music
-        IQSceneChanger.change(2.0, true, null, g.bgm_ending, endingLoop, () => {
-          removeAllObjects()
-          
-          if(g.character === 'Miku'){
-            g.endingPhase = g.ENDING_PHASE_MIKU_STORY
-            g.canvasField.addObject(g.playerObj)
-          }else if(g.character === 'Rin'){
-            g.endingPhase = g.ENDING_PHASE_RIN_STORY
-            g.canvasField.addObject(g.plyaerObj)
-          }else if(g.character === 'Len'){
-            g.endingPhase = g.ENDING_PHASE_LEN_STORY
-            g.canvasField.addObject(g.plyaerObj)
-          }
-          g.canvasField.addObject(g.labelObj)
-          g.endingPhaseStartTime = new Date(g.nowTime.getTime())
-        })
+        if(g.playerName.length === 0){
+          // ask to enter player name
+          IQSceneChanger.change(2.0, true, null, null, enterNameLoop, () => {
+            removeAllObjects()
+
+            g.endingPhase = g.ENDING_PHASE_NAME
+
+            const nameBoxY = 50
+            const keyboardY = 200
+            g.nameEditor = new IQNameEditor(null, nameBoxY, null, keyboardY)
+            g.nameEditor.setEndEditCallback(() => {
+              if(g.playerName.length === 0){
+                // beep: you must have name
+                playSound(g.se_forbidden)
+              }else{
+                // save player's name to cookie
+                g.cookieManager.setCookie(g.cookieOptionPlayer, g.playerName)
+                IQSceneChanger.change(2.0, true, null, g.bgm_ending, endingLoop, startEndingStory)
+              }
+            })
+            g.canvasField.addObject(g.nameEditor)
+          })
+        }else{
+          // go to the next phase
+          IQSceneChanger.change(2.0, true, null, g.bgm_ending, endingLoop, startEndingStory)
+        }
       }
       break
     }
@@ -5145,23 +5500,37 @@ function endingLoop(elapsedTime) {
     }
   }
   
-  /*
-  if(diffTime > maxTime){
-    if(!g.sceneChanging && decisionKeyPushed()){
-      const srcBGM = null
-      IQSceneChanger.change(2.0, true, srcBGM, null, endingTweetLoop, () => {
-        removeAllObjects()
-        g.menu.setMenu('endtweet')
-        g.canvasField.addObject(g.menu)
-      })
-    }
-  }
-  */
-
   breakLineProcess()
 
   g.keyListener.resetKeyNewState()
   resetTouchState()
+}
+
+function enterNameLoop(elapsedTime) {
+  g.nowTime = new Date()
+  g.elapsedTime = elapsedTime * 1000.0
+
+  g.nameEditor.handleInput()
+
+  g.keyListener.resetKeyNewState()
+  resetTouchState()
+}
+
+function startEndingStory() {
+  removeAllObjects()
+            
+  if(g.character === 'Miku'){
+    g.endingPhase = g.ENDING_PHASE_MIKU_STORY
+    g.canvasField.addObject(g.playerObj)
+  }else if(g.character === 'Rin'){
+    g.endingPhase = g.ENDING_PHASE_RIN_STORY
+    g.canvasField.addObject(g.playerObj)
+  }else if(g.character === 'Len'){
+    g.endingPhase = g.ENDING_PHASE_LEN_STORY
+    g.canvasField.addObject(g.playerObj)
+  }
+  g.canvasField.addObject(g.labelObj)
+  g.endingPhaseStartTime = new Date(g.nowTime.getTime())
 }
 
 function setStaffRollText() {
@@ -5326,6 +5695,8 @@ function giveup() {
 
   if(g.testPlay){
     quitTestPlay()
+  }else if(g.playSharedStage){
+    quitSharedStage()
   }else{
     IQSceneChanger.change(2.0, true, null, g.bgm_menu, showMenuLoop, () => {
       g.pausing = false

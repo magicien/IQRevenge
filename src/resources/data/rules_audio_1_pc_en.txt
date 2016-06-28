@@ -2,7 +2,7 @@ audio;0;0;basic_rules_1_00_en
 pause;4313;5339
 audio;4813;3539;basic_rules_1_01_en;The concept of the game is to try to capture the cubes.
 pause;10968;6113
-audio;11468;3895;basic_rules_1_02_pc_en;The player can mark spot on the stage by pressing the Z key.
+audio;11468;3895;basic_rules_1_02_pc_en;The player can mark a spot on the stage by pressing the Z key.
 pause;20099;6547
 audio;20599;4477;basic_rules_1_03_pc_en;By pressing the Z key again, the player can deactivate the mark.
 pause;28046;9646

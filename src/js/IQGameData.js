@@ -28,11 +28,17 @@ class _IQGameData {
     this.deviceType = (this.device.isMobile || this.device.isTable) ? 'mb' : 'pc'
 
     /**
+     * query from URL
+     * @type {Map<string, string>}
+     */
+    this.query = this._parseQuery()
+
+    /**
      * flag for debugging
      * @type {boolean}
      */
     this.debug = false
-    if(window.location.search.indexOf('debug') >= 0){
+    if(this.query.has('debug')){
       this.debug = true
     }
 
@@ -220,6 +226,19 @@ class _IQGameData {
         ['characterSpeed', 250]
       ])]
     ])
+
+    /**
+     * @type {Array<int>}
+     */
+    this.getNewCharacterIQThreshold = [
+      0,
+      100,
+      200
+    ]
+    this.getNewCharacter = null
+
+    this.getExtraStageIQThreshold = 400
+    this.getExtraStage = false
 
     /**
      * Sound volume (0.0 - 1.0) for inner use
@@ -437,6 +456,9 @@ class _IQGameData {
     this.menuRightButtonX = this.canvasWidth - buttonWidth
     this.menuButtonColor = 'rgba(0, 0, 0, 0.7)'
 
+    // name editor
+    this.nameEditor = null
+
     // model
     this.models = new Map()
 
@@ -480,7 +502,7 @@ class _IQGameData {
     this.bgm_stage8_file = 'stage8'
     this.bgm_stage9_file = 'stage9'
     this.bgm_stageX_file = 'stage1'
-    this.bgm_edit_file = 'edit'
+    //this.bgm_edit_file = 'edit'
     this.bgm_ending_file = 'ending'
     this.bgm_staffroll_file = 'staffroll'
 
@@ -622,7 +644,7 @@ class _IQGameData {
     this.clearRotateTime = 1000
     this.clearLabelTime = 500
     this.clearLineMoveTime = 400
-    this.clearLineWaitTime = 2000
+    this.clearLineWaitTime = 5000
     this.endingWaitTime =        1000
     this.endingScoreRotateTime = 1000
     this.endingScoreWaitTime =   1500
@@ -683,7 +705,12 @@ class _IQGameData {
     this.bonusScore = 0
     this.oldBlockNo = 0
 
-    this.playerName = 'player'
+    this.playerName = ''
+    this.playerNameMaxLength = 8
+    this.editName = ''
+
+    // option
+    this.optionNameEdit = false
 
     // question data
     this.stageDataFile = './question/stage_data.txt'
@@ -693,8 +720,25 @@ class _IQGameData {
     this.questionUsed = null
 
     // extra stage data
+    this.extraPlayable = false
     this.playExtra = false
     this.extraStageDataFile = './question/extra_stage_data.txt'
+
+    // shared stage data
+    this.sharedStageParamFlag = 'shared'
+    this.sharedStageParamCharacter = 'c'
+    this.sharedStageParamStageName = 'n'
+    this.sharedStageParamStageWidth = 'w'
+    this.sharedStageParamStageLength = 'l'
+    this.sharedStageParamQuestionLength = 'ql'
+    this.sharedStageParamQuestion = 'q'
+    this.sharedStageParamBaseStep = 'b'
+
+    this.playSharedStage = false
+    if(this.query.has(this.sharedStageParamFlag)){
+      this.playSharedStage = true
+    }
+    this.quittingSharedStage = false
 
     // rule
     this.rulePlay = false
@@ -709,6 +753,7 @@ class _IQGameData {
     this.editStart = false
     this.editing = false
     this.testPlay = false
+    this.quittingTestPlay = false
 
     // game state
     this.loadingDivRemoved = false
@@ -742,6 +787,7 @@ class _IQGameData {
     this.speedUp = false
     this.speedUpByMiss = false
     this.speedUpRate = 10
+
 
     // point
     this.pointNormal =      100
@@ -812,8 +858,10 @@ class _IQGameData {
     this.cookieSaveDays = 35
     this.cookieScore = 'IQ'
     this.cookieStage = 'IQStage'
+    this.cookieOptionPlayer = 'IQPlayer'
     this.cookieOptionLevel = 'IQLv'
     this.cookieOptionCharacter = 'IQChar'
+    this.cookieOptionPlayableCharacter = 'IQPChar'
     this.cookieOptionSoundVolume = 'IQSndVol'
     this.cookieOptionLanguage = 'IQLang'
     this.cookieOptionKeyUp = 'IQKUp'
@@ -827,20 +875,22 @@ class _IQGameData {
     // ending
     this.endingPhase = 0
     this.ENDING_PHASE_ADDSTAGE = 0
-    this.ENDING_PHASE_ESCAPE = 1
-    this.ENDING_PHASE_WAIT = 2
-    this.ENDING_PHASE_DOWN_1 = 3
-    this.ENDING_PHASE_DOWN_2 = 4
-    this.ENDING_PHASE_MIKU_STORY = 11
-    this.ENDING_PHASE_RIN_STORY = 12
-    this.ENDING_PHASE_LEN_STORY = 13
+    this.ENDING_PHASE_WAIT_1 = 1
+    this.ENDING_PHASE_ESCAPE = 2
+    this.ENDING_PHASE_WAIT_2 = 3
+    this.ENDING_PHASE_DOWN_1 = 4
+    this.ENDING_PHASE_DOWN_2 = 5
+    this.ENDING_PHASE_NAME = 11
+    this.ENDING_PHASE_MIKU_STORY = 21
+    this.ENDING_PHASE_RIN_STORY = 31
+    this.ENDING_PHASE_LEN_STORY = 41
     this.ENDING_PHASE_STAFFROLL = 100
     // add stage
-    this.endingMinStageLength = 20
+    this.endingMinStageLength = 10
     this.endingStageAddTime = 1000
     // break stage
     this.endingStageBreakTime = 2000
-    this.endingSecondStageLength = 4
+    this.endingSecondStageLength = 5
     this.endingCube = null
     this.endingCameraXAngle = -0.15
     //this.endingCameraYAngle = Math.PI * 0.2
@@ -864,7 +914,7 @@ class _IQGameData {
     this.endingStoryTextSpeed = 55.0
     this.endingStoryLinePauseTime = 5
     this.endingStoryLineMoveTime = 5
-    this.endingStoryLinesPerPage = 9
+    this.endingStoryLinesPerPage = 8
     this.endingStoryEndWaitTime = 3000
     this.endingStoryTitle = ''
     this.endingStoryText = []
@@ -880,7 +930,7 @@ class _IQGameData {
     this.endingStoryVoiceLen = 'story_len'
 
     // staff roll
-    this.endingStaffRollTime = 163000
+    this.endingStaffRollTime = 160000
     this.endingStaffRollSpeed = 0.03
     this.endingStaffRollFile = 'data/staff_roll.txt'
     this.endingStaffRollText = []
@@ -913,6 +963,26 @@ class _IQGameData {
         || u.indexOf('blackberry') !== -1
       )
     }
+  }
+
+  /**
+   * parse queries of URL
+   * @access private
+   * @returns {Map<string, string>} - query key/value
+   */
+  _parseQuery() {
+    const query = window.location.search.substring(1)
+    const queryMap = new Map()
+    const args = query.split('&')
+
+    args.forEach((arg) => {
+      const keyValue = arg.split('=')
+      const key = decodeURIComponent(keyValue[0])
+      const value = decodeURIComponent(keyValue[1])
+      queryMap.set(key, value)
+    })
+
+    return queryMap
   }
 
   /**
