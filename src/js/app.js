@@ -4,6 +4,7 @@ import {
   AjaxRequest,
   Bone,
   Camera,
+  DH3DObject,
   Light,
   MMDAnimator,
   ModelBank,
@@ -17,6 +18,7 @@ import CookieManager from '../../modules/CookieManager/cookiemanager'
 import IQCanvas from './IQCanvas'
 import IQCube from './IQCube'
 import IQEffectPlate from './IQEffectPlate'
+import IQFaceCube from './IQFaceCube'
 import IQGameData from './IQGameData'
 import IQKeyListener from './IQKeyListener'
 import IQLabel from './IQLabel'
@@ -29,6 +31,7 @@ import IQQuestion from './IQQuestion'
 import IQRecorder from './IQRecorder'
 import IQSceneChanger from './IQSceneChanger'
 import IQStage from './IQStage'
+import IQTimeExecuter from './IQTimeExecuter'
 
 const g = IQGameData
 
@@ -697,6 +700,7 @@ function initCanvas() {
 
   // cube
   IQCube.setup()
+  IQFaceCube.setup()
 
   // effect
   IQEffectPlate.setup()
@@ -854,7 +858,8 @@ function initModelAndMotion() {
     MotionBank.getMotion('vmd/rolling.vmd'),
     MotionBank.getMotion('vmd/down.vmd'),
     MotionBank.getMotion('vmd/standup.vmd'),
-    MotionBank.getMotion('vmd/falling.vmd')
+    MotionBank.getMotion('vmd/falling.vmd'),
+    MotionBank.getMotion('vmd/walking.vmd')
   ])
   .catch((error) => {
     console.error(`model and motion loading error: ${error}`)
@@ -866,6 +871,7 @@ function initModelAndMotion() {
     g.down      = result[5]
     g.standup   = result[6]
     g.falling   = result[7]
+    g.walking   = result[8]
   })
   .then(showMenu)
 }
@@ -1653,7 +1659,7 @@ function createSharedStageURL() {
 
   const params = []
   queryMap.forEach((value, key) => {
-    params.push(encodeURIComponent(key) + "=" + encodeURIComponent(value))
+    params.push(encodeURIComponent(key) + '=' + encodeURIComponent(value))
   })
   const sharedURL = g.shareURL + '?' + g.sharedStageParamFlag + '&' + params.join('&')
 
@@ -1661,7 +1667,7 @@ function createSharedStageURL() {
 }
 
 function createSharedStage() {
-  let character = 'Miku'
+  //let character = 'Miku'
   let stageName = 'SHARED STAGE'
   let stageWidth = 4
   let stageLength = 30
@@ -1669,9 +1675,9 @@ function createSharedStage() {
   let question = 'ffffffff'
   let baseStep = 1
 
-  if(g.query.has(g.sharedStageParamCharacter)){
-    character = g.query.get(g.sharedStageParamCharacter)
-  }
+  //if(g.query.has(g.sharedStageParamCharacter)){
+  //  character = g.query.get(g.sharedStageParamCharacter)
+  //}
   if(g.query.has(g.sharedStageParamStageName)){
     stageName = g.query.get(g.sharedStageParamStageName)
   }
@@ -2554,10 +2560,22 @@ function showMenuLoop() {
       }
     }
 
-    // make it enable to start from the final stage
     if(g.keyListener.getKeyNewState('U')){
+      // make it enable to start from the final stage
       g.selectableMaxStage = 10
       updateStageList()
+    }
+
+    if(g.keyListener.getKeyNewState('Y')){
+      // new character scene debug
+      g.getNewCharacter = 'Rin'
+
+      IQSceneChanger.change(2.0, true, g.bgm_menu, null, showNewCharacterLoop, setupNewCharacterFunctions)
+    }
+
+    if(g.keyListener.getKeyNewState('H')){
+      g.characterListEnable = [true, false, false]
+      setPlayableCharacterToCookie()
     }
   }
 
@@ -2569,7 +2587,7 @@ function showSubMenuLoop() {
   g.nowTime = new Date()
 
   const menuName = g.menu.getOptionName()
-  const subName = g.menu.getSubOptionName()
+  //const subName = g.menu.getSubOptionName()
 
   if(!g.sceneChanging && !g.menu._moving
      && g.menu._showSubMenuReady && !g.editing
@@ -2989,11 +3007,15 @@ function showIQLoop() {
   }else{
     const diffTime = g.getElapsedTime(g.gameOverFadeOutStartTime)
     if(diffTime > g.gameOverFadeOutTime){
-      g.continueFadeInStartTime = new Date(g.nowTime.getTime())
-      removeAllObjects()
-      g.menu.setMenu('continue')
-      g.canvasField.addObject(g.menu)
-      g.canvasField.setFrameCallback(showContinueLoop)
+      if(g.getNewCharacter){
+        IQSceneChanger.change(2.0, true, g.bgm_menu, null, showNewCharacterLoop, setupNewCharacterFunctions)
+      }else{
+        g.continueFadeInStartTime = new Date(g.nowTime.getTime())
+        removeAllObjects()
+        g.menu.setMenu('continue')
+        g.canvasField.addObject(g.menu)
+        g.canvasField.setFrameCallback(showContinueLoop)
+      }
     }
   }
   g.keyListener.resetKeyNewState()
@@ -3094,6 +3116,228 @@ function showContinueLoop() {
   g.keyListener.resetKeyNewState()
   resetTouchState()
 }
+
+function setupNewCharacterFunctions() {
+  removeAllObjects()
+
+  // prepare a new character
+  g.newCharacterObj = new DH3DObject()
+  g.newCharacterObj.setModel(g.models.get(g.getNewCharacter))
+  g.newCharacterObj.setMotion(g.standing)
+  g.newCharacterObj.setAnimationTime(0)
+  g.newCharacterObj.setState('standing')
+  g.newCharacterObj.setAnimator(g.animator)
+  g.newCharacterObj.setAnimating(true)
+  g.newCharacterObj.setLoop(true)
+  g.newCharacterObj.setRenderer(g.renderer)
+  g.newCharacterObj.setRotate(0, 1, 0, 0)
+  g.newCharacterObj.setAutoDirection(false)
+  g.newCharacterObj.setPosition(0, 0, 0)
+
+  // set step SE callback
+  g.newCharacterObj.clearMotionCallback()
+  g.newCharacterObj.addMotionCallback(playSECallback_step, g.se_step_walkTiming_1, 'walking')
+  g.newCharacterObj.addMotionCallback(playSECallback_step, g.se_step_walkTiming_2, 'walking')
+
+  // face cube
+  g.faceCube = new IQFaceCube()
+  g.canvasField.addObject(g.faceCube)
+  g.canvasField.addObject(g.faceCube._lidObj) // FIXME: do it in IQFaceCube
+  g.faceCube.setScale(g.cubeSize)
+  g.faceCube.setPosition(0, 0, 0)
+
+  // set camera
+  g.camera.lookat(-30, 50, -100, 0, 0, 0, 0, 1, 0)
+  g.camera.perspective(45.0, g.canvasWidth / g.canvasHeight, g.cameraNear, g.cameraFar)
+
+  // set light
+  g.light.setPosition(-30, 50, -100)
+
+  // set timer
+  g.newCharacterStartTime = new Date(g.nowTime.getTime())
+  g.newCharacterBeforeTimeDiff = 0
+
+  const functions = [
+    {
+      begin: 0,
+      duration: g.newCharacterRotateTime,
+      func: (diffTime) => {
+        // rotate the box
+        const rot = diffTime / g.newCharacterTimePerRotate
+        const rotCount = Math.floor(rot)
+        const rotMod = rot - rotCount
+        const sqrt2 = Math.sqrt(2)
+        const r = g.cubeSize * sqrt2 * 0.5
+        const cubeZ = rotCount - g.newCharacterRotateMaxCount
+
+        g.camera.lookat(-30, 50, -100, 0, 0, 0, 0, 1, 0)
+        g.faceCube.setRotateAxis(g.xaxis, (g.newCharacterRotateMaxCount - rot - 1) * Math.PI * 0.5)
+        const cubePosY = r * Math.sin(Math.PI * (0.25 + rotMod * 0.5))
+        const cubePosZ = -(cubeZ - 0.5) * g.cubeSize - r * (sqrt2 - Math.cos(Math.PI * (0.25 + rotMod * 0.5)))
+        g.faceCube.setPosition(0, cubePosY, cubePosZ)
+
+        const rotateTurn1 = Math.floor(g.newCharacterBeforeTimeDiff / g.newCharacterTimeRotate)
+        const rotateTurn2 = rotCount
+        if(rotateTurn1 > 0 && rotateTurn1 < rotateTurn2){
+          playSound()
+        }
+        g.newCharacterBeforeTimeDiff = diffTime
+      }
+    },
+    {
+      once: true,
+      func: () => {
+        // prepare for opening lid
+        g.faceCube.setRotateAxis(g.xaxis, 3 * Math.PI * 0.5)
+        g.faceCube.setPosition(0, g.cubeSize / 2, 0)
+        g.newCharacterObj.setPosition(0, 0, 0)
+        g.canvasField.addObject(g.newCharacterObj)
+      }
+    },
+    {
+      // nothing to do. wait for opening the lid
+      duration: g.newCharacterWaitOpenTime
+    },
+    {
+      duration: g.newCharacterWaitOpenTime,
+      func: (diffTime, rate) => {
+        // open the lid
+        g.faceCube.setLidAngle(rate * Math.PI * 0.5)
+      }
+    },
+    {
+      once: true,
+      func: () => {
+        // complete opening the lid
+        g.faceCube.setLidAngle(Math.PI * 0.5)
+      }
+    },
+    {
+      // nothing to do
+      duration: g.newCharacterWaitWalkTime
+    },
+    {
+      once: true,
+      func: () => {
+        // prepare to walk
+        g.newCharacterObj.setState('walking')
+        g.newCharacterObj.setMotionWithBlending(g.walking, 5)
+        g.newCharacterObj.setAnimationTime(0)
+      }
+    },
+    {
+      duration: g.newCharacterWalkTime,
+      func: (diffTime, rate) => {
+        // walk
+        const walkingSpeed = 0.02
+        const z = -walkingSpeed * diffTime
+        g.newCharacterObj.setPosition(0, 0, z)
+      }
+    },
+    {
+      once: true,
+      func: () => {
+        // go to the next scene
+        removeAllObjects()
+        g.newCharacterObj = null
+
+        if(g.gameOver){
+          // gameover: show continue
+          IQSceneChanger.change(3.0, true, null, null, showContinueLoop, () => {
+            g.menu.setMenu('continue')
+            g.canvasField.addObject(g.menu)
+            g.continueFadeInStartTime = new Date(g.nowTime.getTime())
+          })
+        }else{
+          // ending: go back to the menu
+          IQSceneChanger.change(3.0, true, null, g.bgm_menu, showMenuLoop, () => {
+            // nothing to do
+          })
+        }
+      }
+    }
+  ]
+
+  g.showNewCharacterFunc = IQTimeExecuter.create(functions)
+}
+
+function showNewCharacterLoop() {
+  g.nowTime = new Date()
+  const diffTime = g.getElapsedTime(g.newCharacterStartTime)
+
+  g.showNewCharacterFunc(diffTime)
+
+  g.keyListener.resetKeyNewState()
+  resetTouchState()
+}
+
+/*
+function showNewCharacterLoop() {
+  g.nowTime = new Date()
+
+  const diffTime = g.getElapsedTime(g.newCharacterStartTime)
+
+  if(diffTime < t1){
+    // rotate
+    const rot = diffTime / g.newCharacterTimePerRotate
+    const rotMod = diffTime % g.newCharacterTimePerRotate
+    const rotCount = Math.floor(rot)
+    const sqrt2 = Math.sqrt(2)
+    const r = g.cubeSize * sqrt2 * 0.5
+    const cubeZ = rotCount - g.newCharacterRotateMaxCount
+
+    g.faceCube.setRotateAxis(g.xaxis, rot * Math.PI * 0.5)
+    const cubePosY = r * Math.sin(Math.PI * (0.25 + rotMod * 0.5))
+    const cubePosZ = (cubeZ - 0.5) * g.cubeSize + r * (sqrt2 - Math.cos(Math.PI * (0.25 + rotMod * 0.5)))
+    g.faceCube.setPosition(0, cubePosY, cubePosZ)
+
+    const rotateTurn1 = Math.floor(g.newCharacterBeforeTimeDiff / g.newCharacterTimeRotate)
+    const rotateTurn2 = rotCount
+    if(rotateTurn1 > 0 && rotateTurn1 < rotateTurn2){
+      playSound()
+    }
+  }else if(diffTime < t2){
+    // wait
+    if(g.newCharacterBeforeTimeDiff < t1){
+      g.faceCube.setRotateAxis(g.xaxis, 3 * Math.PI * 0.5)
+      g.faceCube.setPosition(0, 0, 0)
+    }
+  }else if(diffTime < t3){
+    // open the lid
+    if(g.newCharacterBeforeTimeDiff < t2){
+      // put character in the box
+      g.newCharacterObj.setPosition(0, 0, 0)
+    }
+    g.faceCube.setLidAngle((diffTime - t2) / g.newCharacterOpenTime * Math.PI * 0.5)
+  }else if(diffTime < t4){
+    // wait
+    if(g.newCharacterBeforeTimeDiff < t3){
+      g.faceCube.setLidAngle(Math.PI * 0.5)
+    }
+  }else if(diffTime < t5){
+    // walk
+    if(g.newCharacterBeforeTimeDiff < t4){
+      // start to walk
+      g.newCharacterObj.setMotionWithBlending(g.walk, 5)
+      g.newCharacterObj.setAnimationTime(0)
+    }
+    g.newCharacterObj.setPosition(0, 0, (diffTime - t4))
+  }else if(!g.sceneChanging){
+    // end
+    IQSceneChanger.change(3.0, true, null, g.bgm_menu, showMenuLoop, () => {
+      removeAllObjects()
+      g.newCharacterObj = null
+    })
+  }else{
+    // nothing to do
+  }
+
+  g.newCharacterBeforeTimeDiff = diffTime
+
+  g.keyListener.resetKeyNewState()
+  resetTouchState()
+}
+*/
 
 function loadRulesData() {
   const audioDataFile = g.rulesAudioDataURLPrefix + g.ruleNumber 
@@ -3472,10 +3716,9 @@ function setup(extra = false) {
  * @returns {void}
  */
 function quitTestPlay() {
-  if(g.quittingTestPlay){
+  if(g.sceneChanging){
     return
   }
-  g.quittingTestPlay = true
 
   IQSceneChanger.change(3.0, true, g.bgm_stage, g.bgm_menu, showSubMenuLoop, () => {
     g.quittingTestPlay = false
@@ -3519,10 +3762,9 @@ function quitTestPlay() {
  * @returns {void}
  */
 function quitSharedStage() {
-  if(g.quittingSharedStage){
+  if(g.sceneChanging){
     return
   }
-  g.quittingSharedStage = true
 
   IQSceneChanger.change(3.0, true, g.bgm_stage, g.bgm_menu, showMenuLoop, () => {
     stop()
@@ -5265,7 +5507,6 @@ function endingLoop(elapsedTime) {
           g.endingPhaseStartTime = new Date(g.nowTime.getTime())
         }else{
           addOneLineToStage()
-          console.log('addOneLineToStage: stageLength: ' + g.stageLength)
           g.endingPhaseStartTime.setMilliseconds(g.endingPhaseStartTime.getMilliseconds() + g.endingStageAddTime)
         }
       }else{
@@ -5345,7 +5586,6 @@ function endingLoop(elapsedTime) {
       if(diffTime > g.endingStageBreakTime && !g.breaking){
         if(g.stageLength > g.endingSecondStageLength){
           // break stage
-          console.log('PHASE_WAIT: 1')
           g.stageObj.shrinkStage(g.stageLength - g.endingSecondStageLength)
           //g.stageLength = g.endingSecondStageLength
           //g.stageObj.length = g.endingSecondStageLength
@@ -5357,24 +5597,19 @@ function endingLoop(elapsedTime) {
             g.breaking = false
           }
           */
-          console.log('stageLength: ' + g.stageLength)
           //g.endingPhaseStartTime.setMilliseconds(g.endingPhaseStartTime.getMilliseconds() + g.endingStageBreakTime)
           g.endingPhaseStartTime = new Date(g.nowTime.getTime())
         }else if(g.stageLength > 1){
           // break stage
-          console.log('PHASE_WAIT: 2')
           g.stageObj.breakOneLine()
           playSound(g.se_break)
-          console.log('stageLength: ' + g.stageLength)
           //g.endingPhaseStartTime.setMilliseconds(g.endingPhaseStartTime.getMilliseconds() + g.endingStageBreakTime)
           g.endingPhaseStartTime = new Date(g.nowTime.getTime())
         }else if(g.stageLength === 1){
           // break stage without the cube which the player is standing
-          console.log('PHASE_WAIT: 3')
           g.endingCube = g.stageObj.breakOneLine(false, true)
           playSound(g.se_break)
           g.canvasField.removeObject(g.stageObj)
-          console.log('stageLength: ' + g.stageLength)
 
           // get the last cube
           //g.endingCube = g.breakCubeArray[3]
@@ -5383,12 +5618,10 @@ function endingLoop(elapsedTime) {
           g.endingPhaseStartTime = new Date(g.nowTime.getTime())
         }else if(g.stageLength === 0){
           // go to the next phase
-          console.log('PHASE_WAIT: 4')
           g.endingPhase = g.ENDING_PHASE_DOWN_1
           g.endingPhaseStartTime = new Date(g.nowTime.getTime())
         }else{
           // something is wrong
-          console.log('PHASE_WAIT: 5')
           console.log('g.stageLength: ' + g.stageLength)
         }
       }
@@ -5472,24 +5705,29 @@ function endingLoop(elapsedTime) {
     case g.ENDING_PHASE_STAFFROLL: {
       if(diffTime > g.endingStaffRollTime){
         if(!g.sceneChanging){
-          IQSceneChanger.change(3.0, true, g.bgm_staffroll, g.bgm_menu, showMenuLoop, () => {
-            removeAllObjects()
-            g.canvasField.addObject(g.menu)
-            g.menu.setMenu('top')
-            g.camera.distance = 20.0
-            g.menu.addTilesToCanvas()
-            g.menu.initMenuParams()
-            g.canvasField.addObject(g.menu._opTileObj, true)
+          if(g.getNewCharacter){
+            // show a new character
+            IQSceneChanger.change(2.0, true, g.bgm_staffroll, null, showNewCharacterLoop, setupNewCharacterFunctions)
+          }else{
+            IQSceneChanger.change(3.0, true, g.bgm_staffroll, g.bgm_menu, showMenuLoop, () => {
+              removeAllObjects()
+              g.canvasField.addObject(g.menu)
+              g.menu.setMenu('top')
+              g.camera.distance = 20.0
+              g.menu.addTilesToCanvas()
+              g.menu.initMenuParams()
+              g.canvasField.addObject(g.menu._opTileObj, true)
 
-            // set light
-            g.light.setPosition(-50, 0, -100)
-            g.light.setAmbient(0.6, 0.6, 0.6, 0.0)
-            g.light.setDiffuse(0.7, 0.7, 0.7, 0.0)
-            g.light.setSpecular(0.9, 0.9, 0.9, 0.0)
-            g.renderer.setLight(g.light)
+              // set light
+              g.light.setPosition(-50, 0, -100)
+              g.light.setAmbient(0.6, 0.6, 0.6, 0.0)
+              g.light.setDiffuse(0.7, 0.7, 0.7, 0.0)
+              g.light.setSpecular(0.9, 0.9, 0.9, 0.0)
+              g.renderer.setLight(g.light)
 
-            subMenuReturn()
-          })
+              subMenuReturn()
+            })
+          }
         }
       }
       break

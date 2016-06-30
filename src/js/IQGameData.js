@@ -232,8 +232,8 @@ class _IQGameData {
      */
     this.getNewCharacterIQThreshold = [
       0,
-      100,
-      200
+      1, // for debug
+      2  // for debug
     ]
     this.getNewCharacter = null
 
@@ -469,6 +469,7 @@ class _IQGameData {
     this.down = null
     this.standup = null
     this.falling = null
+    this.walking = null
 
     // bgm
     this.support_mp3 = false
@@ -578,6 +579,9 @@ class _IQGameData {
 
     this.se_miku_step_timing_1 = 0.1
     this.se_miku_step_timing_2 = 0.5
+
+    this.se_step_walkTiming_1 = 0.1
+    this.se_step_walkTiming_2 = 0.5
 
     // character params
     this.characterSpeed = 0
@@ -738,7 +742,6 @@ class _IQGameData {
     if(this.query.has(this.sharedStageParamFlag)){
       this.playSharedStage = true
     }
-    this.quittingSharedStage = false
 
     // rule
     this.rulePlay = false
@@ -753,7 +756,23 @@ class _IQGameData {
     this.editStart = false
     this.editing = false
     this.testPlay = false
-    this.quittingTestPlay = false
+
+    // new character
+    this.newCharacterObj = null
+    this.newCharacterStartTime = null
+    this.newCharacterBeforeTimeDiff = 0
+    this.faceCube = null
+
+    this.newCharacterRotateCount = 0
+    this.newCharacterRotateMaxCount = 6
+    this.newCharacterTimePerRotate = 500
+
+    this.newCharacterRotateTime = this.newCharacterRotateMaxCount * this.newCharacterTimePerRotate
+    this.newCharacterWaitOpenTime = 2000
+    this.newCharacterOpenTime = 1000
+    this.newCharacterWaitWalkTime = 2000
+    this.newCharacterWalkTime = 5000
+
 
     // game state
     this.loadingDivRemoved = false
