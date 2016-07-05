@@ -123,6 +123,12 @@ export default class IQMenu extends DH2DObject {
     this._subScoreCharacter = ''
     this._subScoreLevel = ''
 
+    this._scoreLineX1 = 220
+    this._scoreLineX2 = 295
+    this._scoreLineX3 = 435
+    this._scoreLineX4 = 515
+    this._scoreShrinkRatio = 0.65
+
     // sub menu = OPTION
     this._optionSubMenus = [
       'PlayerName',
@@ -1641,9 +1647,7 @@ export default class IQMenu extends DH2DObject {
           if(opName === 'OPTION'){
             // nothing to do
           }else if(opName === 'SCORE'){
-            //const headX = sx
-            //const headY = sy
-
+            /*
             // draw score table
             const x1 = sx + 180
             const x2 = sx + 280
@@ -1690,6 +1694,83 @@ export default class IQMenu extends DH2DObject {
             c.fillText(IQGameData.worldWeeklyBest[scoreCharacter][scoreLevel],    x3 - xpad, y3)
             c.fillText(IQGameData.personalDailyBest[scoreCharacter][scoreLevel],  x4 - xpad, y2)
             c.fillText(IQGameData.personalWeeklyBest[scoreCharacter][scoreLevel], x4 - xpad, y3)
+            */
+            const xpad = 40
+            const lx = [
+              sx,
+              sx + this._scoreLineX1,
+              sx + this._scoreLineX2,
+              sx + this._scoreLineX3,
+              sx + this._scoreLineX4
+            ]
+            const ly = [
+              sy +  65, 
+              sy +  95,
+              sy + 125,
+              sy + 155
+            ]
+
+            const boxLeft = lx[0]
+            const boxRight = lx[lx.length-1]
+            const boxWidth = boxRight - boxLeft
+            const boxTop = ly[0]
+            const boxBottom = ly[ly.length-1]
+            const boxHeight = boxBottom - boxTop
+
+            // draw line
+            c.strokeStyle  = IQGameData.whiteColor
+            c.beginPath()
+            for(let lxi=0; lxi<lx.length; lxi++){
+              c.moveTo(lx[lxi], boxTop)
+              c.lineTo(lx[lxi], boxBottom)
+            }
+            for(let lyi=0; lyi<ly.length; lyi++){
+              c.moveTo(boxLeft, ly[lyi])
+              c.lineTo(boxRight, ly[lyi])
+            }
+            c.stroke()
+
+            // string
+            c.font = '24px bold ' + IQGameData.fontFamily
+
+            //const scoreCharacter = this._subScoreCharacter
+            //const scoreLevel = this._subScoreLevel
+            const worldData = IQGameData.worldBest[this._subScoreCharacter][this._subScoreLevel]
+            const personalData = IQGameData.personalBest[this._subScoreCharacter][this._subScoreLevel]
+
+            // header
+            c.textAlign = 'center'
+            c.fillText('Name',    (lx[0] + lx[1]) / 2, ly[1] - 15)
+            c.fillText('I.Q',     (lx[1] + lx[2]) / 2, ly[1] - 15)
+            c.fillText('SCORE',   (lx[2] + lx[3]) / 2, ly[1] - 15)
+
+            c.save()
+            c.transform(this._scoreShrinkRatio, 0, 0, 1, (lx[3] + lx[4]) / 2, ly[1] - 15)
+            c.fillText('PERFECT', 0, 0)
+            c.restore()
+
+            // world record
+            c.textAlign = 'left'
+            c.fillText(worldData.name, lx[0] + 15, ly[2] - 15)
+
+            c.textAlign = 'right'
+            c.fillText(worldData.iq, lx[2] - 15, ly[2] - 15)
+            c.fillText(worldData.score, lx[3] - 15, ly[2] - 15)
+            c.fillText(worldData.perfect, lx[4] - 15, ly[2] - 15)
+
+            // personal record
+            c.textAlign = 'left'
+            c.fillText(personalData.name, lx[0] + 15, ly[3] - 15)
+
+            c.textAlign = 'right'
+            c.fillText(personalData.iq, lx[2] - 15, ly[3] - 15)
+            c.fillText(personalData.score, lx[3] - 15, ly[3] - 15)
+            c.fillText(personalData.perfect, lx[4] - 15, ly[3] - 15)
+
+            //c.fillText(IQGameData.worldDailyBest[scoreCharacter][scoreLevel],     lx[2] - xpad, ly[2] - 15)
+            //c.fillText(IQGameData.worldWeeklyBest[scoreCharacter][scoreLevel],    lx[2] - xpad, ly[3] - 15)
+            //c.fillText(IQGameData.personalDailyBest[scoreCharacter][scoreLevel],  lx[3] - xpad, ly[2] - 15)
+            //c.fillText(IQGameData.personalWeeklyBest[scoreCharacter][scoreLevel], lx[3] - xpad, ly[3] - 15)
 
             c.textAlign    = 'left'
           }else if(opName === 'RULES'){

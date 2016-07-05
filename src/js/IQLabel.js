@@ -393,7 +393,7 @@ export default class IQLabel extends DH2DObject {
           }
 
           // for debug
-          c.fillText(diffTime, 300, 30)
+          //c.fillText(diffTime, 300, 30)
           
           break
         }

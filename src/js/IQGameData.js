@@ -322,10 +322,14 @@ class _IQGameData {
 
     // best score
     this.scoreDataURL = './data/score.txt'
+    /*
     this.worldDailyBest = 0
     this.worldWeeklyBest = 0
     this.personalDailyBest = 0
     this.personalWeeklyBest = 0
+    */
+    this.worldBest = {}
+    this.personalBest = {}
 
     // rules
     this.rulesAudioDataURLPrefix = './data/rules_audio_'

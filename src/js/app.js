@@ -1000,10 +1000,13 @@ function getCookieIQ() {
 }
 
 function setIQtoCookie(iq) {
-  let scoreObj = getCookieIQ()
-  const daySeconds = 24*60*60*1000
-  const today = Math.floor((new Date()) / daySeconds)
+  //let scoreObj = getCookieIQ()
+  //const daySeconds = 24*60*60*1000
+  //const today = Math.floor((new Date()) / daySeconds)
+  updatePersonalBestIQ()
+  const scoreObj = g.personalBest
 
+  /*
   if(!scoreObj || scoreObj.date > today || scoreObj.date <= today - g.cookieSaveDays){
     // create cookieObj
     scoreObj = new Object()
@@ -1048,6 +1051,19 @@ function setIQtoCookie(iq) {
   if(iq > scoreObj[g.character][g.level][0]){
     scoreObj[g.character][g.level][0] = iq
   }
+  */
+
+  // check new record
+  if(iq > scoreObj[g.character][g.level].iq){
+    // update record
+    scoreObj[g.character][g.level] = {
+      "name": g.playerName,
+      "iq": g.iqPoint,
+      "score": g.score,
+      "perfect": g.perfectCount
+    }
+  }
+
 
   const value = JSON.stringify(scoreObj)
   const str = encodeURIComponent(value)
@@ -1055,9 +1071,38 @@ function setIQtoCookie(iq) {
 }
 
 function updatePersonalBestIQ() {
-  setIQtoCookie(0)
+  //setIQtoCookie(0)
   const scoreObj = getCookieIQ()
 
+  g.personalBest = scoreObj
+
+  if(!g.personalBest){
+    g.personalBest = new Object()
+  }
+
+  let playerName = g.playerName
+  if(playerName === ''){
+    playerName = 'You'
+  }
+
+  // set default value if there's no data
+  g.characterList.forEach((characterName) => {
+    if(typeof g.personalBest[characterName] === "undefined"){
+      g.personalBest[characterName] = new Object()
+    }
+    g.levelList.forEach((levelName) => {
+      if(typeof g.personalBest[characterName][levelName] === "undefined"){
+        g.personalBest[characterName][levelName] = {
+          'name': playerName,
+          'iq': 0,
+          'score': 0,
+          'perfect': 0
+        }
+      }
+    })
+  })
+
+  /*
   g.personalDailyBest = new Object()
   g.personalWeeklyBest = new Object()
 
@@ -1078,12 +1123,14 @@ function updatePersonalBestIQ() {
       g.personalWeeklyBest[characterName][levelName] = weeklyBest
     })
   })
+  */
 }
 
 function loadBestIQ() {
   // get world best
-  g.worldDailyBest = new Object()
-  g.worldWeeklyBest = new Object()
+  //g.worldDailyBest = new Object()
+  //g.worldWeeklyBest = new Object()
+  g.worldBest = new Object()
 
   let fileName = g.scoreDataURL
   fileName += '?' + (Number(new Date()) * 1) // disable cache
@@ -1101,26 +1148,58 @@ function loadBestIQ() {
     */
     const worldIQ = JSON.parse(worldIQJson)
 
-    // create score object
+    g.worldBest = worldIQ
+    if(!g.worldBest){
+      g.worldBest = new Object()
+    }
+
+    // set default value if there's no data
     g.characterList.forEach((characterName) => {
-      g.worldDailyBest[characterName] = new Object()
-      g.worldWeeklyBest[characterName] = new Object()
+      if(typeof g.worldBest[characterName] === "undefined"){
+        g.worldBest[characterName] = new Object()
+      }
+      g.levelList.forEach((levelName) => {
+        if(typeof g.worldBest[characterName][levelName] === "undefined"){
+          g.worldBest[characterName][levelName] = {
+            'name': 'NO NAME',
+            'iq': 0,
+            'score': 0,
+            'perfect': 0
+          }
+        }
+      })
+    })
+
+    // create score object
+    /*
+    g.characterList.forEach((characterName) => {
+      g.worldBest[characterName] = new Object()
 
       g.levelList.forEach( (levelName) => {
         if(worldIQ[characterName] && worldIQ[characterName][levelName]){
-          g.worldDailyBest[characterName][levelName]  = worldIQ[characterName][levelName].daily
-          g.worldWeeklyBest[characterName][levelName] = worldIQ[characterName][levelName].weekly
+          //g.worldDailyBest[characterName][levelName]  = worldIQ[characterName][levelName].daily
+          //g.worldWeeklyBest[characterName][levelName] = worldIQ[characterName][levelName].weekly
+          g.worldBest[characterName][levelName] = worldIQ
         }else{
           g.worldDailyBest[characterName][levelName] = 0
           g.worldWeeklyBest[characterName][levelName] = 0
         }
       })
     })
+    */
   })
   .catch((error) => {
     console.error(`BestIQ data loading error: ${error}`)
   })
   .then(updatePersonalBestIQ)
+}
+
+/**
+ * reset score for debug
+ */
+function resetScore() {
+  g.cookieManager.setCookie(g.cookieScore, "")
+  updatePersonalBestIQ()
 }
 
 function sendScore() {
@@ -2330,6 +2409,7 @@ function showMenuLoop() {
         }
         case 'EXIT': {
           IQSceneChanger.change(5.0, true, g.bgm_menu, null, null, () => {
+            removeAllObjects()
             window.close()
           })
           break
@@ -2576,6 +2656,10 @@ function showMenuLoop() {
     if(g.keyListener.getKeyNewState('H')){
       g.characterListEnable = [true, false, false]
       setPlayableCharacterToCookie()
+    }
+
+    if(g.keyListener.getKeyNewState('S')){
+      resetScore()
     }
   }
 
@@ -4948,6 +5032,7 @@ function setIQPoint() {
     g.iqPoint = 0
   }
   sendScore()
+
   checkNewCharacter()
 }
 
