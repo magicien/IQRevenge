@@ -307,8 +307,11 @@ export default class IQNameEditor extends DH2DObject {
   render() {
     this.drawKeyboard()
     this.drawNameBox()
-    this.drawCursor()
     this.drawChars()
+
+    if(!IQGameData.device.isMobile && !IQGameData.device.isTablet){
+      this.drawCursor()
+    }
   }
 
   resetFont() {
