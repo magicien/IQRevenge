@@ -999,7 +999,7 @@ function getCookieIQ() {
   return cookieIQ
 }
 
-function setIQtoCookie(iq) {
+function setIQtoCookie() {
   //let scoreObj = getCookieIQ()
   //const daySeconds = 24*60*60*1000
   //const today = Math.floor((new Date()) / daySeconds)
@@ -1054,7 +1054,7 @@ function setIQtoCookie(iq) {
   */
 
   // check new record
-  if(iq > scoreObj[g.character][g.level].iq){
+  if(g.iqPoint > scoreObj[g.character][g.level].iq){
     // update record
     scoreObj[g.character][g.level] = {
       "name": g.playerName,
@@ -1062,6 +1062,7 @@ function setIQtoCookie(iq) {
       "score": g.score,
       "perfect": g.perfectCount
     }
+    g.isNewRecord = true
   }
 
 
@@ -1190,12 +1191,26 @@ function loadBestIQ() {
   })
   .catch((error) => {
     console.error(`BestIQ data loading error: ${error}`)
+
+    // set initial data
+    g.characterList.forEach((characterName) => {
+      g.worldBest[characterName] = new Object()
+      g.levelList.forEach((levelName) => {
+        g.worldBest[characterName][levelName] = {
+            'name': 'NO NAME',
+            'iq': 0,
+            'score': 0,
+            'perfect': 0
+        }
+      })
+    })
   })
   .then(updatePersonalBestIQ)
 }
 
 /**
  * reset score for debug
+ * @returns {void}
  */
 function resetScore() {
   g.cookieManager.setCookie(g.cookieScore, "")
@@ -1203,29 +1218,40 @@ function resetScore() {
 }
 
 function sendScore() {
-  if(g.iqPoint > g.worldDailyBest[g.character][g.level]){
+  const best = g.worldBest[g.character][g.level].iq
+  console.log('sendScore:' + g.iqPoint + ' <=> ' + best)
+
+  if(g.iqPoint > g.worldBest[g.character][g.level].iq){
+    console.log('new record!')
     // send score to server
     let receiveData = null
 
     const sendData = {
       submit: 'submit',
+      name: g.playerName,
       iq: g.iqPoint,
       score: g.score,
+      perfect: g.perfectCount,
       character: g.character,
       level: g.level
     }
+    console.log('sendData: ' + sendData)
 
     AjaxRequest.post(g.scoreSendURL, {
       data: sendData,
       async: false
     })
     .then((result) => {
+      console.log('after send data, result: ' + result)
       receiveData = result
-      const data = receiveData.evalJSON()
+      //const data = receiveData.evalJSON()
+      const data = JSON.parse(receiveData)
       if(data.result === 'OK'){
         // OK
+        console.log('sendscore: OK')
       }else{
         // error
+        console.log('sendscore: NG: ' + receiveData)
       }
     })
     .catch((error) => {
@@ -1468,6 +1494,7 @@ function resetValues(stage, remainScores) {
 
   g.getNewCharacter = null
   g.getExtraStage = false
+  g.isNewRecord = false
 
   g.subStage = 1
   g.subSubStage = 1
@@ -1938,6 +1965,7 @@ function setSubMenu() {
     }
 
     case 'SCORE': {
+      loadBestIQ()
       g.menu._subScoreCharacter = g.character
       g.menu._subScoreLevel = g.level
 
@@ -3091,19 +3119,51 @@ function showIQLoop() {
   }else{
     const diffTime = g.getElapsedTime(g.gameOverFadeOutStartTime)
     if(diffTime > g.gameOverFadeOutTime){
-      if(g.getNewCharacter){
-        IQSceneChanger.change(2.0, true, g.bgm_menu, null, showNewCharacterLoop, setupNewCharacterFunctions)
+      if(g.isNewRecord){
+        if(g.playerName.length === 0){
+          // ask to enter player name
+          IQSceneChanger.change(2.0, true, null, null, enterNameLoop, () => {
+            removeAllObjects()
+
+            const nameBoxY = 50
+            const keyboardY = 200
+            g.nameEditor = new IQNameEditor(null, nameBoxY, null, keyboardY)
+            g.nameEditor.setEndEditCallback(() => {
+              if(g.playerName.length === 0){
+                // beep: you must have name
+                playSound(g.se_forbidden)
+              }else{
+                // save player's name to cookie
+                g.cookieManager.setCookie(g.cookieOptionPlayer, g.playerName)
+                sendScore()
+                moveToNextSceneFromGameOver()
+              }
+            })
+            g.canvasField.addObject(g.nameEditor)
+          })
+        }else{
+          sendScore()
+          moveToNextSceneFromGameOver()
+        }
       }else{
-        g.continueFadeInStartTime = new Date(g.nowTime.getTime())
-        removeAllObjects()
-        g.menu.setMenu('continue')
-        g.canvasField.addObject(g.menu)
-        g.canvasField.setFrameCallback(showContinueLoop)
+        moveToNextSceneFromGameOver()
       }
     }
   }
   g.keyListener.resetKeyNewState()
   resetTouchState()
+}
+
+function moveToNextSceneFromGameOver() {
+  if(g.getNewCharacter){
+    IQSceneChanger.change(2.0, true, g.bgm_menu, null, showNewCharacterLoop, setupNewCharacterFunctions)
+  }else{
+    g.continueFadeInStartTime = new Date(g.nowTime.getTime())
+    removeAllObjects()
+    g.menu.setMenu('continue')
+    g.canvasField.addObject(g.menu)
+    g.canvasField.setFrameCallback(showContinueLoop)
+  }
 }
 
 function showContinueLoop() {
@@ -5031,7 +5091,8 @@ function setIQPoint() {
   if(g.iqPoint < 0){
     g.iqPoint = 0
   }
-  sendScore()
+  //sendScore()
+  setIQtoCookie()
 
   checkNewCharacter()
 }
@@ -5360,7 +5421,7 @@ function clearProcess() {
       if(g.iqPoint < 0){
         g.iqPoint = 0
       }
-      setIQtoCookie(g.iqPoint)
+      setIQtoCookie()
       loadEndingStory()
       
       IQSceneChanger.change(1.0, false, g.bgm_fanfare, null, endingLoop, () => {

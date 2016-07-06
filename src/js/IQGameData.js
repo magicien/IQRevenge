@@ -52,7 +52,7 @@ class _IQGameData {
      * URL for sharing in Social Media
      * @type {string}
      */
-    this.shareURL = 'http://darkhorse2.0spec.jp/dh3d/sample/iq/iq.php'
+    this.shareURL = 'http://darkhorse2.0spec.jp/iq/'
 
     /**
      * Title for sharing in Social Media
@@ -64,13 +64,15 @@ class _IQGameData {
      * URL to send score
      * @type {string}
      */
-    this.scoreSendURL = 'http://darkhorse2.0spec.jp/dh3d/sample/iq/sendScore.php'
+    //this.scoreSendURL = 'http://darkhorse2.0spec.jp/iq/sendScore.php'
+    this.scoreSendURL = './sendScore.php'
 
     /**
      * URL to get score and ranking
      * @type {string}
      */
-    this.scoreDataURL = 'http://darkhorse2.0spec.jp/dh3d/sample/iq/score.txt'
+    //this.scoreDataURL = 'http://darkhorse2.0spec.jp/iq/data/score.txt'
+    this.scoreDataURL = './data/score.txt'
 
     /** 
      * Stage level of the game
@@ -239,6 +241,7 @@ class _IQGameData {
 
     this.getExtraStageIQThreshold = 400
     this.getExtraStage = false
+    this.isNewRecord = false
 
     /**
      * Sound volume (0.0 - 1.0) for inner use
@@ -321,7 +324,7 @@ class _IQGameData {
     this.keyPause = 'Esc'
 
     // best score
-    this.scoreDataURL = './data/score.txt'
+    //this.scoreDataURL = './data/score.txt'
     /*
     this.worldDailyBest = 0
     this.worldWeeklyBest = 0
