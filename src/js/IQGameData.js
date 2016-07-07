@@ -234,8 +234,8 @@ class _IQGameData {
      */
     this.getNewCharacterIQThreshold = [
       0,
-      1, // for debug
-      2  // for debug
+      100,
+      200
     ]
     this.getNewCharacter = null
 

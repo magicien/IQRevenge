@@ -1291,7 +1291,7 @@ function checkNewCharacter() {
   }
 
   if(!g.extraPlayable && g.getExtraStageIQThreshold <= g.iqPoint){
-    g.getExtraStage = true
+    //g.getExtraStage = true // disabled temporarily
   }
 
   // save data to cookie
