@@ -2143,6 +2143,7 @@ function setSubMenu() {
           const sharedURL = createSharedStageURL()
           alert('URL for this stage:\n' + sharedURL)
         }
+        shareMenu.onTouch = shareMenu.onDecision
 
         const returnMenu = g.menu._menuItem[6]
         returnMenu.onDecision = () => {
