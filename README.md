@@ -2,6 +2,8 @@ IQ Revenge
 ==========
 WebGL game using [DH3DLibrary](http://github.com/magicien/DH3DLibrary)
 
+[Online Page](http://darkhorse2.0spec.jp/dh3d/sample/iq.php)
+
 How to play
 -----------
  - J: Move Left
