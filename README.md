@@ -4,8 +4,13 @@ WebGL game using [DH3DLibrary](http://github.com/magicien/DH3DLibrary)
 
 [Online Page](http://darkhorse2.0spec.jp/dh3d/sample/iq.php)
 
+![ScreenShot](https://raw.githubusercontent.com/magicien/IQRevenge/master/screenshot.png)
+
 How to play
 -----------
+
+### mac/PC
+
  - J: Move Left
  - L: Move Right
  - I: Move Forward
@@ -15,6 +20,16 @@ How to play
  - C: Fast Forward cubes
  - Esc: Pause/Resume
 
+### iPhone
+
+![ScreenShot_iPhone](https://raw.githubusercontent.com/magicien/IQRevenge/master/screenshot_ios.png)
+
+ - Swipe the Circle at bottom left: Move
+ - Tap the blue botton: Marking
+ - Tap the green button: Trigger an Advantage Cube
+ - Tap the Fast Foward button: Fast Forward cubes
+ - Tap the pause button: Pause
+ 
 Rules
 -----------
 Rules of this game look like [this](https://en.wikipedia.org/wiki/I.Q.:_Intelligent_Qube)
